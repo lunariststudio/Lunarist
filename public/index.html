@@ -39,10 +39,31 @@ const demo={
  ]
 };
 const state={route:'home',filter:'All',query:'',session:getSession(),currentMember:null,backendReady:false};
-function getSession(){let s=localStorage.getItem('lunarist_session');if(!s){s={id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]};localStorage.setItem('lunarist_session',JSON.stringify(s))}return s}
+function getSession(){
+  let s=null;
+  try{s=JSON.parse(localStorage.getItem('lunarist_session')||'null')}catch(e){}
+  if(!s||typeof s!=='object')s={};
+  s.id=typeof s.id==='string'&&s.id?s.id:'s_'+(Math.random().toString(36).slice(2));
+  s.interests=s.interests&&typeof s.interests==='object'?s.interests:{};
+  s.viewed=Array.isArray(s.viewed)?s.viewed:[];
+  s.liked=Array.isArray(s.liked)?s.liked:[];
+  localStorage.setItem('lunarist_session',JSON.stringify(s));
+  return s
+}
 function saveSession(){localStorage.setItem('lunarist_session',JSON.stringify(state.session))}
-function member(id){return demo.members.find(m=>m.id===id)}
-function score(p){const interest=state.session.interests[p.category]||0;const tagScore=p.tags.reduce((n,t)=>n+(state.session.interests[t]||0),0);const trend=Math.min(20,p.views/150);const fresh=Math.max(0,12-p.created*.45);const exploration=Math.random()*8;return interest*12+tagScore*4+trend+fresh+exploration}
+function member(id){return demo.members.find(m=>m.id===id)||{id:'unknown',username:'unknown',name:'Unknown artist',role:'',bio:'',avatar:'https://i.pravatar.cc/160?u=unknown',skills:[],available:false}}
+function score(p){
+  const interests=state.session?.interests&&typeof state.session.interests==='object'?state.session.interests:{};
+  const category=String(p?.category||'');
+  const tags=Array.isArray(p?.tags)?p.tags:[];
+  const interest=Number(interests[category]||0);
+  const tagScore=tags.reduce((n,t)=>n+Number(interests[t]||0),0);
+  const trend=Math.min(20,Number(p?.views||0)/150);
+  const created=Number(p?.created||0);
+  const fresh=created>1000000000000?Math.max(0,12-Math.max(0,(Date.now()-created)/86400000)*.45):0;
+  const exploration=Math.random()*8;
+  return interest*12+tagScore*4+trend+fresh+exploration
+}
 function personalized(){return [...demo.projects].sort((a,b)=>score(b)-score(a))}
 function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);p.tags.forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{})}
 function avatar(m){return `<img class="avatar" src="${m.avatar}" alt="${esc(m.name)}">`}

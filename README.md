@@ -50,3 +50,6 @@ The schema includes RLS for profiles/projects and private discovery-event reads.
 ## Important
 
 This package preserves the supplied Lunarist UI and API structure. It does not pretend to contain source files that were not present in the uploaded archive. The supplied archive itself was a static HTML app, so this is the complete production packaging possible from that source.
+
+## Fix 2026-08-20
+Fixed a production crash caused by legacy browser `lunarist_session` data missing `interests`. The feed now normalizes old sessions and tolerates incomplete project/member records.
