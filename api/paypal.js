@@ -1,7 +1,20 @@
+// Server-side price catalog. The amount charged is ALWAYS looked up from here —
+// never taken from the client — so a request can't be replayed with a lower
+// (or zero) amount. Fill in your real service keys and prices before going live.
+const SERVICES = {
+  // 'commission-sketch': { amount: '25.00', label: 'Sketch Commission' },
+  // 'commission-illustration': { amount: '75.00', label: 'Illustration Commission' },
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { amount, service } = req.body;
+  const { service } = req.body || {};
+  const entry = typeof service === 'string' ? SERVICES[service] : null;
+  if (!entry) {
+    return res.status(400).json({ error: 'Unknown or unconfigured service' });
+  }
+
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const secretKey = process.env.PAYPAL_CLIENT_SECRET;
 
@@ -20,6 +33,9 @@ export default async function handler(req, res) {
       },
     });
     const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      return res.status(502).json({ error: 'Unable to authenticate with PayPal' });
+    }
 
     const orderResponse = await fetch('https://api-m.paypal.com/v2/checkout/orders', {
       method: 'POST',
@@ -31,10 +47,10 @@ export default async function handler(req, res) {
         intent: 'CAPTURE',
         purchase_units: [
           {
-            description: service,
+            description: entry.label,
             amount: {
               currency_code: 'USD',
-              value: amount,
+              value: entry.amount,
             },
           },
         ],
@@ -42,8 +58,9 @@ export default async function handler(req, res) {
     });
 
     const orderData = await orderResponse.json();
-    return res.status(200).json(orderData);
+    return res.status(orderResponse.status).json(orderData);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error(error);
+    return res.status(500).json({ error: 'PayPal request failed' });
   }
 }
