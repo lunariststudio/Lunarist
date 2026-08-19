@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+assert.ok(fs.existsSync('public/index.html'));
+assert.ok(fs.existsSync('api/lunarist.js'));
+assert.ok(fs.existsSync('supabase/schema.sql'));
+assert.ok(fs.existsSync('vercel.json'));
+const html=fs.readFileSync('public/index.html','utf8');
+assert.ok(html.includes('/api/lunarist'));
+assert.ok(!html.includes('SUPABASE_SERVICE_ROLE_KEY'));
+console.log('Lunarist package verification: PASS');
