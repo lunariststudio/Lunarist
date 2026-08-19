@@ -17,28 +17,9 @@
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="modal" id="authModal"><div class="modalbox" style="max-width:420px"><button class="modalclose" id="authModalClose">×</button><div class="modalcontent">
-<div class="eyebrow" id="authTitle">Sign in</div>
-<h2 style="font-size:28px;margin:6px 0 16px">Your Lunarist account</h2>
-<div class="formgrid">
-<div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email"></div>
-<div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password"></div>
-</div>
-<div id="authError" style="color:var(--danger);font-size:13px;margin-top:10px;min-height:1em"></div>
-<div class="row" style="margin-top:14px;gap:10px">
-<button class="btn primary grow" id="authSubmit">Sign in</button>
-<button class="btn" id="authToggle">Need an account?</button>
-</div>
-</div></div></div>
 <div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const SUPABASE_URL='https://xouvmwjssngrbnsumrnz.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_7C_Cds49bF5CKF1mBvOj6w_OukuZzqS';
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let authUser=null;
-let authProfile=null;
 const demo={
  members:[
   {id:'m1',username:'yujin',name:'Yujin',role:'Motion Designer · Animator',bio:'Turning music, characters and atmosphere into moving stories.',avatar:'https://i.pravatar.cc/160?img=12',skills:['Motion Design','MV','Compositing'],available:true},
@@ -58,31 +39,10 @@ const demo={
  ]
 };
 const state={route:'home',filter:'All',query:'',session:getSession(),currentMember:null,backendReady:false};
-function getSession(){
-  let s=null;
-  try{s=JSON.parse(localStorage.getItem('lunarist_session')||'null')}catch(e){}
-  if(!s||typeof s!=='object')s={};
-  s.id=typeof s.id==='string'&&s.id?s.id:'s_'+(Math.random().toString(36).slice(2));
-  s.interests=s.interests&&typeof s.interests==='object'?s.interests:{};
-  s.viewed=Array.isArray(s.viewed)?s.viewed:[];
-  s.liked=Array.isArray(s.liked)?s.liked:[];
-  localStorage.setItem('lunarist_session',JSON.stringify(s));
-  return s
-}
+function getSession(){let s=localStorage.getItem('lunarist_session');if(!s){s={id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]};localStorage.setItem('lunarist_session',JSON.stringify(s))}return s}
 function saveSession(){localStorage.setItem('lunarist_session',JSON.stringify(state.session))}
-function member(id){return demo.members.find(m=>m.id===id)||{id:'unknown',username:'unknown',name:'Unknown artist',role:'',bio:'',avatar:'https://i.pravatar.cc/160?u=unknown',skills:[],available:false}}
-function score(p){
-  const interests=state.session?.interests&&typeof state.session.interests==='object'?state.session.interests:{};
-  const category=String(p?.category||'');
-  const tags=Array.isArray(p?.tags)?p.tags:[];
-  const interest=Number(interests[category]||0);
-  const tagScore=tags.reduce((n,t)=>n+Number(interests[t]||0),0);
-  const trend=Math.min(20,Number(p?.views||0)/150);
-  const created=Number(p?.created||0);
-  const fresh=created>1000000000000?Math.max(0,12-Math.max(0,(Date.now()-created)/86400000)*.45):0;
-  const exploration=Math.random()*8;
-  return interest*12+tagScore*4+trend+fresh+exploration
-}
+function member(id){return demo.members.find(m=>m.id===id)}
+function score(p){const interest=state.session.interests[p.category]||0;const tagScore=p.tags.reduce((n,t)=>n+(state.session.interests[t]||0),0);const trend=Math.min(20,p.views/150);const fresh=Math.max(0,12-p.created*.45);const exploration=Math.random()*8;return interest*12+tagScore*4+trend+fresh+exploration}
 function personalized(){return [...demo.projects].sort((a,b)=>score(b)-score(a))}
 function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);p.tags.forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{})}
 function avatar(m){return `<img class="avatar" src="${m.avatar}" alt="${esc(m.name)}">`}
@@ -98,86 +58,9 @@ function bind(){document.querySelectorAll('[data-route]').forEach(b=>b.onclick=(
 function openProject(id){const p=demo.projects.find(x=>x.id===id);if(!p)return;track(p);const m=member(p.member);document.getElementById('modalMedia').innerHTML=p.video?`<iframe src="${p.video}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`:`<img src="${p.image}" style="width:100%;height:100%;object-fit:cover" alt="">`;document.getElementById('modalContent').innerHTML=`<div class="eyebrow">${esc(p.category)}</div><h2>${esc(p.title)}</h2><div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m.id}">${esc(m.name)} · ${esc(m.role)}</button></div><p>${esc(p.desc)}</p><div class="stats"><span class="stat">👁 ${p.views.toLocaleString()} views</span><button class="stat" id="likeBtn">♡ ${p.likes} like</button><button class="stat" id="saveBtn">🔖 Save</button></div><div class="tags">${p.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`;document.getElementById('projectModal').classList.add('open');document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};document.getElementById('saveBtn').onclick=()=>{toast('Project saved for this session')};document.querySelector('[data-modal-member]').onclick=()=>{closeModal();state.route='member:'+m.id;render()}}
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML=''}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
-async function openDashboard(){
-  if(!authUser){openAuthModal();return}
-  if(!authProfile){await refreshAuthState()}
-  const m=authProfile;
-  if(!m){toast('Could not load your profile. Try signing in again.');return}
-  document.getElementById('dashTitle').textContent=m.display_name+' · Member';
-  const {data:myProjects}=await sb.from('projects').select('id,title,category,thumbnail_url,media_url,views,published').eq('owner_id',authUser.id).order('created_at',{ascending:false});
-  const ps=myProjects||[];
-  document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.display_name)}.</h3><p style="color:var(--muted)">Your profile is public and your projects can appear in personalized discovery feeds.</p><div class="stats"><span class="stat">${ps.length} projects</span><span class="stat">${ps.reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div></div><div class="panel" style="margin-top:12px"><div class="row"><div class="grow"><div class="eyebrow">Account</div></div><button class="btn" id="signOutBtn">Sign out</button></div></div>`;
-  document.getElementById('dash-projects').innerHTML=`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Published work</h3></div></div>${ps.map(p=>`<div class="listitem"><img class="listthumb" src="${p.thumbnail_url||p.media_url||''}"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${p.views||0} views · ${p.published?'Published':'Draft'}</div></div></div>`).join('')||'<p style="color:var(--muted)">No projects yet — add your first one below.</p>'}<div class="formgrid" style="margin-top:16px"><div class="field full"><label>Title</label><input id="npTitle"></div><div class="field"><label>Category</label><input id="npCategory" placeholder="Illustration, 3D, MV…"></div><div class="field"><label>Publish immediately</label><select id="npPublished"><option value="0">Save as draft</option><option value="1">Published</option></select></div><div class="field full"><label>Description</label><textarea id="npDesc"></textarea></div><div class="field full"><label>Thumbnail URL</label><input id="npThumb" placeholder="https://…"></div></div><button class="btn primary" style="margin-top:14px" id="addProjectBtn">+ Add project</button></div>`;
-  document.getElementById('dash-profile').innerHTML=`<div class="panel"><div class="eyebrow">Edit profile</div><div class="formgrid"><div class="field"><label>Display name</label><input id="pfName" value="${esc(m.display_name)}"></div><div class="field"><label>Username</label><input value="@${esc(m.username)}" disabled></div><div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role||'')}"></div><div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio||'')}</textarea></div><div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div></div><button class="btn primary" style="margin-top:14px" id="saveProfile">Save profile</button></div>`;
-  document.getElementById('drawer').classList.add('open');
-  document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active')});
-  document.getElementById('saveProfile').onclick=async()=>{
-    const patch={display_name:document.getElementById('pfName').value,role:document.getElementById('pfRole').value,bio:document.getElementById('pfBio').value,available:document.getElementById('pfAvail').value==='1'};
-    const {error}=await sb.from('profiles').update(patch).eq('id',authUser.id);
-    if(error){toast('Could not save profile');return}
-    toast('Profile saved');
-    await refreshAuthState();
-    openDashboard();
-  };
-  document.getElementById('addProjectBtn').onclick=async()=>{
-    const title=document.getElementById('npTitle').value.trim();
-    const category=document.getElementById('npCategory').value.trim();
-    if(!title||!category){toast('Title and category are required');return}
-    const row={owner_id:authUser.id,title,category,description:document.getElementById('npDesc').value,thumbnail_url:document.getElementById('npThumb').value||null,published:document.getElementById('npPublished').value==='1'};
-    const {error}=await sb.from('projects').insert(row);
-    if(error){toast('Could not add project');return}
-    toast('Project added');
-    openDashboard();
-  };
-  document.getElementById('signOutBtn').onclick=async()=>{await sb.auth.signOut();await refreshAuthState();closeDash();toast('Signed out')};
-}
+function openDashboard(){const m=state.currentMember||demo.members[0];state.currentMember=m;document.getElementById('accountName').textContent=m.name;document.getElementById('accountAvatar').outerHTML=`<img class="avatar" id="accountAvatar" src="${m.avatar}" alt="">`;document.getElementById('dashTitle').textContent=m.name+' · Member';document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile is public and your projects can appear in personalized discovery feeds.</p><div class="stats"><span class="stat">${demo.projects.filter(p=>p.member===m.id).length} projects</span><span class="stat">${demo.projects.filter(p=>p.member===m.id).reduce((n,p)=>n+p.views,0).toLocaleString()} views</span></div></div><div class="panel" style="margin-top:12px"><div class="eyebrow">Discovery</div><p style="color:var(--muted)">Current visitor interests are learned from project views, likes and category exploration. Production mode should store these events in Supabase.</p></div>`;const ps=demo.projects.filter(p=>p.member===m.id);document.getElementById('dash-projects').innerHTML=`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Published work</h3></div><button class="btn primary" id="addDemoProject">+ Add project</button></div>${ps.map(p=>`<div class="listitem"><img class="listthumb" src="${p.image}"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${p.views} views</div></div></div>`).join('')}</div>`;document.getElementById('dash-profile').innerHTML=`<div class="panel"><div class="eyebrow">Edit profile</div><div class="formgrid"><div class="field"><label>Display name</label><input id="pfName" value="${esc(m.name)}"></div><div class="field"><label>Username</label><input value="@${esc(m.username)}" disabled></div><div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div><div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio)}</textarea></div><div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div></div><button class="btn primary" style="margin-top:14px" id="saveProfile">Save profile</button></div>`;document.getElementById('drawer').classList.add('open');document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active')});document.getElementById('saveProfile').onclick=()=>{m.name=document.getElementById('pfName').value;m.role=document.getElementById('pfRole').value;m.bio=document.getElementById('pfBio').value;m.available=document.getElementById('pfAvail').value==='1';toast('Profile saved');openDashboard()};document.getElementById('addDemoProject').onclick=()=>toast('Project uploader is ready for Supabase integration')}
 function closeDash(){document.getElementById('drawer').classList.remove('open')}
-document.getElementById('accountBtn').onclick=()=>authUser?openDashboard():openAuthModal();document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');
-let authMode='signin';
-function openAuthModal(){document.getElementById('authError').textContent='';document.getElementById('authModal').classList.add('open')}
-function closeAuthModal(){document.getElementById('authModal').classList.remove('open')}
-function setAuthMode(m){authMode=m;document.getElementById('authTitle').textContent=m==='signin'?'Sign in':'Create account';document.getElementById('authSubmit').textContent=m==='signin'?'Sign in':'Sign up';document.getElementById('authToggle').textContent=m==='signin'?'Need an account?':'Already have one?'}
-document.getElementById('authModalClose').onclick=closeAuthModal;
-document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuthModal()};
-document.getElementById('authToggle').onclick=()=>setAuthMode(authMode==='signin'?'signup':'signin');
-document.getElementById('authSubmit').onclick=async()=>{
-  const email=document.getElementById('authEmail').value.trim();
-  const password=document.getElementById('authPassword').value;
-  const err=document.getElementById('authError');
-  err.textContent='';
-  if(!email||!password){err.textContent='Enter an email and password.';return}
-  const {data,error}=authMode==='signin'?await sb.auth.signInWithPassword({email,password}):await sb.auth.signUp({email,password});
-  if(error){err.textContent=error.message;return}
-  if(authMode==='signup'&&!data.session){err.textContent='Check your email to confirm your account, then sign in.';setAuthMode('signin');return}
-  closeAuthModal();
-  await refreshAuthState();
-  openDashboard();
-};
-async function refreshAuthState(){
-  const {data:{session}}=await sb.auth.getSession();
-  authUser=session?.user||null;
-  if(authUser){
-    const {data:p}=await sb.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available').eq('id',authUser.id).maybeSingle();
-    authProfile=p||null;
-  }else{
-    authProfile=null;
-  }
-  updateAccountChip();
-}
-function updateAccountChip(){
-  const nameEl=document.getElementById('accountName');
-  const avEl=document.getElementById('accountAvatar');
-  if(authUser&&authProfile){
-    nameEl.textContent=authProfile.display_name;
-    if(authProfile.avatar_url)avEl.outerHTML=`<img class="avatar" id="accountAvatar" src="${authProfile.avatar_url}" alt="">`;
-    else avEl.textContent=(authProfile.display_name||'?').slice(0,1).toUpperCase();
-  }else{
-    nameEl.textContent='Guest';
-    avEl.outerHTML='<span class="avatar" id="accountAvatar">G</span>';
-  }
-}
-sb.auth.onAuthStateChange((_event)=>{refreshAuthState()});
-refreshAuthState();
+document.getElementById('accountBtn').onclick=()=>openDashboard();document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');
 async function loadSupabase(){try{const [pr,pp]=await Promise.all([fetch('/api/lunarist?resource=profiles&select=id,username,display_name,role,bio,avatar_url,skills,available&order=created_at').then(r=>r.ok?r.json():Promise.reject()),fetch('/api/lunarist?resource=projects&select=id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,views,likes,created_at&published=eq.true&order=created_at.desc').then(r=>r.ok?r.json():Promise.reject())]);if(Array.isArray(pr)&&pr.length){demo.members=pr.map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false}));}if(Array.isArray(pp)&&pp.length){demo.projects=pp.map(x=>({id:x.id,member:x.owner_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created:Date.parse(x.created_at||0)||0,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||''}));}state.backendReady=true;}catch(e){console.warn('Supabase unavailable; using local demo data.',e)}}
 loadSupabase().finally(render);
 </script>
