@@ -1,33 +1,31 @@
-# Lunarist Studio — Creative Network Prototype
+# Lunarist Studio — Vercel-ready
 
-This is a rebuilt Lunarist Studio web app based on the interaction direction of the supplied Yujin portfolio, redesigned as a multi-member creative network.
+Lunarist is a static Vercel frontend backed by Supabase through server-side Vercel Functions.
 
-## Included
-- Algorithmic / personalized Home feed
-- Discover page with search + filters
-- Artist directory and individual member profiles
-- Project detail modal with video/image presentation
-- Guest personalization using anonymous local session data
-- Like / view signals that change recommendations
-- Member dashboard drawer
-- Profile editing prototype
-- Project management area ready to connect to Supabase
-- Responsive mobile UI
-- Supabase is wired to the production project using a publishable browser key (safe for public clients; RLS remains the security boundary).
+## Environment variables
 
-## Production architecture
-The included UI is intentionally runnable without a backend so it can be previewed immediately. The browser app reads published profiles/projects from the connected Supabase project and records anonymous discovery events. RLS protects member writes and keeps event reads private.
+Create `.env.local` for local development (never commit it):
 
-Suggested tables are in `supabase/schema.sql`.
+```env
+SUPABASE_URL=https://xouvmwjssngrbnsumrnz.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
 
-## Run
-Open `index.html` directly for a static preview, or serve the folder with any static server.
+On Vercel, add the same variables under **Project → Settings → Environment Variables** for Production, Preview, and Development as needed.
 
-## Production wiring
-- Supabase project: `xouvmwjssngrbnsumrnz` (ap-southeast-1)
-- Vercel project: `lunarist`
-- GitHub: `lunariststudio/Lunarist`
-- Frontend reads `profiles` and published `projects` from Supabase.
-- Discovery events are inserted into `discovery_events`.
-- RLS allows public published reads, authenticated owner writes, and anonymous event inserts.
-- `public.rls_auto_enable()` is not executable by API roles.
+**Never expose `SUPABASE_SERVICE_ROLE_KEY` to browser code.** The browser talks only to `/api/lunarist`.
+
+Optional integrations:
+- `YOUTUBE_API_KEY`
+- `PAYPAL_CLIENT_ID`
+- `PAYPAL_CLIENT_SECRET`
+
+## Behavior without env vars
+
+The UI still renders using its local demo dataset; Supabase-backed loading/events are disabled gracefully instead of crashing.
+
+## Deploy
+
+This repository is Vercel-compatible as-is. No build command is required because the main UI is `index.html` and API endpoints live in `/api`.
+
+Supabase schema and RLS policies are in `supabase/schema.sql`.
