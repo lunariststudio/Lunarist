@@ -1,31 +1,52 @@
-# Lunarist Studio — Vercel-ready
+# Lunarist Studio — Vercel + Supabase
 
-Lunarist is a static Vercel frontend backed by Supabase through server-side Vercel Functions.
+This is the production-ready packaging of the Lunarist Studio web app.
 
-## Environment variables
+## Architecture
 
-Create `.env.local` for local development (never commit it):
+- `public/index.html` — complete Lunarist client UI.
+- `api/lunarist.js` — server-side Supabase proxy. The service-role key never reaches the browser.
+- `api/youtube.js` — optional server-side YouTube metadata endpoint.
+- `api/paypal.js` — optional server-side PayPal order endpoint.
+- `supabase/schema.sql` — database/RLS schema.
+- `vercel.json` — Vercel headers.
+- `.env.example` — required environment variable template.
 
-```env
+## Vercel
+
+Set these Environment Variables in the Vercel project:
+
+```text
 SUPABASE_URL=https://xouvmwjssngrbnsumrnz.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_SERVICE_ROLE_KEY=<your Supabase service-role key>
 ```
 
-On Vercel, add the same variables under **Project → Settings → Environment Variables** for Production, Preview, and Development as needed.
+Optional:
 
-**Never expose `SUPABASE_SERVICE_ROLE_KEY` to browser code.** The browser talks only to `/api/lunarist`.
+```text
+YOUTUBE_API_KEY=<Google YouTube Data API v3 key>
+PAYPAL_CLIENT_ID=<PayPal client id>
+PAYPAL_CLIENT_SECRET=<PayPal client secret>
+```
 
-Optional integrations:
-- `YOUTUBE_API_KEY`
-- `PAYPAL_CLIENT_ID`
-- `PAYPAL_CLIENT_SECRET`
+Do NOT use `NEXT_PUBLIC_` for the service-role key.
 
-## Behavior without env vars
+## Local
 
-The UI still renders using its local demo dataset; Supabase-backed loading/events are disabled gracefully instead of crashing.
+```bash
+cp .env.example .env.local
+npm install
+npx vercel dev
+```
 
-## Deploy
+The site is static and the API functions run as Vercel serverless functions.
 
-This repository is Vercel-compatible as-is. No build command is required because the main UI is `index.html` and API endpoints live in `/api`.
+## Supabase
 
-Supabase schema and RLS policies are in `supabase/schema.sql`.
+The existing Lunarist Supabase project should be used. Run the schema only when creating/migrating tables; do not blindly reseed production data.
+
+The schema includes RLS for profiles/projects and private discovery-event reads.
+
+## Important
+
+This package preserves the supplied Lunarist UI and API structure. It does not pretend to contain source files that were not present in the uploaded archive. The supplied archive itself was a static HTML app, so this is the complete production packaging possible from that source.
