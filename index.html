@@ -83,36 +83,51 @@ let result=existing?await supabaseClient.from('projects').update(payload).eq('id
 
 
 async function loadDiscoveryAnalytics(){
-  const {data,error}=await supabaseClient.from('discovery_events').select('event_type,project_id,created_at').order('created_at',{ascending:false}).limit(500);
-  if(error)return {error};
-  const counts={};
-  (data||[]).forEach(e=>counts[e.event_type]=(counts[e.event_type]||0)+1);
+  const {data,error}=await supabaseClient.from('discovery_events').select('event_type,project_id,created_at').order('created_at',{ascending:false}).limit(1000);
+  if(error)return {counts:{},total:0,error:error.message};
+  const counts={};(data||[]).forEach(e=>counts[e.event_type]=(counts[e.event_type]||0)+1);
   return {counts,total:(data||[]).length};
 }
 
 async function openAdminStudio(){
   if(!state.currentUser||!state.currentMember?.is_admin){toast('Admin access required.');return}
   const sec=document.getElementById('dash-admin'); if(!sec)return;
-  sec.innerHTML='<div class="panel"><div class="eyebrow">Studio</div><h3>Loading moderation queue…</h3></div>';
+  sec.innerHTML='<div class="panel"><div class="eyebrow">Studio</div><h3>Loading Studio…</h3></div>';
   const analytics=await loadDiscoveryAnalytics();
-
-  const [{data:pending,error},{count:memberCount},{count:projectCount},{count:pendingCount},{count:publishedCount},{data:members},{data:featured}] = await Promise.all([
-    supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,views,likes').in('status',['pending','published']).order('created_at',{ascending:false}).limit(100),
+  const [{data:projects,error},{count:memberCount},{count:projectCount},{count:pendingCount},{count:publishedCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
+    supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
     supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
     supabaseClient.from('projects').select('*',{count:'exact',head:true}),
     supabaseClient.from('projects').select('*',{count:'exact',head:true}).eq('status','pending'),
     supabaseClient.from('projects').select('*',{count:'exact',head:true}).eq('status','published'),
-    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,available').order('display_name').limit(100),
-    supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20)
+    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,available').order('display_name').limit(200),
+    supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
+    supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
   if(error){sec.innerHTML='<div class="panel"><h3>Studio unavailable</h3><p style="color:var(--muted)">'+esc(error.message)+'</p></div>';return}
-  sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Overview</div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px"><div class="stat"><b>'+Number(memberCount||0)+'</b><span>Members</span></div><div class="stat"><b>'+Number(projectCount||0)+'</b><span>Projects</span></div><div class="stat"><b>'+Number(pendingCount||0)+'</b><span>Pending</span></div><div class="stat"><b>'+Number(publishedCount||0)+'</b><span>Published</span></div><div class="stat"><b>'+((analytics.total??0))+'</b><span>Events</span></div></div></div><div class="panel"><div class="eyebrow">Discovery Analytics</div><h3>'+((analytics.total??0)+' tracked events')+'</h3><div class="meta">'+Object.entries(analytics.counts||{}).map(([k,v])=>esc(k)+': '+v).join(' · ')+'</div></div><div class="panel"><div class="eyebrow">Featured</div><div class="meta">'+((featured||[]).map(f=>esc(f.title)).join(' · ')||'No featured projects')+'</div></div><div class="panel"><div class="eyebrow">Admin Studio</div><h3 style="margin:4px 0 16px">Projects & moderation</h3>'+
-    (pending||[]).map(p=>`<div class="listitem"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status||'draft')} · ${p.featured?'Featured':'Not featured'}</div></div>
-    <select data-admin-status="${p.id}" style="width:auto"><option value="pending" ${p.status==='pending'?'selected':''}>Pending</option><option value="published" ${p.status==='published'?'selected':''}>Published</option><option value="archived" ${p.status==='archived'?'selected':''}>Archived</option></select>
-    <button class="btn" data-admin-feature="${p.id}">${p.featured?'Unfeature':'Feature'}</button></div>`).join('')+
-    '<div class="panel" style="margin-top:16px"><div class="eyebrow">Members</div><div>'+((members||[]).map(m=>`<div class="listitem"><div class="grow"><b>${esc(m.display_name||m.username||'Unnamed member')}</b><div class="meta">${esc(m.role||'Member')} · ${m.is_admin?'Admin':'Member'} · ${m.available===false?'Unavailable':'Available'}</div></div></div>`).join('')||'<div class="meta">No members found</div>')+'</div></div>';
+  const allProjects=projects||[];
+  const pending=allProjects.filter(p=>p.status==='pending');
+  const published=allProjects.filter(p=>p.status==='published');
+  const drafts=allProjects.filter(p=>p.status==='draft');
+  const archived=allProjects.filter(p=>p.status==='archived');
+  const settingsMap=Object.fromEntries((settings||[]).map(x=>[x.key,x.value]));
+  const projectRow=p=>`<div class="listitem"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category||'Uncategorized')} · ${esc(p.status||'draft')} · ${p.featured?'Featured':'Not featured'} · ${Number(p.views||0)} views</div></div><select data-admin-status="${p.id}" style="width:auto"><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="pending" ${p.status==='pending'?'selected':''}>Pending</option><option value="published" ${p.status==='published'?'selected':''}>Published</option><option value="archived" ${p.status==='archived'?'selected':''}>Archived</option></select><button class="btn" data-admin-feature="${p.id}">${p.featured?'Unfeature':'Feature'}</button></div>`;
+  const memberRows=(members||[]).map(m=>`<div class="listitem"><div class="grow"><b>${esc(m.display_name||m.username||'Unnamed member')}</b><div class="meta">@${esc(m.username||'member')} · ${esc(m.role||'Member')} · ${m.is_admin?'Admin':'Member'} · ${m.available===false?'Unavailable':'Available'}</div></div></div>`).join('')||'<div class="meta">No members found</div>';
+  sec.innerHTML=`
+    <div class="panel"><div class="eyebrow">Studio Overview</div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+      <div class="stat"><b>${Number(memberCount||0)}</b><span>Members</span></div><div class="stat"><b>${Number(projectCount||0)}</b><span>Projects</span></div><div class="stat"><b>${Number(pendingCount||0)}</b><span>Pending</span></div><div class="stat"><b>${Number(publishedCount||0)}</b><span>Published</span></div><div class="stat"><b>${Number(analytics.total||0)}</b><span>Events</span></div>
+    </div></div>
+    <div class="heroactions" style="margin:16px 0;flex-wrap:wrap"><button class="filter active" data-studio-tab="overview">Overview</button><button class="filter" data-studio-tab="pending">Pending (${pending.length})</button><button class="filter" data-studio-tab="published">Published (${published.length})</button><button class="filter" data-studio-tab="members">Members (${Number(memberCount||0)})</button><button class="filter" data-studio-tab="analytics">Analytics</button><button class="filter" data-studio-tab="settings">Settings</button></div>
+    <div data-studio-panel="overview"><div class="panel"><div class="eyebrow">Moderation Queue</div><h3>${pending.length?pending.length+' project(s) awaiting review':'No projects awaiting review'}</h3><div>${pending.slice(0,8).map(projectRow).join('')||'<div class="meta">New submissions will appear here.</div>'}</div></div><div class="panel"><div class="eyebrow">Featured</div><div class="meta">${((featured||[]).map(f=>esc(f.title)).join(' · ')||'No featured projects')}</div></div></div>
+    <div data-studio-panel="pending" style="display:none"><div class="panel"><div class="eyebrow">Pending Projects</div>${pending.map(projectRow).join('')||'<div class="meta">Nothing pending.</div>'}</div></div>
+    <div data-studio-panel="published" style="display:none"><div class="panel"><div class="eyebrow">Published Projects</div>${published.map(projectRow).join('')||'<div class="meta">Nothing published.</div>'}</div></div>
+    <div data-studio-panel="members" style="display:none"><div class="panel"><div class="eyebrow">Members</div>${memberRows}</div></div>
+    <div data-studio-panel="analytics" style="display:none"><div class="panel"><div class="eyebrow">Discovery Analytics</div><h3>${Number(analytics.total||0)} tracked events</h3><div class="meta">${Object.entries(analytics.counts||{}).map(([k,v])=>esc(k)+': '+v).join(' · ')||'No events yet.'}</div></div></div>
+    <div data-studio-panel="settings" style="display:none"><div class="panel"><div class="eyebrow">Studio Settings</div><div class="field"><label>Studio name</label><input id="studioName" value="${esc(settingsMap.site_name||'Lunarist Studio')}"></div><div class="field"><label>Tagline</label><input id="studioTagline" value="${esc(settingsMap.tagline||'Unleash Your Dream.')}"></div><button class="btn primary" id="saveStudioSettings">Save settings</button><p id="studioSettingsMsg" class="meta"></p></div></div>`;
+  sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{sec.querySelectorAll('[data-studio-tab]').forEach(x=>x.classList.remove('active'));btn.classList.add('active');sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===btn.dataset.studioTab?'block':'none')});
   sec.querySelectorAll('[data-admin-status]').forEach(el=>el.onchange=async()=>{const r=await supabaseClient.from('projects').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',el.dataset.adminStatus);if(r.error){toast(r.error.message)}else{toast('Project status updated');await loadData();openAdminStudio()}});
-  sec.querySelectorAll('[data-admin-feature]').forEach(el=>el.onclick=async()=>{const id=el.dataset.adminFeature;const item=(pending||[]).find(x=>x.id===id);const r=await supabaseClient.from('projects').update({featured:!item?.featured,updated_at:new Date().toISOString()}).eq('id',id);if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');openAdminStudio()}});
+  sec.querySelectorAll('[data-admin-feature]').forEach(el=>el.onclick=async()=>{const id=el.dataset.adminFeature;const item=allProjects.find(x=>x.id===id);const r=await supabaseClient.from('projects').update({featured:!item?.featured,updated_at:new Date().toISOString()}).eq('id',id);if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');await loadData();openAdminStudio()}});
+  document.getElementById('saveStudioSettings')?.addEventListener('click',async()=>{const msg=document.getElementById('studioSettingsMsg');const rows=[['site_name',document.getElementById('studioName').value.trim()],['tagline',document.getElementById('studioTagline').value.trim()]];for(const [key,value] of rows){const r=await supabaseClient.from('studio_settings').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});if(r.error){msg.textContent=r.error.message;return}}msg.textContent='Settings saved.';toast('Studio settings saved')});
 }
 
 function closeDash(){document.getElementById('drawer').classList.remove('open')}

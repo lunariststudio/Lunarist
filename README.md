@@ -54,7 +54,7 @@ Set `profiles.is_admin = true` manually for trusted Studio administrators. Do no
 - Discovery event breakdown
 - Additional database indexes for Studio queries
 
-## Phase 2 — Project Management
+## Phase 3 — Project Management
 
 Phase 2 adds the real member project workflow:
 
@@ -68,3 +68,12 @@ Phase 2 adds the real member project workflow:
 - `lunariststudio@gmail.com` is promoted to admin by the Phase 2 migration when that Auth user exists.
 
 Apply `supabase/migrations/20260821_lunarist_phase2_projects.sql` to the Lunarist Supabase project before deploying.
+
+
+## Phase 3 — Admin Studio
+
+The Studio account `lunariststudio@gmail.com` can moderate project status, feature/unfeature projects, inspect members, view private discovery analytics, and edit protected Studio settings.
+
+Apply `supabase/migrations/20260821_lunarist_phase3_admin_studio.sql` after the Phase 1 and Phase 2 migrations.
+
+The admin flag is protected against self-escalation; ordinary members cannot promote themselves to admin through profile updates.
