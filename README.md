@@ -77,3 +77,21 @@ The Studio account `lunariststudio@gmail.com` can moderate project status, featu
 Apply `supabase/migrations/20260821_lunarist_phase3_admin_studio.sql` after the Phase 1 and Phase 2 migrations.
 
 The admin flag is protected against self-escalation; ordinary members cannot promote themselves to admin through profile updates.
+
+## Phase 4 — Real Recommendation Backend
+
+Phase 4 replaces the browser-only recommendation score with a server-side Supabase recommendation function.
+
+Scoring weights:
+- Interest match: 40%
+- Tag match: 20%
+- Trending: 15%
+- Freshness: 10%
+- Artist affinity: 10%
+- Exploration: 5%
+
+The frontend keeps a stable anonymous discovery session in localStorage and sends sanitized discovery events to the existing `/api/lunarist` endpoint. The endpoint now exposes `resource=recommendations`, which calls the protected `public.get_recommendations()` RPC using the server-only Supabase service role.
+
+Apply `supabase/migrations/20260821_lunarist_phase4_recommendations.sql` after the existing Phase 1–3 migrations.
+
+The recommendation RPC excludes projects already seen in the visitor's session and uses deterministic per-session exploration, so two visitors can receive different recommendations without relying on browser-side random ranking.
