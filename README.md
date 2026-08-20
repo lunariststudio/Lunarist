@@ -1,0 +1,55 @@
+# Lunarist Studio — production vNext
+
+## What changed
+- One canonical `index.html` at the Vercel root; removed duplicate `public/index.html`.
+- Supabase is now the production source of truth. There is no demo-data fallback.
+- Added Supabase Auth: sign up, sign in, sign out, session restore.
+- Added real profile editing through Supabase + RLS.
+- Added real project create/edit/delete/publish through Supabase + RLS.
+- Added `/api/config` to expose only the public Supabase URL and anon/publishable key.
+- Service-role key remains server-only.
+- Discovery events remain server-side.
+- Removed demo seed inserts from `supabase/schema.sql`; existing production data is not overwritten by the schema.
+- Added optional Storage migration for `project-media`.
+
+## Vercel Environment Variables
+Required:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY` (safe to expose to the browser via `/api/config`)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+
+Optional YouTube/PayPal variables remain supported.
+
+## Supabase
+Run `supabase/schema.sql` only for missing base tables/policies. Run `supabase/migrations/20260821_lunarist_storage.sql` once if you want the `project-media` storage bucket. Do not use the old demo-seeding version.
+
+## Project media
+The project editor currently accepts media URLs. The storage migration prepares a secure per-user bucket for the next upload step without exposing service credentials.
+
+## Platform v1.1
+
+Added:
+- Four-state project lifecycle: `draft`, `pending`, `published`, `archived`
+- Admin Studio project moderation and featured curation
+- Admin moderation policy enforced by Supabase RLS
+- Weighted recommendation scoring: interest 40%, tags 20%, trending 15%, freshness 10%, artist affinity 10%, exploration 5%
+- Safe additive migration: `supabase/migrations/20260821_lunarist_v11.sql`
+
+Set `profiles.is_admin = true` manually for trusted Studio administrators. Do not expose service-role credentials in browser code.
+
+## Platform v1.2
+
+- Real Supabase Storage bucket: `project-media`
+- Authenticated owner-scoped uploads/updates/deletes
+- Public project-media reads
+- Project thumbnail/media file inputs wired into the project save flow
+- Admin Studio discovery-event summary
+
+## Platform v1.3 — Admin Studio
+
+- Studio overview KPIs: members, projects, pending, published, discovery events
+- Pending/moderation queue
+- Featured project curation visibility
+- Member directory with admin/availability status
+- Discovery event breakdown
+- Additional database indexes for Studio queries
