@@ -53,3 +53,18 @@ Set `profiles.is_admin = true` manually for trusted Studio administrators. Do no
 - Member directory with admin/availability status
 - Discovery event breakdown
 - Additional database indexes for Studio queries
+
+## Phase 2 — Project Management
+
+Phase 2 adds the real member project workflow:
+
+- Create and edit projects from Member Space.
+- Save as `draft`.
+- Submit as `pending` for Studio review.
+- Only admins can publish or archive projects.
+- Upload thumbnails and media to the `project-media` Supabase Storage bucket.
+- Owner-scoped Storage paths use `<user-id>/<uuid>-...`.
+- Public discovery only exposes published projects.
+- `lunariststudio@gmail.com` is promoted to admin by the Phase 2 migration when that Auth user exists.
+
+Apply `supabase/migrations/20260821_lunarist_phase2_projects.sql` to the Lunarist Supabase project before deploying.
