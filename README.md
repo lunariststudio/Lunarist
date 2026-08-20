@@ -1,55 +1,55 @@
-# Lunarist Studio — Vercel + Supabase
+# Lunarist Studio — production vNext
 
-This is the production-ready packaging of the Lunarist Studio web app.
+## What changed
+- One canonical `index.html` at the Vercel root; removed duplicate `public/index.html`.
+- Supabase is now the production source of truth. There is no demo-data fallback.
+- Added Supabase Auth: sign up, sign in, sign out, session restore.
+- Added real profile editing through Supabase + RLS.
+- Added real project create/edit/delete/publish through Supabase + RLS.
+- Added `/api/config` to expose only the public Supabase URL and anon/publishable key.
+- Service-role key remains server-only.
+- Discovery events remain server-side.
+- Removed demo seed inserts from `supabase/schema.sql`; existing production data is not overwritten by the schema.
+- Added optional Storage migration for `project-media`.
 
-## Architecture
+## Vercel Environment Variables
+Required:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY` (safe to expose to the browser via `/api/config`)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 
-- `public/index.html` — complete Lunarist client UI.
-- `api/lunarist.js` — server-side Supabase proxy. The service-role key never reaches the browser.
-- `api/youtube.js` — optional server-side YouTube metadata endpoint.
-- `api/paypal.js` — optional server-side PayPal order endpoint.
-- `supabase/schema.sql` — database/RLS schema.
-- `vercel.json` — Vercel headers.
-- `.env.example` — required environment variable template.
-
-## Vercel
-
-Set these Environment Variables in the Vercel project:
-
-```text
-SUPABASE_URL=https://xouvmwjssngrbnsumrnz.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<your Supabase service-role key>
-```
-
-Optional:
-
-```text
-YOUTUBE_API_KEY=<Google YouTube Data API v3 key>
-PAYPAL_CLIENT_ID=<PayPal client id>
-PAYPAL_CLIENT_SECRET=<PayPal client secret>
-```
-
-Do NOT use `NEXT_PUBLIC_` for the service-role key.
-
-## Local
-
-```bash
-cp .env.example .env.local
-npm install
-npx vercel dev
-```
-
-The site is static and the API functions run as Vercel serverless functions.
+Optional YouTube/PayPal variables remain supported.
 
 ## Supabase
+Run `supabase/schema.sql` only for missing base tables/policies. Run `supabase/migrations/20260821_lunarist_storage.sql` once if you want the `project-media` storage bucket. Do not use the old demo-seeding version.
 
-The existing Lunarist Supabase project should be used. Run the schema only when creating/migrating tables; do not blindly reseed production data.
+## Project media
+The project editor currently accepts media URLs. The storage migration prepares a secure per-user bucket for the next upload step without exposing service credentials.
 
-The schema includes RLS for profiles/projects and private discovery-event reads.
+## Platform v1.1
 
-## Important
+Added:
+- Four-state project lifecycle: `draft`, `pending`, `published`, `archived`
+- Admin Studio project moderation and featured curation
+- Admin moderation policy enforced by Supabase RLS
+- Weighted recommendation scoring: interest 40%, tags 20%, trending 15%, freshness 10%, artist affinity 10%, exploration 5%
+- Safe additive migration: `supabase/migrations/20260821_lunarist_v11.sql`
 
-This package preserves the supplied Lunarist UI and API structure. It does not pretend to contain source files that were not present in the uploaded archive. The supplied archive itself was a static HTML app, so this is the complete production packaging possible from that source.
+Set `profiles.is_admin = true` manually for trusted Studio administrators. Do not expose service-role credentials in browser code.
 
-## Fix 2026-08-20
-Fixed a production crash caused by legacy browser `lunarist_session` data missing `interests`. The feed now normalizes old sessions and tolerates incomplete project/member records.
+## Platform v1.2
+
+- Real Supabase Storage bucket: `project-media`
+- Authenticated owner-scoped uploads/updates/deletes
+- Public project-media reads
+- Project thumbnail/media file inputs wired into the project save flow
+- Admin Studio discovery-event summary
+
+## Platform v1.3 — Admin Studio
+
+- Studio overview KPIs: members, projects, pending, published, discovery events
+- Pending/moderation queue
+- Featured project curation visibility
+- Member directory with admin/availability status
+- Discovery event breakdown
+- Additional database indexes for Studio queries

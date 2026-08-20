@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-assert.ok(fs.existsSync('public/index.html'));
+assert.ok(fs.existsSync('index.html'));
+assert.ok(!fs.existsSync('public/index.html'));
+assert.ok(fs.existsSync('api/config.js'));
 assert.ok(fs.existsSync('api/lunarist.js'));
 assert.ok(fs.existsSync('supabase/schema.sql'));
-assert.ok(fs.existsSync('vercel.json'));
-const html=fs.readFileSync('public/index.html','utf8');
-assert.ok(html.includes('/api/lunarist'));
+const html=fs.readFileSync('index.html','utf8');
+assert.ok(html.includes('/api/config'));
 assert.ok(!html.includes('SUPABASE_SERVICE_ROLE_KEY'));
-console.log('Lunarist package verification: PASS');
+assert.ok(!html.includes('const demo='));
+console.log('Lunarist vNext verification: PASS');
