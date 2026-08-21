@@ -1,5 +1,5 @@
 function config(){return{url:(process.env.SUPABASE_URL||"").replace(/\/$/,""),key:process.env.SUPABASE_SERVICE_ROLE_KEY||""}}
-const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at',order:'created_at.desc'}};
+const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at',order:'created_at.desc'}};
 const EVENT_TYPES=['view','like','save','share','open_artist','search'];
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function sanitizeEvent(event){if(!event||typeof event!=='object')return null;const session_id=typeof event.session_id==='string'?event.session_id.slice(0,128):null;if(!session_id)return null;const event_type=typeof event.event_type==='string'?event.event_type:null;if(!EVENT_TYPES.includes(event_type))return null;let project_id=null;if(event.project_id!=null){if(typeof event.project_id!=='string'||!UUID_RE.test(event.project_id))return null;project_id=event.project_id}const category=typeof event.category==='string'?event.category.slice(0,64):null;const tags=event.metadata&&Array.isArray(event.metadata.tags)?event.metadata.tags.filter(t=>typeof t==='string').slice(0,20).map(t=>t.slice(0,64)):[];return{session_id,project_id,event_type,category,metadata:{tags}}}
@@ -13,7 +13,7 @@ export default async function handler(req,res){const {url,key}=config();if(!url|
   }
   const def=RESOURCES[resource];
   if(!def)return res.status(400).json({error:'Use resource=profiles, resource=projects, or resource=recommendations'});
-  const out=new URLSearchParams({select:def.select,order:def.order});if(resource==='projects')out.set('published','eq.true');
+  const out=new URLSearchParams({select:def.select,order:def.order});if(resource==='projects')out.set('published','eq.true');if(resource==='profiles')out.set('or','(account_type.eq.member,is_admin.eq.true)');
   const r=await fetch(`${url}/rest/v1/${resource}?${out}`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
   const text=await r.text();res.status(r.status).setHeader('Content-Type','application/json');return res.send(text)
 }if(req.method==='POST'){const event=sanitizeEvent((req.body||{}).event);if(!event)return res.status(400).json({error:'Invalid event'});const r=await fetch(`${url}/rest/v1/discovery_events`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(event)});const text=await r.text();res.status(r.status);return text?res.send(text):res.end()}return res.status(405).json({error:'Method not allowed'})}catch(e){console.error(e);return res.status(500).json({error:'Supabase request failed'})}}

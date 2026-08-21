@@ -78,6 +78,21 @@ Apply `supabase/migrations/20260821_lunarist_phase3_admin_studio.sql` after the 
 
 The admin flag is protected against self-escalation; ordinary members cannot promote themselves to admin through profile updates.
 
+## Account roles
+
+Lunarist now has four tiers:
+
+- **Guest** — not signed in. Can browse Discover/Artists, no account.
+- **User** — signed in, has a profile, but cannot create or submit projects.
+- **Lunarist Member** — can create, edit, and submit projects for review.
+- **Administrator** — full Studio access (moderation, featuring, member management); implicitly has Member privileges everywhere.
+
+New signups start as **User**. Only a Studio Administrator can promote someone to Lunarist Member (or revoke it), from Studio → Members. This is enforced at the database level — the RLS policy on project creation and a privilege-escalation trigger both check `profiles.account_type`, so it can't be bypassed from the client.
+
+Apply `supabase/migrations/20260821_lunarist_account_roles.sql` after the existing migrations. It adds the `account_type` column and **grandfathers every existing account in as a full Lunarist Member** — nobody who could already publish loses that ability.
+
+The public Artists directory and Discover feed only surface Members and Administrators; plain Users aren't shown until they're promoted.
+
 ## Phase 4 — Real Recommendation Backend
 
 Phase 4 replaces the browser-only recommendation score with a server-side Supabase recommendation function.
