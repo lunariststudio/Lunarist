@@ -758,12 +758,20 @@ async function openAdminStudio(activeTab='members'){
     const next=el.dataset.current==='member'?'user':'member';
     
     el.disabled=true;
-    const r=await supabaseClient.from('profiles').update({account_type:next,updated_at:new Date().toISOString()}).eq('id',id);
-    if(r.error){
-      toast(r.error.message);
-      el.disabled=false;
-    }else{
-      toast(next==='member'?'Promoted to Lunarist Member':'Reverted to User');
+    const { data: resData, error } = await supabaseClient
+      .from('profiles')
+      .update({ account_type: next, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      toast('Error: ' + error.message);
+      el.disabled = false;
+    } else if (!resData || resData.length === 0) {
+      toast('RLS Blocked: Admin privileges missing on database');
+      el.disabled = false;
+    } else {
+      toast(next === 'member' ? 'Promoted to Lunarist Member' : 'Reverted to User');
       await loadData();
       await refreshUser();
       render();
