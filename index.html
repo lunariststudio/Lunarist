@@ -50,11 +50,7 @@ const demo={
   {id:'p1',member:'m1',title:'Stellar Night — MV',category:'MV',tags:['MV','Motion Design','VTuber'],views:1840,likes:142,created:9,video:'https://www.youtube.com/embed/ScMzIvxBSi4',image:'https://i.ytimg.com/vi/ScMzIvxBSi4/hqdefault.jpg',desc:'A cinematic music video concept built around rhythm, glow and celestial motion.'},
   {id:'p2',member:'m2',title:'Moffy — Character Reel',category:'Illustration',tags:['Illustration','Character'],views:1260,likes:118,created:6,video:'',image:'https://images.unsplash.com/photo-1577083288073-40892c0860a4?auto=format&fit=crop&w=900&q=80',desc:'Character exploration and expressive illustration studies.'},
   {id:'p3',member:'m3',title:'Lunarist Visual Identity',category:'Graphic Design',tags:['Branding','Graphic Design'],views:920,likes:87,created:4,video:'',image:'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=900&q=80',desc:'A visual identity system for a dream-driven creative studio.'},
-  {id:'p4',member:'m4',title:'Moonbase — 3D Environment',category:'3D',tags:['3D','VFX'],views:1510,likes:129,created:12,video:'',image:'https://images.unsplash.com/photo-1614728263952-84ea256f9679?auto=format&fit=crop&w=900&q=80',desc:'A moody 3D environment exploration with cinematic lighting.'},
-  {id:'p5',member:'m1',title:'Dream Sequence — PV',category:'PV',tags:['PV','Animation'],views:2100,likes:190,created:21,video:'https://www.youtube.com/embed/aqz-KE-bpKQ',image:'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',desc:'Promotional animation designed to introduce a new character world.'},
-  {id:'p6',member:'m2',title:'Minstrel Concept Sheet',category:'Illustration',tags:['Illustration','Concept'],views:740,likes:64,created:16,video:'',image:'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=900&q=80',desc:'A concept sheet exploring costume, shape language and mood.'},
-  {id:'p7',member:'m3',title:'Neon Signal — Key Visual',category:'Graphic Design',tags:['Graphic Design','PV'],views:1130,likes:102,created:8,video:'',image:'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&w=900&q=80',desc:'Key visual exploration using contrast, typography and futuristic color.'},
-  {id:'p8',member:'m4',title:'Afterglow — Compositing Study',category:'Compositing',tags:['Compositing','VFX'],views:980,likes:91,created:14,video:'',image:'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=80',desc:'Post-production study focused on atmosphere, depth and light integration.'}
+  {id:'p4',member:'m4',title:'Moonbase — 3D Environment',category:'3D',tags:['3D','VFX'],views:1510,likes:129,created:12,video:'',image:'https://images.unsplash.com/photo-1614728263952-84ea256f9679?auto=format&fit=crop&w=900&q=80',desc:'A moody 3D environment exploration with cinematic lighting.'}
  ],
  services:[]
 };
@@ -71,7 +67,7 @@ function getSession(){
   return s
 }
 function saveSession(){localStorage.setItem('lunarist_session',JSON.stringify(state.session))}
-function member(id){return demo.members.find(m=>m.id===id)||{id:'unknown',username:'unknown',name:'Unknown artist',role:'',bio:'',avatar:'https://i.pravatar.cc/160?u=unknown',skills:[],available:false}}
+function member(id){return demo.members.find(m=>m.id===id||m.username===id)||{id:id||'unknown',username:id||'unknown',name:id||'Unknown artist',role:'',bio:'',avatar:'https://i.pravatar.cc/160?u='+(id||'unknown'),skills:[],available:true}}
 function score(p){
   const interests=state.session?.interests&&typeof state.session.interests==='object'?state.session.interests:{};
   const category=String(p?.category||'');
@@ -89,13 +85,36 @@ function track(p,type='view'){state.session.interests[p.category]=(state.session
 function avatar(m){return `<img class="avatar" src="${m.avatar}" alt="${esc(m.name)}">`}
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function card(p,feature=false){const m=member(p.member);return `<article class="card ${feature?'feature':''}" data-project="${p.id}"><div class="thumb"><img src="${p.image}" alt="${esc(p.title)}" loading="lazy"><div class="overlay"><span class="badge">${esc(p.category)}</span></div></div><div class="cardbody"><div class="title">${esc(p.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m.name)} · ${p.views.toLocaleString()} views</span></div><div class="tags">${p.tags.slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
-function serviceCard(s){const m=member(s.artist_id||s.member);return `<article class="card" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||m.avatar)}" alt="${esc(s.label||s.title||'Service')}" loading="lazy"><div class="overlay"><span class="badge">${esc(s.currency||'USD')} ${Number(s.amount||0).toFixed(2)}</span></div></div><div class="cardbody"><div class="title">${esc(s.label||s.title||'Commission Service')}</div><div class="meta artist">${avatar(m)}<span>${esc(m.name)}</span></div><div class="meta">${esc(s.description||'')}</div><div style="margin-top:12px"><button class="btn primary" style="width:100%" data-inquire-service="${s.id}" data-artist="${m.id}">Inquire & Order</button></div></div></article>`}
+
+function serviceCard(s){
+  const artistId = s.artist_id || s.owner_id || s.member;
+  const m = member(artistId);
+  const priceVal = s.amount !== undefined ? Number(s.amount) : parseFloat(s.price_from || 0);
+  const titleText = s.label || s.title || 'Commission Service';
+  const descText = s.description || s.desc || '';
+  const thumb = s.thumbnail_url || m.avatar;
+
+  return `<article class="card" data-service="${s.id}">
+    <div class="thumb">
+      <img src="${esc(thumb)}" alt="${esc(titleText)}" loading="lazy">
+      <div class="overlay"><span class="badge">${esc(s.currency||'USD')} ${priceVal.toFixed(2)}</span></div>
+    </div>
+    <div class="cardbody">
+      <div class="title">${esc(titleText)}</div>
+      <div class="meta artist">${avatar(m)}<span>${esc(m.name)}</span></div>
+      <div class="meta">${esc(descText)}</div>
+      <div style="margin-top:12px">
+        <button class="btn primary" style="width:100%" data-inquire-service="${s.id}" data-artist="${m.id}">Inquire & Order</button>
+      </div>
+    </div>
+  </article>`;
+}
 
 function services(){
   let list=demo.services||[];
   if(state.query){
     const q=state.query.toLowerCase();
-    list=list.filter(s=>( (s.label||'')+' '+(s.description||'')+' '+member(s.artist_id||s.member).name ).toLowerCase().includes(q))
+    list=list.filter(s=>( (s.label||s.title||'')+' '+(s.description||'')+' '+member(s.artist_id||s.owner_id||s.member).name ).toLowerCase().includes(q))
   }
   return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):'<div class="empty" style="grid-column:1/-1">No services listed yet. Members can add service packages from their dashboard.</div>'}</div></section></div>`
 }
@@ -128,7 +147,7 @@ function projectFromPath(pathname){
 }
 function navigateTo(route){state.route=route;render();try{history.pushState(null,'',pathForRoute(route))}catch(e){}}
 function render(){document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));let html=state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();document.getElementById('view').innerHTML=html;bind();window.scrollTo({top:0,behavior:'instant'})}
-function bind(){document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{navigateTo(b.dataset.route);document.getElementById('navlinks').classList.remove('open')});document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>navigateTo('member:'+c.dataset.member));document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});document.querySelectorAll('[data-inquire-service]').forEach(b=>b.onclick=()=>requestCommission(b.dataset.inquireService,b.dataset.artist));const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;const q=state.query.toLowerCase();if(state.route==='services'){const grid=document.getElementById('servicesGrid');let list=(demo.services||[]).filter(sv=>( (sv.label||'')+' '+(sv.description||'')+' '+member(sv.artist_id||sv.member).name ).toLowerCase().includes(q));grid.innerHTML=list.map(serviceCard).join('')||'<div class="empty" style="grid-column:1/-1">No services found.</div>';document.querySelectorAll('[data-inquire-service]').forEach(b=>b.onclick=()=>requestCommission(b.dataset.inquireService,b.dataset.artist));return;}const grid=document.getElementById('discoverGrid');let list=demo.projects.filter(p=>(p.title+' '+p.category+' '+p.tags.join(' ')+' '+member(p.member).name).toLowerCase().includes(q));grid.innerHTML=list.map(p=>card(p)).join('')||'<div class="empty" style="grid-column:1/-1">No work found.</div>';document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project))};document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',()=>{state.session.interests={};state.session.viewed=[];saveSession();toast('Your discovery profile was reset');render()});const cb=document.getElementById('commissionBlock');if(cb)loadCommissionBlock(cb.dataset.artist)}
+function bind(){document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{navigateTo(b.dataset.route);document.getElementById('navlinks').classList.remove('open')});document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>navigateTo('member:'+c.dataset.member));document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});document.querySelectorAll('[data-inquire-service]').forEach(b=>b.onclick=()=>requestCommission(b.dataset.inquireService,b.dataset.artist));const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;const q=state.query.toLowerCase();if(state.route==='services'){const grid=document.getElementById('servicesGrid');let list=(demo.services||[]).filter(sv=>( (sv.label||sv.title||'')+' '+(sv.description||'')+' '+member(sv.artist_id||sv.owner_id||sv.member).name ).toLowerCase().includes(q));grid.innerHTML=list.map(serviceCard).join('')||'<div class="empty" style="grid-column:1/-1">No services found.</div>';document.querySelectorAll('[data-inquire-service]').forEach(b=>b.onclick=()=>requestCommission(b.dataset.inquireService,b.dataset.artist));return;}const grid=document.getElementById('discoverGrid');let list=demo.projects.filter(p=>(p.title+' '+p.category+' '+p.tags.join(' ')+' '+member(p.member).name).toLowerCase().includes(q));grid.innerHTML=list.map(p=>card(p)).join('')||'<div class="empty" style="grid-column:1/-1">No work found.</div>';document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project))};document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',()=>{state.session.interests={};state.session.viewed=[];saveSession();toast('Your discovery profile was reset');render()});const cb=document.getElementById('commissionBlock');if(cb)loadCommissionBlock(cb.dataset.artist)}
 
 async function openProject(id,opts){
   const p=demo.projects.find(x=>x.id===id);if(!p)return;track(p);const m=member(p.member);
@@ -146,13 +165,16 @@ async function loadProjectInquireSection(artistId){
   const sec=document.getElementById('projectInquireSection');
   if(!sec)return;
   const m=member(artistId);
-  const {data:svcs}=await sb.from('services').select('id,key,label,description,amount,currency').eq('artist_id',artistId).eq('active',true).order('amount');
-  const servicesList=svcs&&svcs.length?svcs:(demo.services||[]).filter(s=>(s.artist_id===artistId||s.member===artistId)&&s.active!==false);
+  const {data:svcs}=await sb.from('services').select('id,key,label,title,description,amount,price_from,currency').or(`artist_id.eq.${artistId},owner_id.eq.${artistId}`);
+  const servicesList=svcs&&svcs.length?svcs:(demo.services||[]).filter(s=>(s.artist_id===artistId||s.owner_id===artistId||s.member===artistId));
   if(!servicesList.length){
-    sec.innerHTML=`<div class="eyebrow">Direct Commission</div><p style="color:var(--muted);font-size:13px;margin-bottom:0">${esc(m.name)} has not listed public services yet, but you can view their portfolio.</p>`;
+    sec.innerHTML=`<div class="eyebrow">Direct Commission</div><p style="color:var(--muted);font-size:13px;margin-bottom:0">${esc(m.name)} has not listed public services yet.</p>`;
     return;
   }
-  sec.innerHTML=`<div class="eyebrow">Direct Commission / Services from ${esc(m.name)}</div><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${servicesList.map(s=>`<div class="row" style="justify-content:space-between;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.2)"><div><b>${esc(s.label||s.title)}</b><div class="meta">${esc(s.currency||'USD')} ${Number(s.amount||0).toFixed(2)}</div></div><button class="btn primary" data-project-inquire="${s.id}" data-artist="${m.id}">Inquire & Order</button></div>`).join('')}</div>`;
+  sec.innerHTML=`<div class="eyebrow">Direct Services from ${esc(m.name)}</div><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${servicesList.map(s=>{
+    const price = s.amount !== undefined ? Number(s.amount) : parseFloat(s.price_from || 0);
+    return `<div class="row" style="justify-content:space-between;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.2)"><div><b>${esc(s.label||s.title)}</b><div class="meta">${esc(s.currency||'USD')} ${price.toFixed(2)}</div></div><button class="btn primary" data-project-inquire="${s.id}" data-artist="${artistId}">Inquire & Order</button></div>`
+  }).join('')}</div>`;
   sec.querySelectorAll('[data-project-inquire]').forEach(btn=>btn.onclick=()=>requestCommission(btn.dataset.projectInquire,btn.dataset.artist));
 }
 
@@ -242,9 +264,9 @@ async function openDashboard(){
 
 async function renderServicesTab(){
   const el=document.getElementById('dash-services');
-  const {data:services}=await sb.from('services').select('id,key,label,description,amount,currency,active').eq('artist_id',authUser.id).order('created_at');
+  const {data:services}=await sb.from('services').select('id,key,label,description,amount,currency,active').or(`artist_id.eq.${authUser.id},owner_id.eq.${authUser.id}`).order('created_at');
   const list=services||[];
-  el.innerHTML=`<div class="panel"><div class="eyebrow">Commission types you offer</div>${list.map(s=>`<div class="listitem"><div class="grow"><b>${esc(s.label)}</b><div class="meta">${esc(s.currency)} ${Number(s.amount).toFixed(2)} · ${s.active?'Active':'Hidden'}</div></div><button class="btn" data-toggle-service="${s.id}" data-active="${s.active}">${s.active?'Hide':'Unhide'}</button></div>`).join('')||'<p style="color:var(--muted)">No commission types yet — add one below.</p>'}<div class="formgrid" style="margin-top:16px"><div class="field"><label>Key (unique id)</label><input id="svKey" placeholder="sketch-basic"></div><div class="field"><label>Price (USD)</label><input id="svAmount" type="number" min="1" step="0.01"></div><div class="field full"><label>Label</label><input id="svLabel" placeholder="Basic sketch commission"></div><div class="field full"><label>Description</label><textarea id="svDesc"></textarea></div></div><button class="btn primary" style="margin-top:14px" id="addServiceBtn">+ Add commission type</button></div>`;
+  el.innerHTML=`<div class="panel"><div class="eyebrow">Commission types you offer</div>${list.map(s=>`<div class="listitem"><div class="grow"><b>${esc(s.label||s.title)}</b><div class="meta">${esc(s.currency||'USD')} ${Number(s.amount||0).toFixed(2)} · ${s.active!==false?'Active':'Hidden'}</div></div><button class="btn" data-toggle-service="${s.id}" data-active="${s.active!==false}">${s.active!==false?'Hide':'Unhide'}</button></div>`).join('')||'<p style="color:var(--muted)">No commission types yet — add one below.</p>'}<div class="formgrid" style="margin-top:16px"><div class="field"><label>Key (unique id)</label><input id="svKey" placeholder="sketch-basic"></div><div class="field"><label>Price (USD)</label><input id="svAmount" type="number" min="1" step="0.01"></div><div class="field full"><label>Label</label><input id="svLabel" placeholder="Basic sketch commission"></div><div class="field full"><label>Description</label><textarea id="svDesc"></textarea></div></div><button class="btn primary" style="margin-top:14px" id="addServiceBtn">+ Add commission type</button></div>`;
   el.querySelectorAll('[data-toggle-service]').forEach(btn=>btn.onclick=async()=>{
     const active=btn.dataset.active==='true';
     const {error}=await sb.from('services').update({active:!active}).eq('id',btn.dataset.toggleService);
@@ -256,9 +278,10 @@ async function renderServicesTab(){
     const label=document.getElementById('svLabel').value.trim();
     const amount=parseFloat(document.getElementById('svAmount').value);
     if(!key||!label||!(amount>0)){toast('Key, label and a price above 0 are required');return}
-    const {error}=await sb.from('services').insert({artist_id:authUser.id,key,label,description:document.getElementById('svDesc').value,amount,currency:'USD'});
+    const {error}=await sb.from('services').insert({artist_id:authUser.id,owner_id:authUser.id,key,slug:key,label,title:label,description:document.getElementById('svDesc').value,amount,currency:'USD',active:true,status:'published',published:true});
     if(error){toast(error.message.includes('duplicate')?'That key is already in use':'Could not add commission type');return}
     toast('Commission type added');
+    await loadSupabase();
     renderServicesTab();
   };
 }
@@ -271,7 +294,7 @@ async function renderCommissionsTab(){
   ]);
   const artistNext={requested:'accepted',accepted:'in_progress',in_progress:'delivered'};
   const artistLabel={accepted:'Accept',in_progress:'Start work',delivered:'Mark delivered'};
-  el.innerHTML=`<div class="panel"><div class="eyebrow">Commissions from clients</div>${(incoming||[]).map(c=>`<div class="listitem"><div class="grow"><b>${esc(c.services?.label||'Commission')}</b><div class="meta">from ${esc(c.client?.display_name||'a client')} · ${esc(c.currency)} ${Number(c.amount).toFixed(2)} · ${esc(c.status)}</div></div>${artistNext[c.status]?`<button class="btn" data-advance="${c.id}" data-next="${artistNext[c.status]}">${esc(artistLabel[c.status])}</button>`:''}</div>`).join('')||'<p style="color:var(--muted)">No incoming commissions yet.</p>'}</div><div class="panel" style="margin-top:12px"><div class="eyebrow">Your commission requests</div>${(outgoing||[]).map(c=>`<div class="listitem"><div class="grow"><b>${esc(c.services?.label||'Commission')}</b><div class="meta">with ${esc(c.artist?.display_name||'an artist')} · ${esc(c.currency)} ${Number(c.amount).toFixed(2)} · ${esc(c.status)}</div></div>${c.status==='delivered'?`<button class="btn primary" data-approve="${c.id}">Approve & complete</button>`:''}${c.status==='pending_payment'?`<button class="btn" data-cancel="${c.id}">Cancel</button>`:''}</div>`).join('')||'<p style="color:var(--muted)">You have not requested a commission yet.</p>'}</div>`;
+  el.innerHTML=`<div class="panel"><div class="eyebrow">Commissions from clients</div>${(incoming||[]).map(c=>`<div class="listitem"><div class="grow"><b>${esc(c.services?.label||'Commission')}</b><div class="meta">from ${esc(c.client?.display_name||'a client')} · ${esc(c.currency||'USD')} ${Number(c.amount||0).toFixed(2)} · ${esc(c.status)}</div></div>${artistNext[c.status]?`<button class="btn" data-advance="${c.id}" data-next="${artistNext[c.status]}">${esc(artistLabel[c.status])}</button>`:''}</div>`).join('')||'<p style="color:var(--muted)">No incoming commissions yet.</p>'}</div><div class="panel" style="margin-top:12px"><div class="eyebrow">Your commission requests</div>${(outgoing||[]).map(c=>`<div class="listitem"><div class="grow"><b>${esc(c.services?.label||'Commission')}</b><div class="meta">with ${esc(c.artist?.display_name||'an artist')} · ${esc(c.currency||'USD')} ${Number(c.amount||0).toFixed(2)} · ${esc(c.status)}</div></div>${c.status==='delivered'?`<button class="btn primary" data-approve="${c.id}">Approve & complete</button>`:''}${c.status==='pending_payment'?`<button class="btn" data-cancel="${c.id}">Cancel</button>`:''}</div>`).join('')||'<p style="color:var(--muted)">You have not requested a commission yet.</p>'}</div>`;
   el.querySelectorAll('[data-advance]').forEach(btn=>btn.onclick=async()=>{
     const {error}=await sb.from('commissions').update({status:btn.dataset.next}).eq('id',btn.dataset.advance);
     if(error){toast('Could not update status');return}
@@ -331,25 +354,54 @@ async function videoFrameThumb(file){
 async function loadCommissionBlock(artistId){
   const el=document.getElementById('commissionBlock');
   if(!el)return;
-  if(authUser&&authUser.id===artistId){el.innerHTML='<div class="eyebrow">Commissions</div><p style="color:var(--muted);font-size:13px">Manage your commission types from your dashboard → Services.</p>';return}
-  const {data:services,error}=await sb.from('services').select('id,key,label,description,amount,currency').eq('artist_id',artistId).eq('active',true).order('amount');
-  const svcs=services&&services.length?services:(demo.services||[]).filter(s=>s.artist_id===artistId||s.member===artistId);
-  if(error||!svcs||!svcs.length){el.innerHTML='<div class="eyebrow">Commissions</div><p style="color:var(--muted);font-size:13px">This artist has not listed any commission types yet.</p>';return}
-  el.innerHTML=`<div class="eyebrow">Commissions & Services</div>${svcs.map(s=>`<div class="listitem"><div class="grow"><b>${esc(s.label||s.title)}</b><div class="meta">${esc(s.description||'')}</div></div><div class="row" style="gap:10px"><b>${esc(s.currency||'USD')} ${Number(s.amount||0).toFixed(2)}</b><button class="btn primary" data-request-service="${s.id}">Inquire & Order</button></div></div>`).join('')}`;
-  el.querySelectorAll('[data-request-service]').forEach(btn=>btn.onclick=()=>requestCommission(btn.dataset.requestService,artistId));
+  const {data:services,error}=await sb.from('services').select('id,key,label,title,description,amount,price_from,currency').or(`artist_id.eq.${artistId},owner_id.eq.${artistId}`);
+  const svcs=services&&services.length?services:(demo.services||[]).filter(s=>s.artist_id===artistId||s.owner_id===artistId||s.member===artistId);
+  if(!svcs||!svcs.length){el.innerHTML='<div class="eyebrow">Commissions</div><p style="color:var(--muted);font-size:13px">This artist has not listed any commission types yet.</p>';return}
+  el.innerHTML=`<div class="eyebrow">Commissions & Services</div>${svcs.map(s=>{
+    const price = s.amount !== undefined ? Number(s.amount) : parseFloat(s.price_from || 0);
+    return `<div class="listitem"><div class="grow"><b>${esc(s.label||s.title)}</b><div class="meta">${esc(s.description||'')}</div></div><div class="row" style="gap:10px"><b>${esc(s.currency||'USD')} ${price.toFixed(2)}</b><button class="btn primary" data-request-service="${s.id}" data-artist="${artistId}">Inquire & Order</button></div></div>`
+  }).join('')}`;
+  el.querySelectorAll('[data-request-service]').forEach(btn=>btn.onclick=()=>requestCommission(btn.dataset.requestService,btn.dataset.artist));
 }
 
 async function requestCommission(serviceId,artistId){
   if(!authUser){openAuthModal();return}
-  if(authUser.id===artistId){toast('You cannot commission yourself');return}
-  const {data:svc}=await sb.from('services').select('amount,currency').eq('id',serviceId).maybeSingle();
-  const serviceData=svc||(demo.services||[]).find(s=>s.id===serviceId);
-  if(!serviceData){toast('This commission type is no longer available');return}
-  const {data:commission,error}=await sb.from('commissions').insert({service_id:serviceId,client_id:authUser.id,artist_id:artistId,amount:serviceData.amount,currency:serviceData.currency||'USD',status:'pending_payment'}).select('id').single();
-  if(error||!commission){toast('Could not start this commission');return}
-  const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create',commission_id:commission.id,returnBase:location.origin+location.pathname})});
+  let targetArtist = artistId;
+  let serviceData = (demo.services||[]).find(s=>s.id===serviceId);
+  if(!serviceData){
+    const {data:svc}=await sb.from('services').select('id,artist_id,owner_id,amount,price_from,currency').eq('id',serviceId).maybeSingle();
+    serviceData = svc;
+  }
+  if(serviceData){
+    targetArtist = serviceData.artist_id || serviceData.owner_id || targetArtist;
+  }
+  if(!serviceData){
+    toast('This commission type is no longer available');
+    return;
+  }
+  const amt = serviceData.amount !== undefined ? Number(serviceData.amount) : parseFloat(serviceData.price_from || 0);
+  const {data:commission,error}=await sb.from('commissions').insert({
+    service_id:serviceId,
+    client_id:authUser.id,
+    artist_id:targetArtist,
+    amount:amt,
+    currency:serviceData.currency||'USD',
+    status:'pending_payment'
+  }).select('id').single();
+  if(error||!commission){
+    toast('Could not start this commission: '+(error?.message||'Database error'));
+    return;
+  }
+  const r=await fetch('/api/paypal',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'create',commission_id:commission.id,returnBase:location.origin+location.pathname})
+  });
   const body=await r.json();
-  if(!r.ok||!body.approveUrl){toast(body.error||'Could not start checkout');return}
+  if(!r.ok||!body.approveUrl){
+    toast(body.error||'Could not start checkout');
+    return;
+  }
   location.href=body.approveUrl;
 }
 
@@ -421,11 +473,11 @@ async function loadSupabase(){
     const [pr,pp,sv]=await Promise.all([
       fetch('/api/lunarist?resource=profiles&select=id,username,display_name,role,bio,avatar_url,skills,available&order=created_at').then(r=>r.ok?r.json():Promise.reject()),
       fetch('/api/lunarist?resource=projects&select=id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,views,likes,created_at&published=eq.true&order=created_at.desc').then(r=>r.ok?r.json():Promise.reject()),
-      fetch('/api/lunarist?resource=services&select=id,artist_id,key,label,description,amount,currency,active&active=eq.true').then(r=>r.ok?r.json():Promise.reject())
+      fetch('/api/lunarist?resource=services').then(r=>r.ok?r.json():Promise.reject())
     ]);
     if(Array.isArray(pr)&&pr.length){demo.members=pr.map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false}));}
     if(Array.isArray(pp)&&pp.length){demo.projects=pp.map(x=>({id:x.id,member:x.owner_id,title:x.title,slug:x.slug||x.id,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created:Date.parse(x.created_at||0)||0,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||''}));}
-    if(Array.isArray(sv)&&sv.length){demo.services=sv.map(x=>({id:x.id,artist_id:x.artist_id,key:x.key,label:x.label,description:x.description||'',amount:x.amount,currency:x.currency||'USD',active:x.active!==false}));}
+    if(Array.isArray(sv)&&sv.length){demo.services=sv.map(x=>({id:x.id,artist_id:x.artist_id||x.owner_id,owner_id:x.owner_id||x.artist_id,key:x.key,label:x.label||x.title,title:x.title||x.label,description:x.description||'',amount:x.amount !== undefined ? x.amount : parseFloat(x.price_from || 0),price_from:x.price_from,currency:x.currency||'USD',thumbnail_url:x.thumbnail_url}));}
     state.backendReady=true;
   }catch(e){console.warn('Supabase service endpoint unavailable; using local state.',e)}
 }
