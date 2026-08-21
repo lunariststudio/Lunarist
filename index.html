@@ -199,10 +199,35 @@ function profilePage(m){
 
 function render(){
   document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));
-  let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
+  let notFound=false;
+  let html;
+  if(state.loadError){
+    html=`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`;
+  }else if(state.route==='home'){
+    html=home();
+  }else if(state.route==='discover'){
+    html=discover();
+  }else if(state.route==='services'){
+    html=services();
+  }else if(state.route==='artists'){
+    html=artists();
+  }else if(state.route.startsWith('member:')){
+    const m=member(state.route.split(':')[1]);
+    if(m){
+      html=profilePage(m);
+    }else{
+      notFound=true;
+      state.route='artists';
+      if(location.pathname!=='/artists')history.replaceState({route:'artists'},'','/artists');
+      html=artists();
+    }
+  }else{
+    html=home();
+  }
   document.getElementById('view').innerHTML=html;
   bind();
-  window.scrollTo({top:0,behavior:'instant'})
+  window.scrollTo({top:0,behavior:'instant'});
+  if(notFound)toast("That profile couldn't be found.");
 }
 
 function bind(){document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{document.getElementById('navlinks').classList.remove('open');goRoute(b.dataset.route)});document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));document.querySelectorAll('[data-service]').forEach(c=>c.onclick=()=>openService(c.dataset.service));document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>goRoute('member:'+c.dataset.member));document.getElementById('copyProfileLink')?.addEventListener('click',(e)=>{const url=location.origin+'/'+e.currentTarget.dataset.username;navigator.clipboard?.writeText(url).then(()=>toast('Profile link copied')).catch(()=>toast(url))});document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render()};document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render()});document.getElementById('retryBtn')?.addEventListener('click',()=>loadData());}
