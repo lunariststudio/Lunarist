@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lunarist Studio</title>
   <style>
-    /* Base styles matching Lunarist Studio theme */
     :root {
       --bg: #09090b;
       --card-bg: rgba(255, 255, 255, 0.02);
@@ -122,7 +121,6 @@
 <div id="serviceFormContainer"></div>
 
 <script>
-// Mock state representation matching project structure
 const data = {
   services: [
     { id: '1', category: 'Motion Design' },
@@ -203,7 +201,7 @@ function renderServiceForm(existing = null) {
     </div>
   `;
 
-  // --- Dynamic Category Logic ---
+  // --- Category Dropdown Setup ---
   const defaultCategories = ['Motion Design', '3D Modeling', 'Branding', 'UI/UX Design', 'Illustration', 'Video Editing'];
   const existingCategories = Array.from(new Set([
     ...defaultCategories,
@@ -214,19 +212,16 @@ function renderServiceForm(existing = null) {
   const catSelect = document.getElementById('svCategorySelect');
   const catNewInput = document.getElementById('svCategoryNew');
 
-  // Populate dropdown options
   catSelect.innerHTML = existingCategories.map(c => 
     `<option value="${esc(c)}" ${existing?.category === c ? 'selected' : ''}>${esc(c)}</option>`
   ).join('') + `<option value="__NEW__">+ Add new category...</option>`;
 
-  // Check if existing item used a custom category not in defaults
   if (existing?.category && !existingCategories.includes(existing.category)) {
     catSelect.value = '__NEW__';
     catNewInput.style.display = 'block';
     catNewInput.value = existing.category;
   }
 
-  // Toggle text input when "+ Add new category..." is selected
   catSelect.onchange = () => {
     if (catSelect.value === '__NEW__') {
       catNewInput.style.display = 'block';
@@ -236,13 +231,12 @@ function renderServiceForm(existing = null) {
     }
   };
 
-  // --- Save Handler ---
+  // --- Save Action ---
   document.getElementById('saveService').onclick = async () => {
     const title = document.getElementById('svTitle').value.trim();
     const categorySelectVal = catSelect.value;
     const categoryNewVal = catNewInput.value.trim();
 
-    // Resolve final category choice
     const category = categorySelectVal === '__NEW__' ? categoryNewVal : categorySelectVal;
     const tags = document.getElementById('svTags').value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 12);
     const status = document.getElementById('svStatus').value;
@@ -252,7 +246,6 @@ function renderServiceForm(existing = null) {
       return;
     }
 
-    console.log("Saving service:", { title, category, tags, status });
     document.getElementById('serviceMsg').style.color = '#10b981';
     document.getElementById('serviceMsg').textContent = 'Service saved successfully!';
   };
@@ -262,7 +255,6 @@ function renderServiceForm(existing = null) {
   };
 }
 
-// Initial render
 renderServiceForm();
 </script>
 
