@@ -226,7 +226,7 @@ function closeModal(){document.getElementById('projectModal').classList.remove('
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';document.getElementById('authUsernameWrap').style.display=m?'flex':'none';document.getElementById('authDisplayWrap').style.display=m?'flex':'none';document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';document.getElementById('authModeHint').textContent=m?'':'Use Google or email/password';document.getElementById('authMessage').textContent='';document.getElementById('authModal').classList.add('open')}
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
-async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.error?await supabaseClient.auth.signInWithPassword({email,password}):await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
+async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
 async function signInWithGoogle(){document.getElementById('googleAuth').disabled=true;try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});if(error)throw error}catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}}
 async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
 
@@ -568,7 +568,7 @@ async function loadDiscoveryAnalytics(){
   return {counts,total:(data||[]).length};
 }
 
-async function openAdminStudio(){
+async function openAdminStudio(activeTab='members'){
   if(!state.currentUser||!state.currentMember?.is_admin){toast('Admin access required.');return}
   const sec=document.getElementById('dash-admin'); if(!sec)return;
   sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
@@ -660,15 +660,15 @@ async function openAdminStudio(){
     </div>
 
     <div class="heroactions" style="margin:16px 0;flex-wrap:wrap">
-      <button class="filter active" data-studio-tab="overview">Queue (${totalPending})</button>
-      <button class="filter" data-studio-tab="projects">Projects (${allProjects.length})</button>
-      <button class="filter" data-studio-tab="services">Services (${allServices.length})</button>
-      <button class="filter" data-studio-tab="members">Members (${Number(memberCount||0)})</button>
-      <button class="filter" data-studio-tab="analytics">Analytics</button>
-      <button class="filter" data-studio-tab="settings">Settings</button>
+      <button class="filter ${activeTab==='overview'?'active':''}" data-studio-tab="overview">Queue (${totalPending})</button>
+      <button class="filter ${activeTab==='projects'?'active':''}" data-studio-tab="projects">Projects (${allProjects.length})</button>
+      <button class="filter ${activeTab==='services'?'active':''}" data-studio-tab="services">Services (${allServices.length})</button>
+      <button class="filter ${activeTab==='members'?'active':''}" data-studio-tab="members">Members (${Number(memberCount||0)})</button>
+      <button class="filter ${activeTab==='analytics'?'active':''}" data-studio-tab="analytics">Analytics</button>
+      <button class="filter ${activeTab==='settings'?'active':''}" data-studio-tab="settings">Settings</button>
     </div>
 
-    <div data-studio-panel="overview">
+    <div data-studio-panel="overview" style="${activeTab==='overview'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Review Queue</div>
         <h3>${totalPending ? totalPending + ' item(s) awaiting moderation' : 'Review queue is empty 🎉'}</h3>
@@ -680,28 +680,28 @@ async function openAdminStudio(){
       </div>
     </div>
 
-    <div data-studio-panel="projects" style="display:none">
+    <div data-studio-panel="projects" style="${activeTab==='projects'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">All Submitted Projects</div>
         <div style="margin-top:12px">${allProjects.map(projectRow).join('') || '<div class="meta">No projects found.</div>'}</div>
       </div>
     </div>
 
-    <div data-studio-panel="services" style="display:none">
+    <div data-studio-panel="services" style="${activeTab==='services'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">All Submitted Services</div>
         <div style="margin-top:12px">${allServices.map(serviceRow).join('') || '<div class="meta">No services found.</div>'}</div>
       </div>
     </div>
 
-    <div data-studio-panel="members" style="display:none">
+    <div data-studio-panel="members" style="${activeTab==='members'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Members Management</div>
         <div style="margin-top:12px">${memberRows}</div>
       </div>
     </div>
 
-    <div data-studio-panel="analytics" style="display:none">
+    <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Discovery Analytics</div>
         <h3>${Number(analytics.total||0)} tracked events</h3>
@@ -709,7 +709,7 @@ async function openAdminStudio(){
       </div>
     </div>
 
-    <div data-studio-panel="settings" style="display:none">
+    <div data-studio-panel="settings" style="${activeTab==='settings'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Studio Settings</div>
         <div class="field" style="margin-top:10px"><label>Studio name</label><input id="studioName" value="${esc(settingsMap.site_name||'Lunarist Studio')}"></div>
@@ -728,36 +728,47 @@ async function openAdminStudio(){
 
   sec.querySelectorAll('[data-admin-pj-status]').forEach(el=>el.onchange=async()=>{
     const r=await supabaseClient.from('projects').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',el.dataset.adminPjStatus);
-    if(r.error){toast(r.error.message)}else{toast('Project status updated');await loadData();openAdminStudio()}
+    if(r.error){toast(r.error.message)}else{toast('Project status updated');await loadData();openAdminStudio('projects')}
   });
 
   sec.querySelectorAll('[data-admin-pj-approve]').forEach(btn=>btn.onclick=async()=>{
     const r=await supabaseClient.from('projects').update({status:'published',published:true,updated_at:new Date().toISOString()}).eq('id',btn.dataset.adminPjApprove);
-    if(r.error){toast(r.error.message)}else{toast('Project approved & published!');await loadData();openAdminStudio()}
+    if(r.error){toast(r.error.message)}else{toast('Project approved & published!');await loadData();openAdminStudio('overview')}
   });
 
   sec.querySelectorAll('[data-admin-sv-status]').forEach(el=>el.onchange=async()=>{
     const r=await supabaseClient.from('services').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',el.dataset.adminSvStatus);
-    if(r.error){toast(r.error.message)}else{toast('Service status updated');await loadData();openAdminStudio()}
+    if(r.error){toast(r.error.message)}else{toast('Service status updated');await loadData();openAdminStudio('services')}
   });
 
   sec.querySelectorAll('[data-admin-sv-approve]').forEach(btn=>btn.onclick=async()=>{
     const r=await supabaseClient.from('services').update({status:'published',published:true,updated_at:new Date().toISOString()}).eq('id',btn.dataset.adminSvApprove);
-    if(r.error){toast(r.error.message)}else{toast('Service approved & published!');await loadData();openAdminStudio()}
+    if(r.error){toast(r.error.message)}else{toast('Service approved & published!');await loadData();openAdminStudio('overview')}
   });
 
   sec.querySelectorAll('[data-admin-feature]').forEach(el=>el.onclick=async()=>{
     const id=el.dataset.adminFeature;
     const item=allProjects.find(x=>x.id===id);
     const r=await supabaseClient.from('projects').update({featured:!item?.featured,updated_at:new Date().toISOString()}).eq('id',id);
-    if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');await loadData();openAdminStudio()}
+    if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');await loadData();openAdminStudio('projects')}
   });
 
   sec.querySelectorAll('[data-toggle-membertype]').forEach(el=>el.onclick=async()=>{
     const id=el.dataset.toggleMembertype;
     const next=el.dataset.current==='member'?'user':'member';
+    
+    el.disabled=true;
     const r=await supabaseClient.from('profiles').update({account_type:next,updated_at:new Date().toISOString()}).eq('id',id);
-    if(r.error){toast(r.error.message)}else{toast(next==='member'?'Promoted to Lunarist Member':'Reverted to User');await loadData();openAdminStudio()}
+    if(r.error){
+      toast(r.error.message);
+      el.disabled=false;
+    }else{
+      toast(next==='member'?'Promoted to Lunarist Member':'Reverted to User');
+      await loadData();
+      await refreshUser();
+      render();
+      openAdminStudio('members');
+    }
   });
 
   document.getElementById('saveStudioSettings')?.addEventListener('click',async()=>{
