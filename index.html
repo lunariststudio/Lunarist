@@ -13,36 +13,19 @@
 .addon-box label{font-size:13px;text-transform:none;letter-spacing:normal;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px}
 .tos-box{margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);max-height:300px;overflow-y:auto;font-size:13px;color:var(--muted);line-height:1.6}
 
-/* Per-profile scoped theme — only affects markup inside .profile-wrapper, never the whole site */
-.profile-wrapper{
-  --pf-accent:#c9b6ff;
-  --pf-bg:#08070d;
-  --pf-panel:rgba(255,255,255,.03);
-  --pf-line:rgba(255,255,255,.1);
-  --pf-text:#f7f4ff;
-  --pf-muted:#9c96ad;
-  background:var(--pf-bg);
-  color:var(--pf-text);
-  border-radius:24px;
-  padding:12px 12px 40px;
-  margin-top:15px;
-  transition:background .25s, color .25s;
-}
-.profile-wrapper .eyebrow{color:var(--pf-accent)}
-.profile-wrapper .panel{background:var(--pf-panel);border-color:var(--pf-line);color:var(--pf-text)}
-.profile-wrapper .card{border-color:var(--pf-line);background:var(--pf-panel);color:var(--pf-text)}
-.profile-wrapper .card:hover{border-color:var(--pf-accent)}
-.profile-wrapper .tag{color:var(--pf-accent);border-color:var(--pf-line);background:rgba(255,255,255,.04)}
-.profile-wrapper .btn{border-color:var(--pf-line);color:var(--pf-text)}
-.profile-wrapper .btn:hover{border-color:var(--pf-accent)}
-.profile-wrapper .btn.primary{background:var(--pf-text);color:var(--pf-bg)}
-.profile-wrapper .meta,.profile-wrapper p,.profile-wrapper .sectionhead p{color:var(--pf-muted)}
-.profile-wrapper .tos-box{border-color:var(--pf-line);background:rgba(255,255,255,.02);color:var(--pf-muted)}
+/* Theme Color Selector Grid */
+.theme-picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:8px}
+.theme-option{border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:12px;padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.2s}
+.theme-option:hover,.theme-option.selected{border-color:var(--moon);background:rgba(255,255,255,.06)}
+.theme-swatches{display:flex;gap:6px;align-items:center}
+.theme-swatch{width:16px;height:16px;border-radius:50%}
 
-/* Theme editor controls (dashboard → Profile) */
-.mode-toggle-group{display:flex;gap:8px;margin-top:6px}
-.mode-toggle-btn{flex:1;padding:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:10px;font-weight:700;font-size:12px;cursor:pointer}
-.mode-toggle-btn.active{border-color:var(--moon);background:rgba(255,255,255,.1)}
+/* Global Theme Definitions Override */
+html[data-theme="moonlight"]{--moon:#c9b6ff;--pink:#ff86c8;--line:rgba(201,182,255,.22);--bg:#08070d}
+html[data-theme="cyberpink"]{--moon:#ff86c8;--pink:#ff4da6;--line:rgba(255,134,200,.28);--bg:#0e0612}
+html[data-theme="goldember"]{--moon:#e8cf91;--pink:#ff9e42;--line:rgba(232,207,145,.28);--bg:#0f0d08}
+html[data-theme="emeraldglow"]{--moon:#8ee0ba;--pink:#51c4a0;--line:rgba(142,224,186,.28);--bg:#060f0b}
+html[data-theme="midnight"]{--moon:#8bb2ff;--pink:#a28eff;--line:rgba(139,178,255,.28);--bg:#060912}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -58,23 +41,13 @@
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <script>
 let supabaseClient=null;
-const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,backendReady:false,authMode:'signin',loadError:null};
+const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',loadError:null};
 const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function formatDescription(text){if(!text)return '';const escaped=esc(text);const formatted=escaped.replace(/(?:^|\n)[-*\u2022]\s+(.+)/g,'<div class="bullet-item"><span class="bullet-dot">•</span><span>$1</span></div>');return formatted.replace(/\n/g,'<br>')}
-function computeProfileVariables(m){
-  const accent = m?.theme_accent || '#c9b6ff';
-  const mode = m?.theme_mode || 'dark';
-  const bgLight = Number(m?.theme_bg_light ?? (mode === 'light' ? 95 : 5));
-
-  const isLight = mode === 'light';
-  const bg = isLight ? `hsl(260, 20%, ${bgLight}%)` : `hsl(260, 25%, ${bgLight}%)`;
-  const text = isLight ? '#120f1a' : '#f7f4ff';
-  const muted = isLight ? '#5c5670' : '#9c96ad';
-  const panel = isLight ? 'rgba(0,0,0,.035)' : 'rgba(255,255,255,.03)';
-  const line = isLight ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.1)';
-
-  return `--pf-accent:${accent}; --pf-bg:${bg}; --pf-text:${text}; --pf-muted:${muted}; --pf-panel:${panel}; --pf-line:${line};`;
+function applyTheme(themeName){
+  state.selectedTheme = themeName || 'moonlight';
+  document.documentElement.setAttribute('data-theme', state.selectedTheme);
 }
 function getSession(){let s=null;try{s=JSON.parse(localStorage.getItem('lunarist_session')||'null')}catch(e){}if(!s||typeof s!=='object')s={};s.id=typeof s.id==='string'&&s.id?s.id:'s_'+Math.random().toString(36).slice(2);s.interests=s.interests&&typeof s.interests==='object'?s.interests:{};s.viewed=Array.isArray(s.viewed)?s.viewed:[];s.liked=Array.isArray(s.liked)?s.liked:[];localStorage.setItem('lunarist_session',JSON.stringify(s));return s}
 state.session=getSession();
@@ -192,42 +165,18 @@ function artists(){return `<div class="container"><section class="section" style
 function profilePage(m){
   const ps=data.projects.filter(p=>p.member===m.id);
   const ss=data.services.filter(s=>s.member===m.id);
-  const scopedVars = computeProfileVariables(m);
-
-  return `<div class="container"><div class="profile-wrapper" style="${scopedVars}"><section class="section" style="padding-top:25px;padding-bottom:25px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy profile link</button></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt=""><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0;color:var(--pf-text)">${esc(m.name)}</h2><div style="color:var(--pf-muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--pf-muted)">${esc(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--pf-muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div>${m.tos?`<div class="tos-box"><div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div><div>${formatDescription(m.tos)}</div></div>`:''}</div><div class="sectionhead" style="margin-top:38px"><div><h2 style="color:var(--pf-text)">Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2 style="color:var(--pf-text)">Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div></section></div></div>`
+  applyTheme(m.theme || 'moonlight');
+  
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy profile link</button></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt=""><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${esc(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div>${m.tos?`<div class="tos-box"><div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div><div>${formatDescription(m.tos)}</div></div>`:''}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div></section></div>`
 }
 
 function render(){
   document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));
-  let notFound=false;
-  let html;
-  if(state.loadError){
-    html=`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`;
-  }else if(state.route==='home'){
-    html=home();
-  }else if(state.route==='discover'){
-    html=discover();
-  }else if(state.route==='services'){
-    html=services();
-  }else if(state.route==='artists'){
-    html=artists();
-  }else if(state.route.startsWith('member:')){
-    const m=member(state.route.split(':')[1]);
-    if(m){
-      html=profilePage(m);
-    }else{
-      notFound=true;
-      state.route='artists';
-      if(location.pathname!=='/artists')history.replaceState({route:'artists'},'','/artists');
-      html=artists();
-    }
-  }else{
-    html=home();
-  }
+  if(!state.route.startsWith('member:')){ applyTheme(state.currentMember?.theme || 'moonlight'); }
+  let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
   document.getElementById('view').innerHTML=html;
   bind();
-  window.scrollTo({top:0,behavior:'instant'});
-  if(notFound)toast("That profile couldn't be found.");
+  window.scrollTo({top:0,behavior:'instant'})
 }
 
 function bind(){document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{document.getElementById('navlinks').classList.remove('open');goRoute(b.dataset.route)});document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));document.querySelectorAll('[data-service]').forEach(c=>c.onclick=()=>openService(c.dataset.service));document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>goRoute('member:'+c.dataset.member));document.getElementById('copyProfileLink')?.addEventListener('click',(e)=>{const url=location.origin+'/'+e.currentTarget.dataset.username;navigator.clipboard?.writeText(url).then(()=>toast('Profile link copied')).catch(()=>toast(url))});document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render()};document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render()});document.getElementById('retryBtn')?.addEventListener('click',()=>loadData());}
@@ -277,7 +226,7 @@ function closeModal(){document.getElementById('projectModal').classList.remove('
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';document.getElementById('authUsernameWrap').style.display=m?'flex':'none';document.getElementById('authDisplayWrap').style.display=m?'flex':'none';document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';document.getElementById('authModeHint').textContent=m?'':'Use Google or email/password';document.getElementById('authMessage').textContent='';document.getElementById('authModal').classList.add('open')}
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
-async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
+async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.error?await supabaseClient.auth.signInWithPassword({email,password}):await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
 async function signInWithGoogle(){document.getElementById('googleAuth').disabled=true;try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});if(error)throw error}catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}}
 async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
 
@@ -285,9 +234,9 @@ async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   state.currentUser=session?.user||null;
   if(state.currentUser){
-    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,theme_accent,theme_mode,theme_bg_light').eq('id',state.currentUser.id).maybeSingle();
+    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,theme').eq('id',state.currentUser.id).maybeSingle();
     if(!p){
-      const fallback={id:state.currentUser.id,username:(state.currentUser.email||'member').split('@')[0].replace(/[^a-z0-9_]/gi,'').slice(0,32)||'member',display_name:state.currentUser.email||'Lunarist member',role:'',bio:'',skills:[],available:true,account_type:'user',theme_accent:'#c9b6ff',theme_mode:'dark',theme_bg_light:5};
+      const fallback={id:state.currentUser.id,username:(state.currentUser.email||'member').split('@')[0].replace(/[^a-z0-9_]/gi,'').slice(0,32)||'member',display_name:state.currentUser.email||'Lunarist member',role:'',bio:'',skills:[],available:true,account_type:'user',theme:'moonlight'};
       const r=await supabaseClient.from('profiles').insert(fallback).select().single();
       if(!r.error)p=r.data;
     }
@@ -299,15 +248,15 @@ async function refreshUser(){
       role:p.role||'',
       bio:p.bio||'',
       tos:p.tos||'',
-      theme_accent:p.theme_accent||'#c9b6ff',
-      theme_mode:p.theme_mode||'dark',
-      theme_bg_light:p.theme_bg_light??(p.theme_mode==='light'?95:5),
+      theme:p.theme||'moonlight',
       avatar:p.avatar_url||'https://i.pravatar.cc/160?u='+p.id,
       skills:p.skills||[],
       available:p.available!==false,
       is_admin:isStudioAdmin,
       account_type:isStudioAdmin?'member':(p.account_type||'user')
     }:null;
+    state.selectedTheme = state.currentMember?.theme || 'moonlight';
+    applyTheme(state.selectedTheme);
     document.getElementById('accountName').textContent=state.currentMember?.name||'Member';
     document.getElementById('accountAvatar').outerHTML=`<img class="avatar" id="accountAvatar" src="${esc(state.currentMember?.avatar||'')}" alt="">`;
   }else{
@@ -315,6 +264,7 @@ async function refreshUser(){
     document.getElementById('accountName').textContent='Guest';
     document.getElementById('accountAvatar').outerHTML='<span class="avatar" id="accountAvatar">G</span>';
     state.currentMember=null;
+    applyTheme('moonlight');
   }
 }
 
@@ -331,6 +281,14 @@ async function openDashboard(){
   
   state.myProjects=ps||[];
   const userServices = (ss && ss.length) ? ss : data.services.filter(s => s.member === m.id);
+
+  const themeOptions = [
+    { key: 'moonlight', name: 'Moonlight', c1: '#c9b6ff', c2: '#ff86c8' },
+    { key: 'cyberpink', name: 'Cyber Pink', c1: '#ff86c8', c2: '#ff4da6' },
+    { key: 'goldember', name: 'Gold Ember', c1: '#e8cf91', c2: '#ff9e42' },
+    { key: 'emeraldglow', name: 'Emerald Glow', c1: '#8ee0ba', c2: '#51c4a0' },
+    { key: 'midnight', name: 'Midnight Blue', c1: '#8bb2ff', c2: '#a28eff' }
+  ];
 
   document.getElementById('dashTitle').textContent=m.name+' · '+roleLabel(m);
   document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile and projects are stored in Supabase. Published work appears in Discover.</p><div class="stats"><span class="stat">${roleLabel(m)}</span><span class="stat">${(ps||[]).length} projects</span><span class="stat">${(ps||[]).reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div>${(m.account_type!=='member'&&!m.is_admin)?'<p class="meta" style="margin-top:10px">You\'re a Lunarist User — ask a Studio admin to promote you to Lunarist Member to publish work.</p>':''}</div>`;
@@ -354,33 +312,19 @@ async function openDashboard(){
         <div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div>
         <div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio)}</textarea></div>
         
-        <div class="field full" style="padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
-          <label style="font-weight:800;color:var(--text)">Personal Profile Customization</label>
-          <div class="meta" style="margin-bottom:12px">Customize how visitors view your specific profile page (`/username`). This never changes the theme for anyone else.</div>
-
-          <div class="formgrid">
-            <div class="field">
-              <label>Theme Mode</label>
-              <div class="mode-toggle-group">
-                <button type="button" class="mode-toggle-btn ${m.theme_mode==='dark'?'active':''}" id="btnModeDark">🌙 Dark Mode</button>
-                <button type="button" class="mode-toggle-btn ${m.theme_mode==='light'?'active':''}" id="btnModeLight">☀️ Light Mode</button>
+        <div class="field full">
+          <label>Profile Color Scheme</label>
+          <div class="meta">Select a color theme accent for your profile and space.</div>
+          <div class="theme-picker-grid" id="themePickerGrid">
+            ${themeOptions.map(t=>`
+              <div class="theme-option ${(m.theme===t.key || (!m.theme && t.key==='moonlight')) ? 'selected' : ''}" data-theme-val="${t.key}">
+                <div class="theme-swatches">
+                  <span class="theme-swatch" style="background:${t.c1}"></span>
+                  <span class="theme-swatch" style="background:${t.c2}"></span>
+                </div>
+                <span style="font-size:12px;font-weight:700">${t.name}</span>
               </div>
-            </div>
-
-            <div class="field">
-              <label>Accent Color Picker</label>
-              <div class="row" style="gap:8px">
-                <input type="color" id="pfAccentColor" value="${esc(m.theme_accent||'#c9b6ff')}" style="width:48px;height:38px;padding:2px;border-radius:8px;cursor:pointer">
-                <input id="pfAccentText" value="${esc(m.theme_accent||'#c9b6ff')}" style="flex:1;text-transform:uppercase">
-              </div>
-              <div class="meta">Any color — pick from the swatch or paste a hex/HSL-derived value.</div>
-            </div>
-
-            <div class="field full">
-              <label>Background Lightness (<span id="bgLightVal">${m.theme_bg_light}%</span>)</label>
-              <input type="range" id="pfBgLight" min="0" max="100" value="${m.theme_bg_light}">
-              <div class="meta">Low = deep dark background, high = a bright, light theme.</div>
-            </div>
+            `).join('')}
           </div>
         </div>
 
@@ -409,52 +353,28 @@ function bindDashboard(ps,ss){
     pfUsername.oninput=()=>{const clean=pfUsername.value.toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32);if(clean!==pfUsername.value)pfUsername.value=clean;document.getElementById('pfUsernamePreview').textContent=clean||'username'};
   }
   
-  let selectedMode = state.currentMember?.theme_mode || 'dark';
-  const btnDark = document.getElementById('btnModeDark');
-  const btnLight = document.getElementById('btnModeLight');
-  const accentPicker = document.getElementById('pfAccentColor');
-  const accentText = document.getElementById('pfAccentText');
-  const bgLightSlider = document.getElementById('pfBgLight');
-  const bgLightVal = document.getElementById('bgLightVal');
-
-  if(btnDark && btnLight){
-    btnDark.onclick = () => {
-      selectedMode = 'dark';
-      btnDark.classList.add('active');
-      btnLight.classList.remove('active');
-      if(bgLightSlider){ bgLightSlider.value = 5; bgLightVal.textContent = '5%'; }
+  document.querySelectorAll('.theme-option').forEach(opt => {
+    opt.onclick = () => {
+      document.querySelectorAll('.theme-option').forEach(x => x.classList.remove('selected'));
+      opt.classList.add('selected');
+      const val = opt.dataset.themeVal;
+      applyTheme(val);
     };
-    btnLight.onclick = () => {
-      selectedMode = 'light';
-      btnLight.classList.add('active');
-      btnDark.classList.remove('active');
-      if(bgLightSlider){ bgLightSlider.value = 95; bgLightVal.textContent = '95%'; }
-    };
-  }
-
-  if(accentPicker && accentText){
-    accentPicker.oninput = () => { accentText.value = accentPicker.value.toUpperCase(); };
-    accentText.oninput = () => { if(/^#[0-9A-F]{6}$/i.test(accentText.value)) accentPicker.value = accentText.value; };
-  }
-
-  if(bgLightSlider && bgLightVal){
-    bgLightSlider.oninput = () => { bgLightVal.textContent = bgLightSlider.value + '%'; };
-  }
+  });
 
   document.getElementById('pfAvatarBtn')?.addEventListener('click',()=>document.getElementById('pfAvatarFile').click());
   document.getElementById('pfAvatarFile')?.addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}});
   
   document.getElementById('saveProfile')?.addEventListener('click',async()=>{
     const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
+    const selectedThemeVal = document.querySelector('.theme-option.selected')?.dataset.themeVal || 'moonlight';
     const payload={
       display_name:document.getElementById('pfName').value.trim(),
       username,
       role:document.getElementById('pfRole').value.trim(),
       bio:document.getElementById('pfBio').value.trim(),
       tos:document.getElementById('pfTos').value.trim(),
-      theme_accent:accentPicker.value,
-      theme_mode:selectedMode,
-      theme_bg_light:parseInt(bgLightSlider.value, 10),
+      theme:selectedThemeVal,
       available:document.getElementById('pfAvail').value==='1',
       updated_at:new Date().toISOString()
     };
@@ -853,7 +773,7 @@ async function openAdminStudio(){
 
 function closeDash(){document.getElementById('drawer').classList.remove('open')}
 async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});await refreshUser()}
-async function loadData(){state.loadError=null;try{if(!supabaseClient)await loadConfig();const [pr,pp,sv]=await Promise.all([fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})]);data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',theme_accent:x.theme_accent||'#c9b6ff',theme_mode:x.theme_mode||'dark',theme_bg_light:x.theme_bg_light??(x.theme_mode==='light'?95:5),avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));data.projects=(Array.isArray(pp)?pp:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created_at:x.created_at,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||'',description:x.description||'',published:x.published,status:x.status||(x.published?'published':'draft'),featured:!!x.featured,thumbnail_url:x.thumbnail_url,media_url:x.media_url,media_type:x.media_type}));data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));state.backendReady=true;if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}await refreshRecommendations();render()}catch(e){state.backendReady=false;state.loadError=e.message||'Unable to connect to Supabase.';render()}}
+async function loadData(){state.loadError=null;try{if(!supabaseClient)await loadConfig();const [pr,pp,sv]=await Promise.all([fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})]);data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',theme:x.theme||'moonlight',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));data.projects=(Array.isArray(pp)?pp:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created_at:x.created_at,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||'',description:x.description||'',published:x.published,status:x.status||(x.published?'published':'draft'),featured:!!x.featured,thumbnail_url:x.thumbnail_url,media_url:x.media_url,media_type:x.media_type}));data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));state.backendReady=true;if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}await refreshRecommendations();render()}catch(e){state.backendReady=false;state.loadError=e.message||'Unable to connect to Supabase.';render()}}
 function updateAccountButton(){const b=document.getElementById('accountBtn');if(state.currentUser){b.title='Open member space · '+roleLabel(state.currentMember);document.getElementById('accountName').textContent=state.currentMember?.name||state.currentUser.email||'Member';document.getElementById('adminDashBtn').style.display=state.currentMember?.is_admin?'inline-flex':'none'}else{b.title='Sign in';document.getElementById('accountName').textContent='Guest'}}
 document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
 (async()=>{await loadData();updateAccountButton()})();
