@@ -11,6 +11,7 @@
 .bullet-item{display:flex;align-items:flex-start;gap:10px;margin-top:6px;margin-bottom:6px}.bullet-dot{color:var(--moon);font-size:22px;line-height:1;user-select:none}
 .addon-box{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:12px;margin-top:6px}
 .addon-box label{font-size:13px;text-transform:none;letter-spacing:normal;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px}
+.tos-box{margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);max-height:220px;overflow-y:auto;font-size:13px;color:var(--muted)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -107,6 +108,13 @@ function openService(id){
       </div>
     `:''}
 
+    ${m?.tos?`
+      <div class="tos-box">
+        <div class="eyebrow" style="margin-bottom:6px">Artist Terms of Service (TOS)</div>
+        <div>${formatDescription(m.tos)}</div>
+      </div>
+    `:''}
+
     <div class="tags" style="margin-top:16px">${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${examples.length?`<div class="sectionhead" style="margin-top:22px"><div><h3 style="margin:0">Portfolio examples</h3></div></div><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${examples.map(p=>card(p)).join('')}</div>`:''}
   `;
@@ -135,10 +143,51 @@ function home(){const rec=personalized(),trending=[...data.projects].sort((a,b)=
 function artistCard(m){return `<article class="artistcard" data-member="${m.id}">${avatar(m)}<div class="artistname">${esc(m.name)}</div><div class="role">${esc(m.role)}</div>${m.is_admin?'<span class="badge" style="display:inline-block;margin-top:8px">Administrator</span>':''}<div class="tags">${(m.skills||[]).slice(0,2).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:12px;font-size:11px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available':'● Booked'}</div></article>`}
 function discover(){let list=data.projects.filter(p=>state.filter==='All'||state.filter==='Recommended'||state.filter==='Trending'||state.filter==='Newest'||p.category===state.filter||(p.tags||[]).includes(state.filter));if(state.query){const q=state.query.toLowerCase();list=list.filter(p=>(p.title+' '+p.category+' '+(p.tags||[]).join(' ')+' '+(member(p.member)?.name||'')).toLowerCase().includes(q))}list.sort((a,b)=>state.filter==='Recommended'?score(b)-score(a):state.filter==='Trending'?b.likes-a.likes:state.filter==='Newest'?(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0):score(b)-score(a));const cats=['All','Recommended','Trending','Newest',...new Set(data.projects.map(p=>p.category))];return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Explore Lunarist</div><h2 style="font-size:46px">Discover work.</h2><p>Search projects, styles and artists.</p></div><input class="search" id="searchInput" placeholder="Search projects, artists, skills…" value="${esc(state.query)}"></div><div class="discoverbar">${cats.map(c=>`<button class="filter ${state.filter===c?'active':''}" data-filter="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="grid" id="discoverGrid">${list.length?list.map(p=>card(p)).join(''):emptyState('No work found.','Try another search or filter.')}</div></section></div>`}
 function artists(){return `<div class="container"><section class="section" style="padding-top:55px"><div class="eyebrow">The Lunarist collective</div><h2 style="font-size:52px;letter-spacing:-.05em;margin:10px 0">Meet the artists.</h2><p style="color:var(--muted);max-width:650px">Every member owns their profile and projects. Clients can discover people by discipline, style and availability.</p><div class="artistgrid" style="margin-top:28px">${data.members.length?data.members.map(artistCard).join(''):emptyState('No public artist profiles yet.','Create an account to become one.')}</div></section></div>`}
-function profilePage(m){const ps=data.projects.filter(p=>p.member===m.id);const ss=data.services.filter(s=>s.member===m.id);return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy profile link</button></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt=""><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${esc(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div></section></div>`}
+function profilePage(m){const ps=data.projects.filter(p=>p.member===m.id);const ss=data.services.filter(s=>s.member===m.id);return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy profile link</button></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt=""><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${esc(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div>${m.tos?`<div class="tos-box" style="margin-top:16px"><div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div><div>${formatDescription(m.tos)}</div></div>`:''}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div></section></div>`}
 function render(){document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();document.getElementById('view').innerHTML=html;bind();window.scrollTo({top:0,behavior:'instant'})}
 function bind(){document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{document.getElementById('navlinks').classList.remove('open');goRoute(b.dataset.route)});document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));document.querySelectorAll('[data-service]').forEach(c=>c.onclick=()=>openService(c.dataset.service));document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>goRoute('member:'+c.dataset.member));document.getElementById('copyProfileLink')?.addEventListener('click',(e)=>{const url=location.origin+'/'+e.currentTarget.dataset.username;navigator.clipboard?.writeText(url).then(()=>toast('Profile link copied')).catch(()=>toast(url))});document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render()};document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render()});document.getElementById('retryBtn')?.addEventListener('click',()=>loadData());}
-async function openProject(id){const p=data.projects.find(x=>x.id===id);if(!p)return;await track(p);const m=member(p.member);const linkedServices=data.services.filter(sv=>(sv.projectIds||[]).includes(p.id));document.getElementById('modalMedia').innerHTML=p.video?`<iframe src="${esc(p.video)}${p.video.includes('?')?'&':'?'}autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="">`;document.getElementById('modalContent').innerHTML=`<div class="eyebrow">${esc(p.category)}</div><h2>${esc(p.title)}</h2><div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · ${esc(m?.role||'')}</button></div><p>${formatDescription(p.desc)}</p><div class="stats"><span class="stat">👁 ${Number(p.views||0).toLocaleString()} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div><div class="tags">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>${linkedServices.length?`<div class="meta" style="margin-top:14px">Available as a service:</div><div class="tags">${linkedServices.map(sv=>`<button class="tag" data-open-service="${sv.id}" style="cursor:pointer">💼 ${esc(sv.title)}</button>`).join('')}</div>`:''}`;document.getElementById('projectModal').classList.add('open');document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};document.getElementById('saveBtn').onclick=()=>{track(p,'save');toast('Saved to this browser')};document.querySelector('[data-modal-member]').onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};document.querySelectorAll('[data-open-service]').forEach(b=>b.onclick=()=>openService(b.dataset.openService))}
+
+async function openProject(id){
+  const p=data.projects.find(x=>x.id===id);if(!p)return;
+  await track(p);
+  const m=member(p.member);
+  const linkedServices=data.services.filter(sv=>(sv.projectIds||[]).includes(p.id));
+
+  document.getElementById('modalMedia').innerHTML=p.video?`<iframe src="${esc(p.video)}${p.video.includes('?')?'&':'?'}autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="">`;
+  
+  document.getElementById('modalContent').innerHTML=`
+    <div class="eyebrow">${esc(p.category)}</div>
+    <h2>${esc(p.title)}</h2>
+    <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · ${esc(m?.role||'')}</button></div>
+    <p>${formatDescription(p.desc)}</p>
+    <div class="stats"><span class="stat">👁 ${Number(p.views||0).toLocaleString()} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div>
+    <div class="tags">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    
+    ${linkedServices.length?`
+      <div style="margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
+        <div class="eyebrow" style="margin-bottom:8px">Commission / Order Package</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${linkedServices.map(sv=>`
+            <div class="row" style="justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:12px">
+              <div>
+                <b style="display:block;font-size:14px">${esc(sv.title)}</b>
+                <span class="meta">${sv.price_from?'From '+esc(sv.price_from):''} ${sv.delivery_time?'· '+esc(sv.delivery_time):''}</span>
+              </div>
+              <button class="btn primary" data-open-service="${sv.id}" style="font-size:12px;padding:8px 14px">💼 View Service</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `:''}
+  `;
+
+  document.getElementById('projectModal').classList.add('open');
+  document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};
+  document.getElementById('saveBtn').onclick=()=>{track(p,'save');toast('Saved to this browser')};
+  document.querySelector('[data-modal-member]').onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
+  document.querySelectorAll('[data-open-service]').forEach(b=>b.onclick=()=>{closeModal();openService(b.dataset.openService)});
+}
+
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML=''}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';document.getElementById('authUsernameWrap').style.display=m?'flex':'none';document.getElementById('authDisplayWrap').style.display=m?'flex':'none';document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';document.getElementById('authModeHint').textContent=m?'':'Use Google or email/password';document.getElementById('authMessage').textContent='';document.getElementById('authModal').classList.add('open')}
@@ -146,11 +195,12 @@ function closeAuth(){document.getElementById('authModal').classList.remove('open
 async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
 async function signInWithGoogle(){document.getElementById('googleAuth').disabled=true;try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});if(error)throw error}catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}}
 async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
+
 async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   state.currentUser=session?.user||null;
   if(state.currentUser){
-    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type').eq('id',state.currentUser.id).maybeSingle();
+    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos').eq('id',state.currentUser.id).maybeSingle();
     if(!p){
       const fallback={id:state.currentUser.id,username:(state.currentUser.email||'member').split('@')[0].replace(/[^a-z0-9_]/gi,'').slice(0,32)||'member',display_name:state.currentUser.email||'Lunarist member',role:'',bio:'',skills:[],available:true,account_type:'user'};
       const r=await supabaseClient.from('profiles').insert(fallback).select().single();
@@ -163,6 +213,7 @@ async function refreshUser(){
       name:p.display_name,
       role:p.role||'',
       bio:p.bio||'',
+      tos:p.tos||'',
       avatar:p.avatar_url||'https://i.pravatar.cc/160?u='+p.id,
       skills:p.skills||[],
       available:p.available!==false,
@@ -178,6 +229,7 @@ async function refreshUser(){
     state.currentMember=null;
   }
 }
+
 async function openDashboard(){
   if(!state.currentUser){openAuth('signin');return}
   await refreshUser();
@@ -190,21 +242,80 @@ async function openDashboard(){
   ]);
   
   state.myProjects=ps||[];
-  
-  // Dynamic fallback for matching services loaded globally
   const userServices = (ss && ss.length) ? ss : data.services.filter(s => s.member === m.id);
 
   document.getElementById('dashTitle').textContent=m.name+' · '+roleLabel(m);
   document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile and projects are stored in Supabase. Published work appears in Discover.</p><div class="stats"><span class="stat">${roleLabel(m)}</span><span class="stat">${(ps||[]).length} projects</span><span class="stat">${(ps||[]).reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div>${(m.account_type!=='member'&&!m.is_admin)?'<p class="meta" style="margin-top:10px">You\'re a Lunarist User — ask a Studio admin to promote you to Lunarist Member to publish work.</p>':''}</div>`;
   const canPublish=m.account_type==='member'||m.is_admin;
   document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(ps||[]).length?(ps||[]).map(p=>`<div class="listitem"><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="this.style.display='none'"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${Number(p.views||0)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
-  document.getElementById('dash-profile').innerHTML=`<div class="panel"><div class="eyebrow">Edit profile</div><div class="row" style="margin:12px 0 18px"><img class="avatar" id="pfAvatarPreview" style="width:64px;height:64px" src="${esc(m.avatar||'')}" alt=""><div><button class="btn" id="pfAvatarBtn" type="button">Change photo</button><input type="file" id="pfAvatarFile" accept="image/*" style="display:none"><div class="meta" id="pfAvatarStatus">JPG or PNG, square works best.</div></div></div><div class="formgrid"><div class="field"><label>Display name</label><input id="pfName" value="${esc(m.name)}"></div><div class="field"><label>Username</label><input id="pfUsername" value="${esc(m.username)}" maxlength="32" pattern="[a-z0-9_]+"><div class="meta">${esc(location.host)}/<span id="pfUsernamePreview">${esc(m.username)}</span></div></div><div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div><div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio)}</textarea></div><div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div></div><button class="btn primary" style="margin-top:14px" id="saveProfile">Save profile</button><button class="btn" style="margin:14px 0 0 8px" id="signOut">Sign out</button></div>`;
+  
+  document.getElementById('dash-profile').innerHTML=`
+    <div class="panel">
+      <div class="eyebrow">Edit profile</div>
+      <div class="row" style="margin:12px 0 18px">
+        <img class="avatar" id="pfAvatarPreview" style="width:64px;height:64px" src="${esc(m.avatar||'')}" alt="">
+        <div>
+          <button class="btn" id="pfAvatarBtn" type="button">Change photo</button>
+          <input type="file" id="pfAvatarFile" accept="image/*" style="display:none">
+          <div class="meta" id="pfAvatarStatus">JPG or PNG, square works best.</div>
+        </div>
+      </div>
+      <div class="formgrid">
+        <div class="field"><label>Display name</label><input id="pfName" value="${esc(m.name)}"></div>
+        <div class="field"><label>Username</label><input id="pfUsername" value="${esc(m.username)}" maxlength="32" pattern="[a-z0-9_]+"><div class="meta">${esc(location.host)}/<span id="pfUsernamePreview">${esc(m.username)}</span></div></div>
+        <div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div>
+        <div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio)}</textarea></div>
+        <div class="field full"><label>Terms of Service (TOS)</label><textarea id="pfTos" placeholder="Specify your commission guidelines, payment policies, or revision limits…">${esc(m.tos||'')}</textarea></div>
+        <div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div>
+      </div>
+      <button class="btn primary" style="margin-top:14px" id="saveProfile">Save profile</button>
+      <button class="btn" style="margin:14px 0 0 8px" id="signOut">Sign out</button>
+    </div>
+  `;
+  
   document.getElementById('dash-services').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My services</div><h3 style="margin:4px 0">Offer commissions & packages</h3></div><button class="btn primary" id="addService">+ New service</button></div><div id="serviceList" style="margin-top:12px">${userServices.length?userServices.map(s=>`<div class="listitem"><img class="listthumb" src="${esc(s.thumbnail_url||'')}" onerror="this.style.display='none'"><div class="grow"><b>${esc(s.title)}</b><div class="meta">${esc(s.category)} · ${esc(s.status||(s.published?'published':'draft'))} · ${(s.service_projects||s.projectIds||[]).length} linked project(s)</div></div><button class="btn" data-edit-service="${s.id}">Edit</button></div>`).join(''):emptyState('No services yet.','List a service artists can hire you for.')}</div><div id="serviceForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can offer services.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create services.')}</div>`;
   document.getElementById('drawer').classList.add('open');
   bindDashboard(ps||[],userServices)
 }
 
-function bindDashboard(ps,ss){document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=async()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active');if(b.dataset.dash==='admin')await openAdminStudio()});let pendingAvatarUrl=null;const pfUsername=document.getElementById('pfUsername');pfUsername.oninput=()=>{const clean=pfUsername.value.toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32);if(clean!==pfUsername.value)pfUsername.value=clean;document.getElementById('pfUsernamePreview').textContent=clean||'username'};document.getElementById('pfAvatarBtn').onclick=()=>document.getElementById('pfAvatarFile').click();document.getElementById('pfAvatarFile').onchange=async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}};document.getElementById('saveProfile').onclick=async()=>{const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}const payload={display_name:document.getElementById('pfName').value.trim(),username,role:document.getElementById('pfRole').value.trim(),bio:document.getElementById('pfBio').value.trim(),available:document.getElementById('pfAvail').value==='1',updated_at:new Date().toISOString()};if(pendingAvatarUrl)payload.avatar_url=pendingAvatarUrl;const {data,error}=await supabaseClient.from('profiles').update(payload).eq('id',state.currentUser.id).select().single();if(error){toast(error.code==='23505'?'That username is already taken.':error.message);return}toast('Profile saved');await refreshUser();updateAccountButton();await loadData();if(state.route.startsWith('member:')&&state.route.split(':')[1]===state.currentUser.id)goRoute('member:'+state.currentUser.id,true);openDashboard()};document.getElementById('signOut').onclick=async()=>{await supabaseClient.auth.signOut();closeDash();toast('Signed out');await refreshUser();render()};document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)))}
+function bindDashboard(ps,ss){
+  document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=async()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active');if(b.dataset.dash==='admin')await openAdminStudio()});
+  let pendingAvatarUrl=null;
+  const pfUsername=document.getElementById('pfUsername');
+  if(pfUsername){
+    pfUsername.oninput=()=>{const clean=pfUsername.value.toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32);if(clean!==pfUsername.value)pfUsername.value=clean;document.getElementById('pfUsernamePreview').textContent=clean||'username'};
+  }
+  document.getElementById('pfAvatarBtn')?.addEventListener('click',()=>document.getElementById('pfAvatarFile').click());
+  document.getElementById('pfAvatarFile')?.addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}});
+  
+  document.getElementById('saveProfile')?.addEventListener('click',async()=>{
+    const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
+    const payload={
+      display_name:document.getElementById('pfName').value.trim(),
+      username,
+      role:document.getElementById('pfRole').value.trim(),
+      bio:document.getElementById('pfBio').value.trim(),
+      tos:document.getElementById('pfTos').value.trim(),
+      available:document.getElementById('pfAvail').value==='1',
+      updated_at:new Date().toISOString()
+    };
+    if(pendingAvatarUrl)payload.avatar_url=pendingAvatarUrl;
+    const {data,error}=await supabaseClient.from('profiles').update(payload).eq('id',state.currentUser.id).select().single();
+    if(error){toast(error.code==='23505'?'That username is already taken.':error.message);return}
+    toast('Profile saved');
+    await refreshUser();
+    updateAccountButton();
+    await loadData();
+    if(state.route.startsWith('member:')&&state.route.split(':')[1]===state.currentUser.id)goRoute('member:'+state.currentUser.id,true);
+    openDashboard()
+  });
+
+  document.getElementById('signOut')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();closeDash();toast('Signed out');await refreshUser();render()});
+  document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());
+  document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));
+  document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());
+  document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)))
+}
 
 function showServiceForm(existing=null){
   const f=document.getElementById('serviceForm');if(!f)return;
@@ -389,7 +500,7 @@ async function openAdminStudio(){
     supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
     supabaseClient.from('projects').select('*',{count:'exact',head:true}),
     supabaseClient.from('services').select('*',{count:'exact',head:true}),
-    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available').order('display_name').limit(200),
+    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos').order('display_name').limit(200),
     supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
@@ -583,7 +694,7 @@ async function openAdminStudio(){
 
 function closeDash(){document.getElementById('drawer').classList.remove('open')}
 async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});await refreshUser()}
-async function loadData(){state.loadError=null;try{if(!supabaseClient)await loadConfig();const [pr,pp,sv]=await Promise.all([fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})]);data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));data.projects=(Array.isArray(pp)?pp:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created_at:x.created_at,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||'',description:x.description||'',published:x.published,status:x.status||(x.published?'published':'draft'),featured:!!x.featured,thumbnail_url:x.thumbnail_url,media_url:x.media_url,media_type:x.media_type}));data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));state.backendReady=true;if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}await refreshRecommendations();render()}catch(e){state.backendReady=false;state.loadError=e.message||'Unable to connect to Supabase.';render()}}
+async function loadData(){state.loadError=null;try{if(!supabaseClient)await loadConfig();const [pr,pp,sv]=await Promise.all([fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})]);data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));data.projects=(Array.isArray(pp)?pp:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created_at:x.created_at,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||'',description:x.description||'',published:x.published,status:x.status||(x.published?'published':'draft'),featured:!!x.featured,thumbnail_url:x.thumbnail_url,media_url:x.media_url,media_type:x.media_type}));data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));state.backendReady=true;if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}await refreshRecommendations();render()}catch(e){state.backendReady=false;state.loadError=e.message||'Unable to connect to Supabase.';render()}}
 function updateAccountButton(){const b=document.getElementById('accountBtn');if(state.currentUser){b.title='Open member space · '+roleLabel(state.currentMember);document.getElementById('accountName').textContent=state.currentMember?.name||state.currentUser.email||'Member';document.getElementById('adminDashBtn').style.display=state.currentMember?.is_admin?'inline-flex':'none'}else{b.title='Sign in';document.getElementById('accountName').textContent='Guest'}}
 document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
 (async()=>{await loadData();updateAccountButton()})();
