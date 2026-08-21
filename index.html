@@ -39,7 +39,6 @@
 .profile-wrapper .meta,.profile-wrapper p,.profile-wrapper .sectionhead p{color:var(--pf-muted)}
 .profile-wrapper .tos-box{border-color:var(--pf-line);background:rgba(255,255,255,.02);color:var(--pf-muted)}
 
-/* Mode Switcher Buttons */
 .mode-toggle-group{display:flex;gap:8px;margin-top:6px}
 .mode-toggle-btn{flex:1;padding:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:10px;font-weight:700;font-size:12px;cursor:pointer}
 .mode-toggle-btn.active{border-color:var(--moon);background:rgba(255,255,255,.1)}
@@ -261,7 +260,7 @@ async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   state.currentUser=session?.user||null;
   if(state.currentUser){
-    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,theme_accent,theme_mode,theme_bg_light').eq('id',state.currentUser.id).maybeSingle();
+    let {data:p, error}=await supabaseClient.from('profiles').select('*').eq('id',state.currentUser.id).maybeSingle();
     if(!p){
       const fallback={id:state.currentUser.id,username:(state.currentUser.email||'member').split('@')[0].replace(/[^a-z0-9_]/gi,'').slice(0,32)||'member',display_name:state.currentUser.email||'Lunarist member',role:'',bio:'',skills:[],available:true,account_type:'user',theme_accent:'#c9b6ff',theme_mode:'dark',theme_bg_light:5};
       const r=await supabaseClient.from('profiles').insert(fallback).select().single();
@@ -633,7 +632,7 @@ async function openAdminStudio(){
     supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
     supabaseClient.from('projects').select('*',{count:'exact',head:true}),
     supabaseClient.from('services').select('*',{count:'exact',head:true}),
-    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme_accent,theme_mode,theme_bg_light').order('display_name').limit(200),
+    supabaseClient.from('profiles').select('*').order('display_name').limit(200),
     supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
