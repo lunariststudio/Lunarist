@@ -2,7 +2,7 @@
   "name": "lunarist-studio",
   "version": "1.0.0",
   "private": true,
-  "description": "Lunarist Studio creative network \u2014 Vercel + Supabase",
+  "description": "Lunarist Studio creative network — Vercel + Supabase",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo \"Static Vercel build: no compilation required\"",
@@ -10,5 +10,12 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3"
+  },
+  "devDependencies": {
+    "supabase": "^2.115.0"
   }
 }
