@@ -31,12 +31,12 @@ html[data-theme="midnight"]{--moon:#8bb2ff;--pink:#a28eff;--line:rgba(139,178,25
 </head>
 <body>
 <div class="app" id="app">
-<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home">Home</button><button class="navbtn" data-route="discover">Discover</button><button class="navbtn" data-route="services">Services</button><button class="navbtn" data-route="artists">Artists</button></nav><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
+<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home">Home</button><button class="navbtn" data-route="discover">Discover</button><button class="navbtn" data-route="services">Services</button><button class="navbtn" data-route="artists">Artists</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none">Admin Studio</button></nav><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
 <main id="view"></main>
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button><button class="filter" data-dash="services">Services</button><button class="filter" data-dash="admin" id="adminDashBtn" style="display:none">Studio</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section><section class="dashsection" id="dash-admin"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button><button class="filter" data-dash="services">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <script>
@@ -55,10 +55,10 @@ function saveSession(){localStorage.setItem('lunarist_session',JSON.stringify(st
 function member(id){return data.members.find(m=>m.id===id)||null}
 function roleLabel(m){if(!m)return 'Guest';if(m.is_admin)return 'Administrator';return m.account_type==='member'?'Lunarist Member':'User'}
 function memberByUsername(u){u=String(u||'').toLowerCase();return data.members.find(m=>(m.username||'').toLowerCase()===u)||null}
-const RESERVED_ROUTES=['discover','artists','services','api'];
-function pathForRoute(route){if(route==='home')return '/';if(route==='discover')return '/discover';if(route==='artists')return '/artists';if(route==='services')return '/services';if(route.startsWith('member:')){const m=member(route.split(':')[1]);return m?.username?('/'+m.username):'/artists'}return '/'}
+const RESERVED_ROUTES=['discover','artists','services','admin','api'];
+function pathForRoute(route){if(route==='home')return '/';if(route==='discover')return '/discover';if(route==='artists')return '/artists';if(route==='services')return '/services';if(route==='admin')return '/admin';if(route.startsWith('member:')){const m=member(route.split(':')[1]);return m?.username?('/'+m.username):'/artists'}return '/'}
 function goRoute(route,replace){state.route=route;const path=pathForRoute(route);if(location.pathname!==path){history[replace?'replaceState':'pushState']({route},'',path)}render()}
-function routeFromPath(){const seg=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,''));if(!seg)return 'home';if(seg==='discover')return 'discover';if(seg==='artists')return 'artists';if(seg==='services')return 'services';if(RESERVED_ROUTES.includes(seg.toLowerCase()))return 'home';const m=memberByUsername(seg);return m?'member:'+m.id:'home'}
+function routeFromPath(){const seg=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,''));if(!seg)return 'home';if(seg==='discover')return 'discover';if(seg==='artists')return 'artists';if(seg==='services')return 'services';if(seg==='admin')return 'admin';if(RESERVED_ROUTES.includes(seg.toLowerCase()))return 'home';const m=memberByUsername(seg);return m?'member:'+m.id:'home'}
 function extractYoutubeId(url){if(!url)return null;const s=String(url).trim();let m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);if(m)return m[1];if(/^[A-Za-z0-9_-]{11}$/.test(s))return s;return null}
 function embedToWatchUrl(u){const m=String(u||'').match(/embed\/([A-Za-z0-9_-]{11})/);return m?('https://youtu.be/'+m[1]):''}
 window.addEventListener('popstate',()=>{state.route=routeFromPath();render()});
@@ -173,9 +173,10 @@ function profilePage(m){
 function render(){
   document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));
   if(!state.route.startsWith('member:')){ applyTheme(state.currentMember?.theme || 'moonlight'); }
-  let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
+  let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route==='admin'?`<div class="container"><section class="section" style="padding-top:55px" id="adminPageView"></section></div>`:state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
   document.getElementById('view').innerHTML=html;
   bind();
+  if(state.route==='admin') renderAdminStudioPage();
   window.scrollTo({top:0,behavior:'instant'})
 }
 
@@ -260,7 +261,8 @@ async function refreshUser(){
     document.getElementById('accountName').textContent=state.currentMember?.name||'Member';
     document.getElementById('accountAvatar').outerHTML=`<img class="avatar" id="accountAvatar" src="${esc(state.currentMember?.avatar||'')}" alt="">`;
   }else{
-    document.getElementById('adminDashBtn').style.display='none';
+    const navAdmin = document.getElementById('navAdminBtn');
+    if(navAdmin) navAdmin.style.display='none';
     document.getElementById('accountName').textContent='Guest';
     document.getElementById('accountAvatar').outerHTML='<span class="avatar" id="accountAvatar">G</span>';
     state.currentMember=null;
@@ -346,7 +348,7 @@ async function openDashboard(){
 }
 
 function bindDashboard(ps,ss){
-  document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=async()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active');if(b.dataset.dash==='admin')await openAdminStudio()});
+  document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active')});
   let pendingAvatarUrl=null;
   const pfUsername=document.getElementById('pfUsername');
   if(pfUsername){
@@ -568,10 +570,14 @@ async function loadDiscoveryAnalytics(){
   return {counts,total:(data||[]).length};
 }
 
-async function openAdminStudio(activeTab='members'){
-  if(!state.currentUser||!state.currentMember?.is_admin){toast('Admin access required.');return}
-  const sec=document.getElementById('dash-admin'); if(!sec)return;
+async function renderAdminStudioPage(activeTab='members'){
+  if(!state.currentUser||!state.currentMember?.is_admin){
+    document.getElementById('adminPageView').innerHTML='<div class="panel"><h3>Access Restricted</h3><p style="color:var(--muted)">You must be an administrator to view this page.</p></div>';
+    return;
+  }
+  const sec = document.getElementById('adminPageView'); if(!sec) return;
   sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
+  
   const analytics=await loadDiscoveryAnalytics();
   const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
     supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
@@ -591,11 +597,9 @@ async function openAdminStudio(activeTab='members'){
 
   const allProjects = projects || [];
   const allServices = servicesArr || [];
-
   const pendingProjects = allProjects.filter(p=>p.status==='pending');
   const pendingServices = allServices.filter(s=>s.status==='pending');
   const totalPending = pendingProjects.length + pendingServices.length;
-
   const settingsMap = Object.fromEntries((settings||[]).map(x=>[x.key,x.value]));
 
   const getMemberName = (id) => {
@@ -648,9 +652,16 @@ async function openAdminStudio(activeTab='members'){
     </div>`).join('')||'<div class="meta">No members found</div>';
 
   sec.innerHTML = `
-    <div class="panel">
-      <div class="eyebrow">Studio Moderation Dashboard</div>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:10px">
+    <div class="sectionhead">
+      <div>
+        <div class="eyebrow">Studio Management</div>
+        <h2 style="font-size:42px;margin:4px 0">Admin Studio</h2>
+        <p>Manage members, review pending submissions, and configure studio settings.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
         <div class="stat"><b>${Number(totalPending)}</b><span>Pending Review</span></div>
         <div class="stat"><b>${Number(memberCount||0)}</b><span>Members</span></div>
         <div class="stat"><b>${Number(projectCount||0)}</b><span>Projects</span></div>
@@ -728,35 +739,34 @@ async function openAdminStudio(activeTab='members'){
 
   sec.querySelectorAll('[data-admin-pj-status]').forEach(el=>el.onchange=async()=>{
     const r=await supabaseClient.from('projects').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',el.dataset.adminPjStatus);
-    if(r.error){toast(r.error.message)}else{toast('Project status updated');await loadData();openAdminStudio('projects')}
+    if(r.error){toast(r.error.message)}else{toast('Project status updated');await loadData();renderAdminStudioPage('projects')}
   });
 
   sec.querySelectorAll('[data-admin-pj-approve]').forEach(btn=>btn.onclick=async()=>{
     const r=await supabaseClient.from('projects').update({status:'published',published:true,updated_at:new Date().toISOString()}).eq('id',btn.dataset.adminPjApprove);
-    if(r.error){toast(r.error.message)}else{toast('Project approved & published!');await loadData();openAdminStudio('overview')}
+    if(r.error){toast(r.error.message)}else{toast('Project approved & published!');await loadData();renderAdminStudioPage('overview')}
   });
 
   sec.querySelectorAll('[data-admin-sv-status]').forEach(el=>el.onchange=async()=>{
     const r=await supabaseClient.from('services').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',el.dataset.adminSvStatus);
-    if(r.error){toast(r.error.message)}else{toast('Service status updated');await loadData();openAdminStudio('services')}
+    if(r.error){toast(r.error.message)}else{toast('Service status updated');await loadData();renderAdminStudioPage('services')}
   });
 
   sec.querySelectorAll('[data-admin-sv-approve]').forEach(btn=>btn.onclick=async()=>{
     const r=await supabaseClient.from('services').update({status:'published',published:true,updated_at:new Date().toISOString()}).eq('id',btn.dataset.adminSvApprove);
-    if(r.error){toast(r.error.message)}else{toast('Service approved & published!');await loadData();openAdminStudio('overview')}
+    if(r.error){toast(r.error.message)}else{toast('Service approved & published!');await loadData();renderAdminStudioPage('overview')}
   });
 
   sec.querySelectorAll('[data-admin-feature]').forEach(el=>el.onclick=async()=>{
     const id=el.dataset.adminFeature;
     const item=allProjects.find(x=>x.id===id);
     const r=await supabaseClient.from('projects').update({featured:!item?.featured,updated_at:new Date().toISOString()}).eq('id',id);
-    if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');await loadData();openAdminStudio('projects')}
+    if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');await loadData();renderAdminStudioPage('projects')}
   });
 
   sec.querySelectorAll('[data-toggle-membertype]').forEach(el => el.onclick = async () => {
     const id = el.dataset.toggleMembertype;
     const next = el.dataset.current === 'member' ? 'user' : 'member';
-
     el.disabled = true;
 
     try {
@@ -765,7 +775,6 @@ async function openAdminStudio(activeTab='members'){
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })
       });
-
       const result = await res.json();
 
       if (!res.ok || result.error) {
@@ -775,8 +784,7 @@ async function openAdminStudio(activeTab='members'){
         toast(next === 'member' ? 'Promoted to Lunarist Member' : 'Reverted to User');
         await loadData();
         await refreshUser();
-        render();
-        openAdminStudio('members');
+        renderAdminStudioPage('members');
       }
     } catch (err) {
       toast('Error connecting to server');
@@ -798,7 +806,19 @@ async function openAdminStudio(activeTab='members'){
 function closeDash(){document.getElementById('drawer').classList.remove('open')}
 async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});await refreshUser()}
 async function loadData(){state.loadError=null;try{if(!supabaseClient)await loadConfig();const [pr,pp,sv]=await Promise.all([fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})]);data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',theme:x.theme||'moonlight',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));data.projects=(Array.isArray(pp)?pp:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created_at:x.created_at,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||'',description:x.description||'',published:x.published,status:x.status||(x.published?'published':'draft'),featured:!!x.featured,thumbnail_url:x.thumbnail_url,media_url:x.media_url,media_type:x.media_type}));data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));state.backendReady=true;if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}await refreshRecommendations();render()}catch(e){state.backendReady=false;state.loadError=e.message||'Unable to connect to Supabase.';render()}}
-function updateAccountButton(){const b=document.getElementById('accountBtn');if(state.currentUser){b.title='Open member space · '+roleLabel(state.currentMember);document.getElementById('accountName').textContent=state.currentMember?.name||state.currentUser.email||'Member';document.getElementById('adminDashBtn').style.display=state.currentMember?.is_admin?'inline-flex':'none'}else{b.title='Sign in';document.getElementById('accountName').textContent='Guest'}}
+function updateAccountButton(){
+  const b=document.getElementById('accountBtn');
+  const isAdmin = state.currentMember?.is_admin;
+  const navAdmin = document.getElementById('navAdminBtn');
+  if(navAdmin) navAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
+  if(state.currentUser){
+    b.title='Open member space · '+roleLabel(state.currentMember);
+    document.getElementById('accountName').textContent=state.currentMember?.name||state.currentUser.email||'Member';
+  }else{
+    b.title='Sign in';
+    document.getElementById('accountName').textContent='Guest';
+  }
+}
 document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
 (async()=>{await loadData();updateAccountButton()})();
 </script>
