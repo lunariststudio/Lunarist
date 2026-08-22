@@ -330,18 +330,12 @@ function openService(id){
         <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
       </div>
 
-      ${addOns.length?`
-        <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
-          <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">TOS Add-ons &amp; Custom Options:</div>
-          <div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
-            ${addOns.map((ao,idx)=>`
-              <div class="addon-box">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} ${esc(ao.title)} <span style="margin-left:auto;color:var(--gold);font-weight:800">${addonLabel(ao)}</span></label>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `:''}
+      <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
+        <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">Add-ons &amp; Custom Options</div>
+        ${addOns.length?`<div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
+          ${addOns.map((ao,idx)=>`<div class="addon-box"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} ${esc(ao.title)} <span style="margin-left:auto;color:var(--gold);font-weight:800">${addonLabel(ao)}</span></label></div>`).join('')}
+        </div>`:`<div class="meta">This service has no optional add-ons.</div>`}
+      </div>
 
       <div id="svcPriceBreakdown" style="margin-top:14px;padding:16px;border:1px solid var(--gold);border-radius:14px;background:rgba(232,207,145,.05)">
         <div class="eyebrow" style="color:var(--gold);margin-bottom:8px">Automatic price calculation</div>
@@ -545,8 +539,11 @@ function profilePage(m){
   updateSeoMeta(`${m.name} (@${m.username})`, m.bio, m.avatar);
   
   const formattedTos = String(m.tos||'').trim();
+  const isClientProfile = m.account_type !== 'member' && !m.is_admin;
+  const canViewClientDashboard = isClientProfile && (state.currentUser?.id === m.id || !!state.currentMember?.is_admin);
+  const clientDash = canViewClientDashboard ? `<div class="panel" id="publicClientDashboard" style="margin-top:42px"><div class="eyebrow">Client Dashboard</div><h2 style="margin:4px 0">My commissions &amp; reviews</h2><p class="meta">Your completed commissions, current orders, and reviews are all collected here.</p><div id="publicClientCommissions" style="margin-top:16px"><div class="meta">Loading your commissions…</div></div></div>` : '';
 
-  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body">${formatDescription(formattedTos)}</div></div>`:''}</section></div>`
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body">${formatDescription(formattedTos)}</div></div>`:''}${clientDash}</section></div>`
 }
 
 async function loadArtistReviews(artistId){
@@ -569,7 +566,12 @@ function render(){
   let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route==='admin'?`<div class="container"><section class="section" style="padding-top:55px" id="adminPageView"></section></div>`:state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
   document.getElementById('view').innerHTML=html;
   bind();
-  if(state.route.startsWith('member:')) loadArtistReviews(state.route.split(':')[1]);
+  if(state.route.startsWith('member:')) {
+    const pid=state.route.split(':')[1];
+    loadArtistReviews(pid);
+    const pm=member(pid);
+    if(pm && pm.account_type!=='member' && !pm.is_admin && (state.currentUser?.id===pm.id || !!state.currentMember?.is_admin)) renderPublicClientDashboard(pm.id);
+  }
   if(state.route==='admin') renderAdminStudioPage();
   window.scrollTo({top:0,behavior:'instant'})
 }
@@ -795,6 +797,18 @@ async function openDashboard(){
 
 function commissionClientStatusLabel(status){
   return artistCommissionStatusLabel(status);
+}
+
+async function renderPublicClientDashboard(clientId){
+  const container=document.getElementById('publicClientCommissions');
+  if(!container)return;
+  const {data:rows,error}=await supabaseClient.from('commissions').select('id,status,total_amount,amount,currency,target_deadline,created_at,updated_at,project_title,service:service_id(id,title,thumbnail_url),artist:artist_id(id,display_name,username,avatar_url),client_reviews(id,rating,review,published,created_at)').eq('client_id',clientId).order('created_at',{ascending:false});
+  if(error){container.innerHTML=`<div class="meta">Unable to load commissions: ${esc(error.message)}</div>`;return;}
+  if(!rows?.length){container.innerHTML=`<div class="empty">No commissions yet. Your artist commissions will appear here.</div>`;return;}
+  container.innerHTML=rows.map(c=>{
+    const a=c.artist||{},sv=c.service||{},rv=Array.isArray(c.client_reviews)?c.client_reviews[0]:null;
+    return `<article class="panel" style="padding:16px;margin-top:10px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><div class="eyebrow">${esc(sv.title||c.project_title||'Commission')}</div><div class="meta">Artist: ${esc(a.display_name||a.username||'Artist')}</div></div><span class="pill">${esc(commissionClientStatusLabel(c.status))}</span></div><div class="stats" style="margin-top:10px"><span class="stat">${esc(c.currency||'USD')} ${Number(c.total_amount||c.amount||0).toFixed(2)}</span>${c.target_deadline?`<span class="stat">Due ${esc(c.target_deadline)}</span>`:''}<span class="stat">${new Date(c.created_at).toLocaleDateString()}</span></div>${rv?`<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px"><div class="eyebrow">Your review</div><div style="color:var(--gold)">${'★'.repeat(Number(rv.rating||0))}${'☆'.repeat(5-Number(rv.rating||0))}</div><div class="meta">${esc(rv.review)}</div></div>`:''}</article>`;
+  }).join('');
 }
 
 function renderClientCommissionsTab(){
@@ -1106,7 +1120,7 @@ function showServiceForm(existing=null){
     const row = document.createElement('div');
     row.className = 'row addonRow';
     row.style.gap = '8px';
-    row.innerHTML = `<input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
     row.querySelector('.removeAddonBtn').onclick = () => row.remove();
     row.querySelector('.aoType').onchange = (e) => { row.querySelector('.aoPrice').placeholder = e.target.value==='percent'?'Percent (%)':'Price ($)'; refreshServiceEditorPrice(); };
     row.querySelector('.aoPrice').addEventListener('input',refreshServiceEditorPrice);
@@ -1149,7 +1163,8 @@ function showServiceForm(existing=null){
       const t = r.querySelector('.aoTitle').value.trim();
       const p = parseFloat(r.querySelector('.aoPrice').value);
       const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
-      return (t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
+      const enabled = r.querySelector('.aoEnabled')?.checked !== false;
+      return (enabled && t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
     }).filter(Boolean);
 
     const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;
@@ -1386,7 +1401,10 @@ async function renderAdminStudioPage(activeTab='members'){
         <b>${esc(m.display_name||m.username||'Unnamed member')}</b>
         <div class="meta">@${esc(m.username||'member')} · ${esc(m.role||'Member')} · ${m.is_admin?'Administrator':(m.account_type==='member'?'Lunarist Member':'User')}</div>
       </div>
-      ${m.is_admin?'':`<button class="btn" style="padding:6px 12px;font-size:12px" data-toggle-membertype="${m.id}" data-current="${m.account_type||'user'}">${m.account_type==='member'?'Revoke Member':'Promote to Member'}</button>`}
+      <div class="row" style="gap:8px">
+        <button class="btn" style="padding:6px 12px;font-size:12px" data-admin-profile="${m.id}">Profile</button>
+        ${m.is_admin?'':`<button class="btn" style="padding:6px 12px;font-size:12px" data-toggle-membertype="${m.id}" data-current="${m.account_type||'user'}">${m.account_type==='member'?'Revoke Member':'Promote to Member'}</button>`}
+      </div>
     </div>`).join('')||'<div class="meta">No members found</div>';
 
   sec.innerHTML = `
@@ -1538,6 +1556,8 @@ async function renderAdminStudioPage(activeTab='members'){
     sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===btn.dataset.studioTab?'block':'none');
     if(btn.dataset.studioTab==='analytics')initAnalyticsCharts();
   });
+
+  sec.querySelectorAll('[data-admin-profile]').forEach(btn=>btn.onclick=()=>{ const target=member(btn.dataset.adminProfile); if(target) goRoute('member:'+target.id); });
 
   sec.querySelectorAll('[data-admin-pj-status]').forEach(el=>el.onchange=async()=>{
     const id = el.dataset.adminPjStatus;
