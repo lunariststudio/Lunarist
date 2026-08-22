@@ -116,12 +116,29 @@ function card(p,feature=false){
 function serviceCard(s){const m=member(s.member);return `<article class="card" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onerror="this.style.opacity=0"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
+function addonAmount(base,ao){
+  const n=Number(ao?.price||0);
+  return ao?.type==='percent' ? (base*n/100) : n;
+}
+function addonLabel(ao){
+  return ao?.type==='percent' ? ('+'+Number(ao.price||0)+'%') : ('+$'+Number(ao.price||0).toFixed(2));
+}
+function addonIcon(title){
+  const t=String(title||'').toLowerCase();
+  if(t.includes('commercial'))return '💼';
+  if(t.includes('rush')||t.includes('expedite')||t.includes('priority'))return '⚡';
+  if(t.includes('nda')||t.includes('private'))return '🔒';
+  if(t.includes('revision'))return '🔁';
+  return '✦';
+}
+
 function openService(id){
   const s=data.services.find(x=>x.id===id);if(!s)return;
   const m=member(s.member);
   const examples=(s.projectIds||[]).map(pid=>data.projects.find(p=>p.id===pid)).filter(Boolean);
   const addOns = Array.isArray(s.add_ons) ? s.add_ons : [];
   const basePrice = parseFloat(String(s.price_from||'0').replace(/[^0-9.]/g,''))||0;
+  const canCheckout = basePrice>0;
 
   document.getElementById('modalMedia').innerHTML=`<img src="${esc(s.thumbnail_url||'')}" style="width:100%;height:100%;object-fit:cover" alt="">`;
   document.getElementById('modalContent').innerHTML=`
@@ -133,49 +150,181 @@ function openService(id){
       ${s.price_from?`<span class="stat">From ${esc(s.price_from)}</span>`:''}
       ${s.delivery_time?`<span class="stat">${esc(s.delivery_time)}</span>`:''}
     </div>
-    
-    ${addOns.length?`
-      <div style="margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
-        <div class="eyebrow" style="margin-bottom:10px">Available Service Add-ons</div>
-        <div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
-          ${addOns.map((ao,idx)=>`
-            <div class="addon-box">
-              <label><input type="checkbox" class="modalAddonCheck" data-price="${ao.price||0}"> ${esc(ao.title)}</label>
-              <b style="color:var(--moon)">+$${Number(ao.price||0).toFixed(2)}</b>
-            </div>
-          `).join('')}
-        </div>
-        <div class="row" style="margin-top:16px;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px">
-          <span style="color:var(--muted);font-size:13px">Estimated Total</span>
-          <b style="font-size:20px;color:var(--moon)" id="svcTotalCalc">$${basePrice.toFixed(2)}</b>
-        </div>
-      </div>
-    `:''}
 
-    ${m?.tos?`
-      <div class="tos-box">
-        <div class="eyebrow" style="margin-bottom:6px">Artist Terms of Service (TOS)</div>
-        <div>${formatDescription(m.tos)}</div>
+    ${examples.length?`<div class="sectionhead" style="margin-top:22px"><div><h3 style="margin:0">Portfolio examples</h3></div></div><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${examples.map(p=>card(p)).join('')}</div>`:''}
+
+    <div style="margin-top:26px;padding:22px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.02)">
+      <h2 style="font-size:26px;margin:0 0 6px;font-style:italic">Inquire — ${esc(s.title)}</h2>
+      <p id="inquirySubtext" style="color:var(--muted);margin-top:0"></p>
+
+      <div class="formgrid" style="margin-top:16px">
+        <div class="field"><label>Your Name / Handle *</label><input id="inqName" placeholder="Your name or handle"></div>
+        <div class="field"><label>Company / Agency Name (Optional)</label><input id="inqCompany" placeholder="Studio or agency"></div>
+        <div class="field"><label>Your Email Address *</label><input id="inqEmail" type="email" placeholder="you@example.com"></div>
+        <div class="field"><label>Social Media e.g. @Handle *</label><input id="inqSocial" placeholder="@yourhandle"></div>
+        <div class="field full"><label>Target Deadline / Preferred Delivery Date (Optional)</label><input id="inqDeadline" type="date"></div>
+        <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
       </div>
-    `:''}
+
+      ${addOns.length?`
+        <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
+          <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">TOS Add-ons &amp; Custom Options:</div>
+          <div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
+            ${addOns.map((ao,idx)=>`
+              <div class="addon-box">
+                <label><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} ${esc(ao.title)} (${addonLabel(ao)})</label>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `:''}
+
+      <div class="field full" style="margin-top:14px"><label>Upload Brief / Asset Attachment (Optional)</label><input type="file" id="inqAttachment"><div class="meta" id="inqAttachStatus">Images or documents, up to 5MB.</div></div>
+
+      ${m?.tos?`
+        <div class="tos-box" style="max-height:220px">
+          <div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div>
+          <div>${formatDescription(m.tos)}</div>
+        </div>
+      `:''}
+
+      <div class="addon-box" style="margin-top:14px">
+        <label><input type="checkbox" id="inqAgreeTos"> I have read and agree to the ${m?.tos?"Terms of Service":"artist's terms"} (Required)</label>
+      </div>
+
+      ${canCheckout?`
+        <div class="formgrid" style="margin-top:14px">
+          <div class="field" id="depositOption" style="cursor:pointer;border:1px solid var(--gold);border-radius:12px;padding:12px;text-align:center">
+            <b style="color:var(--gold)" id="depositAmountLabel">50% Deposit</b>
+            <div class="meta" id="depositSubLabel">Save Slot</div>
+          </div>
+          <div class="field" id="fullOption" style="cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <b id="fullAmountLabel">Full Amount</b>
+            <div class="meta">Pay Upfront</div>
+          </div>
+        </div>
+        <button class="btn primary" id="payPaypalBtn" style="width:100%;margin-top:16px;background:#ffc439;color:#0a0810;border-color:#ffc439;font-weight:900">PayPal</button>
+        <button class="btn" id="payCardBtn" style="width:100%;margin-top:10px">💳 Debit or Credit Card</button>
+        <p style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">Powered by PayPal</p>
+      `:`
+        <button class="btn primary" id="sendInquiryBtn" style="width:100%;margin-top:16px">Send Inquiry</button>
+      `}
+      <p id="inquiryMsg" style="color:var(--danger);min-height:18px;margin-top:8px"></p>
+    </div>
 
     <div class="tags" style="margin-top:16px">${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
-    ${examples.length?`<div class="sectionhead" style="margin-top:22px"><div><h3 style="margin:0">Portfolio examples</h3></div></div><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${examples.map(p=>card(p)).join('')}</div>`:''}
   `;
 
   document.getElementById('projectModal').classList.add('open');
-  
-  if(addOns.length){
-    const checkboxes = document.querySelectorAll('.modalAddonCheck');
-    const totalEl = document.getElementById('svcTotalCalc');
-    checkboxes.forEach(cb=>{
-      cb.onchange = () => {
-        let currentTotal = basePrice;
-        checkboxes.forEach(c=>{ if(c.checked) currentTotal += parseFloat(c.dataset.price||'0'); });
-        if(totalEl) totalEl.textContent = '$' + currentTotal.toFixed(2);
-      };
-    });
+
+  let paymentType='deposit';
+  let pendingAttachmentUrl=null;
+
+  function computeTotals(){
+    const checked=Array.from(document.querySelectorAll('.modalAddonCheck:checked'));
+    const addonTotal=checked.reduce((n,cb)=>n+addonAmount(basePrice,addOns[Number(cb.dataset.idx)]),0);
+    const total=basePrice+addonTotal;
+    return {total,deposit:total/2};
   }
+  function refreshPaymentUI(){
+    if(!canCheckout)return;
+    const {total,deposit}=computeTotals();
+    document.getElementById('depositAmountLabel').textContent='50% Deposit ($'+deposit.toFixed(2)+')';
+    document.getElementById('fullAmountLabel').textContent='Full Amount ($'+total.toFixed(2)+')';
+    document.getElementById('inquirySubtext').textContent=`Inquiry for ${s.title} · Pay $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD (${paymentType==='deposit'?'50% Slot Deposit':'Full Amount'}) to auto-register on the waitlist.`;
+    const depEl=document.getElementById('depositOption'),fullEl=document.getElementById('fullOption');
+    depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)';
+    fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
+  }
+  if(canCheckout){
+    refreshPaymentUI();
+    document.getElementById('depositOption').onclick=()=>{paymentType='deposit';refreshPaymentUI()};
+    document.getElementById('fullOption').onclick=()=>{paymentType='full';refreshPaymentUI()};
+  }else{
+    document.getElementById('inquirySubtext').textContent=`Inquiry for ${s.title} · This artist provides a custom quote — send your brief and they'll follow up.`;
+  }
+  document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=refreshPaymentUI);
+
+  document.getElementById('inqAttachment')?.addEventListener('change',async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const statusEl=document.getElementById('inqAttachStatus');
+    if(file.size>5*1024*1024){toast('File must be under 5MB');e.target.value='';return}
+    statusEl.textContent='Uploading…';
+    try{
+      const ext=(file.name.split('.').pop()||'bin').toLowerCase();
+      const path=`inquiries/${crypto.randomUUID()}.${ext}`;
+      const up=await supabaseClient.storage.from('commission-uploads').upload(path,file,{upsert:false,contentType:file.type||undefined});
+      if(up.error)throw up.error;
+      pendingAttachmentUrl=supabaseClient.storage.from('commission-uploads').getPublicUrl(path).data.publicUrl;
+      statusEl.textContent='Attached: '+file.name;
+    }catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload attachment')}
+  });
+
+  function collectInquiry(){
+    const name=document.getElementById('inqName').value.trim();
+    const email=document.getElementById('inqEmail').value.trim();
+    const social=document.getElementById('inqSocial').value.trim();
+    const agree=document.getElementById('inqAgreeTos').checked;
+    const msgEl=document.getElementById('inquiryMsg');
+    if(!name||!email||!social){msgEl.textContent='Please fill in your name, email and social handle.';return null}
+    if(!agree){msgEl.textContent='Please agree to the Terms of Service to continue.';return null}
+    msgEl.textContent='';
+    return {
+      name,email,social,
+      company:document.getElementById('inqCompany').value.trim(),
+      target_deadline:document.getElementById('inqDeadline').value||null,
+      message:document.getElementById('inqBrief').value.trim(),
+      attachment_url:pendingAttachmentUrl,
+      addon_titles:Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>addOns[Number(cb.dataset.idx)].title)
+    };
+  }
+
+  async function submitPayment(){
+    const info=collectInquiry();if(!info)return;
+    const btns=[document.getElementById('payPaypalBtn'),document.getElementById('payCardBtn')];
+    btns.forEach(b=>b&&(b.disabled=true));
+    document.getElementById('inquiryMsg').style.color='var(--muted)';
+    document.getElementById('inquiryMsg').textContent='Redirecting to PayPal…';
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        service_id:s.id,
+        addon_titles:info.addon_titles,
+        payment_type:paymentType,
+        customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
+      })});
+      const od=await r.json();
+      if(!r.ok)throw new Error(od?.error||'Unable to start checkout.');
+      const approve=(od.links||[]).find(l=>l.rel==='approve'||l.rel==='payer-action');
+      if(approve?.href){window.location.href=approve.href}
+      else throw new Error('PayPal did not return a checkout link.');
+    }catch(e){
+      document.getElementById('inquiryMsg').style.color='var(--danger)';
+      document.getElementById('inquiryMsg').textContent=e.message||'Something went wrong starting checkout.';
+      btns.forEach(b=>b&&(b.disabled=false));
+    }
+  }
+  document.getElementById('payPaypalBtn')?.addEventListener('click',submitPayment);
+  document.getElementById('payCardBtn')?.addEventListener('click',submitPayment);
+
+  document.getElementById('sendInquiryBtn')?.addEventListener('click',async()=>{
+    const info=collectInquiry();if(!info)return;
+    const btn=document.getElementById('sendInquiryBtn');btn.disabled=true;
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        action:'inquiry_only',
+        service_id:s.id,
+        addon_titles:info.addon_titles,
+        customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
+      })});
+      const rr=await r.json();
+      if(!r.ok)throw new Error(rr?.error||'Unable to send inquiry.');
+      toast('Inquiry sent — the artist will follow up by email.');
+      closeModal();
+    }catch(e){
+      document.getElementById('inquiryMsg').textContent=e.message||'Something went wrong sending your inquiry.';
+      btn.disabled=false;
+    }
+  });
 
   const mb=document.querySelector('[data-modal-member]');
   if(mb)mb.onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
@@ -439,7 +588,11 @@ function showServiceForm(existing=null){
       ${existingAddons.map((ao,i)=>`
         <div class="row addonRow" style="gap:8px">
           <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2">
-          <input class="aoPrice" type="number" placeholder="Price ($)" value="${ao.price||''}" style="flex:1">
+          <select class="aoType" style="flex:1">
+            <option value="fixed" ${(!ao.type||ao.type==='fixed')?'selected':''}>Fixed ($)</option>
+            <option value="percent" ${ao.type==='percent'?'selected':''}>Percentage (%)</option>
+          </select>
+          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price||''}" style="flex:1">
           <button type="button" class="btn removeAddonBtn">×</button>
         </div>
       `).join('')}
@@ -456,15 +609,20 @@ function showServiceForm(existing=null){
   catSelect.onchange=()=>{if(catSelect.value==='__NEW__'){catNewInput.style.display='block';catNewInput.focus()}else{catNewInput.style.display='none'}};
   
   const addonContainer = document.getElementById('addonContainer');
-  const addAddonRow = (title='', price='') => {
+  const addAddonRow = (title='', price='', type='fixed') => {
     const row = document.createElement('div');
     row.className = 'row addonRow';
     row.style.gap = '8px';
-    row.innerHTML = `<input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><input class="aoPrice" type="number" placeholder="Price ($)" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
+    row.innerHTML = `<input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
     row.querySelector('.removeAddonBtn').onclick = () => row.remove();
+    row.querySelector('.aoType').onchange = (e) => { row.querySelector('.aoPrice').placeholder = e.target.value==='percent'?'Percent (%)':'Price ($)'; };
     addonContainer.appendChild(row);
   };
 
+  document.querySelectorAll('.addonRow').forEach(row=>{
+    const typeSel=row.querySelector('.aoType');
+    if(typeSel)typeSel.onchange=(e)=>{row.querySelector('.aoPrice').placeholder=e.target.value==='percent'?'Percent (%)':'Price ($)';};
+  });
   document.querySelectorAll('.removeAddonBtn').forEach(b => b.onclick = (e) => e.target.closest('.addonRow').remove());
   document.getElementById('addAddonRowBtn').onclick = () => addAddonRow();
 
@@ -479,7 +637,8 @@ function showServiceForm(existing=null){
     const add_ons = addonRows.map(r=>{
       const t = r.querySelector('.aoTitle').value.trim();
       const p = parseFloat(r.querySelector('.aoPrice').value);
-      return (t && !isNaN(p)) ? { title: t, price: p } : null;
+      const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
+      return (t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
     }).filter(Boolean);
 
     const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;

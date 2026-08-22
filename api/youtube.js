@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'YOUTUBE_API_KEY is not configured' });
   }
   try {
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(key)}`;
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(key)}`;
     const r = await fetch(url);
     const data = await r.json();
     if (!r.ok) return res.status(r.status).json({ error: data?.error?.message || 'YouTube API request failed' });
@@ -18,7 +18,8 @@ export default async function handler(req, res) {
       title: item.snippet?.title || '',
       description: item.snippet?.description || '',
       publishedAt: item.snippet?.publishedAt || '',
-      channelTitle: item.snippet?.channelTitle || ''
+      channelTitle: item.snippet?.channelTitle || '',
+      viewCount: item.statistics?.viewCount ?? null
     });
   } catch (e) {
     return res.status(500).json({ error: 'Unable to contact YouTube' });
