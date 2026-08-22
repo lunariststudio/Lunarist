@@ -69,19 +69,42 @@ html[data-theme="cyberpink"]{--moon:#ff86c8;--pink:#ff4da6;--line:rgba(255,134,2
 html[data-theme="goldember"]{--moon:#e8cf91;--pink:#ff9e42;--line:rgba(232,207,145,.28);--bg:#0f0d08}
 html[data-theme="emeraldglow"]{--moon:#8ee0ba;--pink:#51c4a0;--line:rgba(142,224,186,.28);--bg:#060f0b}
 html[data-theme="midnight"]{--moon:#8bb2ff;--pink:#a28eff;--line:rgba(139,178,255,.28);--bg:#060912}
+
+/* Lunarist UI polish v3 */
+:root{--ease:cubic-bezier(.22,1,.36,1);--ease-soft:cubic-bezier(.16,1,.3,1)}
+body{background-attachment:fixed;transition:background .6s var(--ease),color .35s var(--ease)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(circle at 50% -10%,rgba(255,255,255,.035),transparent 36%),linear-gradient(120deg,transparent 0%,rgba(201,182,255,.018) 50%,transparent 100%);animation:lunarBreath 12s ease-in-out infinite}
+@keyframes lunarBreath{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
+.nav{background:rgba(8,7,13,.68);box-shadow:0 12px 40px rgba(0,0,0,.12);transition:background .35s var(--ease),box-shadow .35s var(--ease)}
+.nav:hover{background:rgba(8,7,13,.82)}
+.navin{gap:14px}.navlinks{gap:4px}.navbtn{position:relative;transition:color .25s var(--ease),background .25s var(--ease),border-color .25s var(--ease),transform .25s var(--ease)}
+.navbtn:after{content:"";position:absolute;left:18%;right:18%;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--moon),var(--pink));transform:scaleX(0);transform-origin:center;transition:transform .3s var(--ease)}
+.navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
+.nav-commission{color:var(--pink)}
+.nav-tools{display:flex;align-items:center;gap:8px}.lang-switch{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted);padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.08em}.lang-switch span{cursor:pointer;transition:color .2s,opacity .2s}.lang-switch .active{color:var(--text)}.lang-switch .sep{opacity:.35;cursor:default}
+.btn,.card,.panel,.artistcard,.filter,.userchip,.search,.field input,.field textarea,.field select,.stat{transition:transform .32s var(--ease),border-color .32s var(--ease),background .32s var(--ease),box-shadow .32s var(--ease),color .25s var(--ease)}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(0) scale(.98)}
+.card,.panel,.artistcard{will-change:transform}.panel:hover{border-color:rgba(201,182,255,.18);box-shadow:0 18px 55px rgba(0,0,0,.18)}
+.modal{opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility .35s}.modal.open{opacity:1;visibility:visible}.modalbox{transform:translateY(16px) scale(.985);opacity:0;transition:transform .45s var(--ease),opacity .35s var(--ease)}.modal.open .modalbox{transform:none;opacity:1}
+.drawer{opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility .35s}.drawer.open{opacity:1;visibility:visible}.drawerpanel{transform:translateX(28px);transition:transform .45s var(--ease)}.drawer.open .drawerpanel{transform:none}
+.toast{transition:opacity .3s var(--ease),transform .4s var(--ease)}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .65s var(--ease),transform .65s var(--ease)}.reveal.in-view{opacity:1;transform:none}
+::selection{background:rgba(255,134,200,.3);color:#fff}
+@media(max-width:720px){.navin{gap:8px}.nav-tools{margin-left:auto}.userchip{max-width:140px}.userchip span:last-child{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lang-switch{padding:6px 8px}.navlinks.open{box-shadow:0 20px 60px rgba(0,0,0,.4);backdrop-filter:blur(18px)}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.reveal{opacity:1;transform:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="app" id="app">
-<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home">Home</button><button class="navbtn" data-route="discover">Discover</button><button class="navbtn" data-route="services">Services</button><button class="navbtn" data-route="artists">Artists</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none">Admin Studio</button></nav><button class="notif-btn" id="notifToggleBtn" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
+<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
 <div class="notif-popover" id="notifPopover"><div class="notif-header"><b style="font-size:13px">Notifications</b><button id="markNotifsReadBtn" style="background:none;border:none;color:var(--moon);font-size:11px;cursor:pointer">Mark all read</button></div><div class="notif-list" id="notifList"></div></div>
 <main id="view"></main>
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="messages">Messages 💬</button><button class="filter" data-dash="commissions">My Commissions</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button><button class="filter" data-dash="services">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="messages">Messages 💬</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button><button class="filter" data-dash="services">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <script>
@@ -714,7 +737,10 @@ function switchDashTab(tabName) {
   if(btn) btn.classList.add('active');
   const sec = document.getElementById('dash-'+tabName);
   if(sec) sec.classList.add('active');
+  const navCommission=document.getElementById('navCommissionsBtn');
+  if(navCommission) navCommission.classList.toggle('active',tabName==='commissions');
 }
+
 
 async function openDashboard(){
   if(!state.currentUser){openAuth('signin');return}
@@ -1932,7 +1958,20 @@ function updateAccountButton(){
     document.getElementById('accountName').textContent='Guest';
   }
 }
-document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
+
+/* Navigation + language */
+const I18N={en:{home:'Home',discover:'Discover',services:'Services',artists:'Artists',myCommissions:'My Commissions',adminStudio:'Admin Studio',overview:'Overview',messages:'Messages',projects:'My Projects',profile:'Profile'},ja:{home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',overview:'概要',messages:'メッセージ',projects:'マイ・プロジェクト',profile:'プロフィール'}};
+function applyLanguage(lang){
+  const dict=I18N[lang]||I18N.en; document.documentElement.lang=lang==='ja'?'ja':'en'; localStorage.setItem('lunarist_lang',lang);
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(dict[k])el.textContent=dict[k]});
+  document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.classList.toggle('active',el.dataset.lang===lang));
+  document.querySelectorAll('[data-dash]').forEach(el=>{const k={overview:'overview',messages:'messages',commissions:'myCommissions',projects:'projects',profile:'profile',services:'services'}[el.dataset.dash];if(dict[k])el.textContent=dict[k]});
+  document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in-view'));
+}
+function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>applyLanguage(el.dataset.lang));}
+function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
+
+document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('navCommissionsBtn').onclick=()=>{document.getElementById('navlinks').classList.remove('open');if(state.currentUser){openDashboard();setTimeout(()=>switchDashTab('commissions'),40)}else openAuth('signin')};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
 async function capturePaypalReturnIfPresent(){
   const params=new URLSearchParams(location.search);
   const paypalStatus=params.get('paypal');
