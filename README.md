@@ -110,3 +110,15 @@ The frontend keeps a stable anonymous discovery session in localStorage and send
 Apply `supabase/migrations/20260821_lunarist_phase4_recommendations.sql` after the existing Phase 1–3 migrations.
 
 The recommendation RPC excludes projects already seen in the visitor's session and uses deterministic per-session exploration, so two visitors can receive different recommendations without relying on browser-side random ranking.
+
+## Phase 3 Complete — Admin Studio v1.6
+
+Completed remaining admin capabilities:
+- Commission inbox with lifecycle management
+- Internal admin notes on commissions
+- Commission funnel analytics
+- Members directory and account-type management
+- Project/service moderation queue
+- Featured homepage curation
+- Studio settings persistence
+- Admin-only RLS policy for commissions and studio settings

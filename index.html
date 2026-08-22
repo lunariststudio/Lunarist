@@ -624,7 +624,7 @@ async function openAdminStudio(activeTab='members'){
   const sec=document.getElementById('dash-admin'); if(!sec)return;
   sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
   const analytics=await loadDiscoveryAnalytics();
-  const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
+  const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings},{data:commissions}] = await Promise.all([
     supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
     supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
     supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
@@ -632,7 +632,8 @@ async function openAdminStudio(activeTab='members'){
     supabaseClient.from('services').select('*',{count:'exact',head:true}),
     supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
     supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
-    supabaseClient.from('studio_settings').select('key,value').order('key')
+    supabaseClient.from('studio_settings').select('key,value').order('key'),
+    supabaseClient.from('commissions').select('id,service_id,name,email,message,budget,addon_titles,status,paypal_order_id,created_at,admin_notes').order('created_at',{ascending:false}).limit(200)
   ]);
 
   if(pErr || sErr){
@@ -648,10 +649,32 @@ async function openAdminStudio(activeTab='members'){
   const totalPending = pendingProjects.length + pendingServices.length;
 
   const settingsMap = Object.fromEntries((settings||[]).map(x=>[x.key,x.value]));
+  const allCommissions = commissions || [];
+  const newCommissions = allCommissions.filter(c=>['new','contacted','accepted'].includes(c.status));
 
   const getMemberName = (id) => {
     const m = (members||[]).find(x=>x.id===id);
     return m ? (m.display_name || '@'+m.username) : 'Unknown';
+  };
+
+  const commissionRow = c => {
+    const svc = allServices.find(s=>s.id===c.service_id);
+    return `<div class="listitem" style="align-items:flex-start">
+      <div class="grow">
+        <b>${esc(c.name)}</b>
+        <div class="meta">${esc(svc?.title||'Service')} · ${esc(c.email)} · ${new Date(c.created_at).toLocaleString()}</div>
+        <div style="margin-top:6px">${esc(c.message)}</div>
+        ${c.budget?`<div class="meta" style="margin-top:6px">Budget: ${esc(c.budget)}</div>`:''}
+        ${(c.addon_titles||[]).length?`<div class="tags" style="margin-top:6px">${c.addon_titles.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:''}
+        ${c.paypal_order_id?`<div class="meta" style="margin-top:6px">PayPal: ${esc(c.paypal_order_id)}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:150px">
+        <select data-admin-commission-status="${c.id}">
+          ${['new','contacted','accepted','paid','completed','declined','archived'].map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <button class="btn" data-admin-commission-note="${c.id}">Notes</button>
+      </div>
+    </div>`;
   };
 
   const projectRow = p => `
@@ -714,6 +737,7 @@ async function openAdminStudio(activeTab='members'){
       <button class="filter ${activeTab==='overview'?'active':''}" data-studio-tab="overview">Queue (${totalPending})</button>
       <button class="filter ${activeTab==='projects'?'active':''}" data-studio-tab="projects">Projects (${allProjects.length})</button>
       <button class="filter ${activeTab==='services'?'active':''}" data-studio-tab="services">Services (${allServices.length})</button>
+      <button class="filter ${activeTab==='commissions'?'active':''}" data-studio-tab="commissions">Commissions (${allCommissions.length})</button>
       <button class="filter ${activeTab==='members'?'active':''}" data-studio-tab="members">Members (${Number(memberCount||0)})</button>
       <button class="filter ${activeTab==='analytics'?'active':''}" data-studio-tab="analytics">Analytics</button>
       <button class="filter ${activeTab==='settings'?'active':''}" data-studio-tab="settings">Settings</button>
@@ -745,6 +769,15 @@ async function openAdminStudio(activeTab='members'){
       </div>
     </div>
 
+    <div data-studio-panel="commissions" style="${activeTab==='commissions'?'':'display:none'}">
+      <div class="panel">
+        <div class="eyebrow">Commission Inbox</div>
+        <h3>${newCommissions.length} active inquiry${newCommissions.length===1?'':'ies'}</h3>
+        <div class="meta" style="margin-bottom:10px">Manage commission inquiries, payment state, and internal notes.</div>
+        <div>${allCommissions.map(commissionRow).join('') || '<div class="meta">No commission inquiries yet.</div>'}</div>
+      </div>
+    </div>
+
     <div data-studio-panel="members" style="${activeTab==='members'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Members Management</div>
@@ -757,6 +790,16 @@ async function openAdminStudio(activeTab='members'){
         <div class="eyebrow">Discovery Analytics</div>
         <h3>${Number(analytics.total||0)} tracked events</h3>
         <div class="meta">${Object.entries(analytics.counts||{}).map(([k,v])=>esc(k)+': '+v).join(' · ')||'No events yet.'}</div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <div class="eyebrow">Commission funnel</div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">
+          ${['new','contacted','accepted','paid','completed'].map(s=>`<div class="stat"><b>${allCommissions.filter(c=>c.status===s).length}</b><span>${s}</span></div>`).join('')}
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <div class="eyebrow">Featured projects</div>
+        <div class="meta">${(featured||[]).map(f=>esc(f.title)).join(' · ')||'No featured projects.'}</div>
       </div>
     </div>
 
@@ -828,6 +871,19 @@ async function openAdminStudio(activeTab='members'){
       render();
       openAdminStudio('members');
     }
+  });
+
+  sec.querySelectorAll('[data-admin-commission-status]').forEach(el=>el.onchange=async()=>{
+    const r=await supabaseClient.from('commissions').update({status:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.adminCommissionStatus);
+    if(r.error){toast(r.error.message)}else{toast('Commission status updated');openAdminStudio('commissions')}
+  });
+  sec.querySelectorAll('[data-admin-commission-note]').forEach(btn=>btn.onclick=async()=>{
+    const id=btn.dataset.adminCommissionNote;
+    const item=allCommissions.find(x=>x.id===id);
+    const note=prompt('Internal admin notes',item?.admin_notes||'');
+    if(note===null)return;
+    const r=await supabaseClient.from('commissions').update({admin_notes:note.slice(0,4000),updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error){toast(r.error.message)}else{toast('Admin notes saved');openAdminStudio('commissions')}
   });
 
   document.getElementById('saveStudioSettings')?.addEventListener('click',async()=>{
