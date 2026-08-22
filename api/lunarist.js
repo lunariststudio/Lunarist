@@ -1,39 +1,159 @@
-function config(){return{url:(process.env.SUPABASE_URL||"").replace(/\/$/,""),key:process.env.SUPABASE_SERVICE_ROLE_KEY||""}}
-const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at',order:'created_at.desc'},services:{select:'id,owner_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,published,featured,views,created_at,service_projects(project_id)',order:'created_at.desc'}};
-const EVENT_TYPES=['view','like','save','share','open_artist','search'];
-const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { createClient } from '@supabase/supabase-js';
 
-function sanitizeCommission(c){
-  if(!c||typeof c!=='object')return null;
-  const service_id=typeof c.service_id==='string'&&UUID_RE.test(c.service_id)?c.service_id:null;
-  const name=typeof c.name==='string'?c.name.trim().slice(0,100):'';
-  const email=typeof c.email==='string'?c.email.trim().slice(0,160):'';
-  const message=typeof c.message==='string'?c.message.trim().slice(0,4000):'';
-  const budget=typeof c.budget==='string'?c.budget.trim().slice(0,80):'';
-  const addon_titles=Array.isArray(c.addon_titles)?c.addon_titles.filter(x=>typeof x==='string').slice(0,10).map(x=>x.slice(0,120)):[];
-  if(!service_id||!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!message)return null;
-  return{service_id,name,email,message,budget,addon_titles};
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+// Priority given to Service Role Key for administrative actions, fallback to Anon Key
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, serviceKey);
+
+export default async function handler(req, res) {
+  const { method } = req;
+  const { resource, session_id, limit } = req.query;
+
+  // Set CORS and JSON Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // --- GET REQUESTS ---
+  if (method === 'GET') {
+    try {
+      if (resource === 'profiles') {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, role, bio, avatar_url, skills, available, is_admin, account_type, tos, theme')
+          .order('display_name');
+
+        if (error) throw error;
+        return res.status(200).json(data || []);
+      }
+
+      if (resource === 'projects') {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('id, owner_id, title, category, tags, views, likes, created_at, description, thumbnail_url, media_url, media_type, published, status, featured')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json(data || []);
+      }
+
+      if (resource === 'services') {
+        const { data, error } = await supabase
+          .from('services')
+          .select('id, owner_id, artist_id, title, category, tags, price_from, delivery_time, thumbnail_url, views, created_at, description, add_ons, status, published, service_projects(project_id)')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json(data || []);
+      }
+
+      if (resource === 'recommendations') {
+        const fetchLimit = parseInt(limit, 10) || 5;
+
+        if (session_id) {
+          const { data, error } = await supabase
+            .from('discovery_events')
+            .select('project_id, category, event_type')
+            .eq('session_id', session_id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          if (!error && data && data.length > 0) {
+            const projectScores = {};
+            data.forEach((evt) => {
+              const pid = evt.project_id;
+              if (!pid) return;
+              const weight = evt.event_type === 'like' ? 4 : evt.event_type === 'save' ? 3 : 1;
+              projectScores[pid] = (projectScores[pid] || 0) + weight;
+            });
+
+            const sortedProjectIds = Object.keys(projectScores).sort(
+              (a, b) => projectScores[b] - projectScores[a]
+            );
+
+            const recommendedObjects = sortedProjectIds.slice(0, fetchLimit).map((pid) => ({
+              project_id: pid,
+              score: projectScores[pid],
+            }));
+
+            return res.status(200).json(recommendedObjects);
+          }
+        }
+
+        // Fallback: Return top viewed published projects
+        const { data: topProjects, error: topErr } = await supabase
+          .from('projects')
+          .select('id, views')
+          .eq('published', true)
+          .order('views', { ascending: false })
+          .limit(fetchLimit);
+
+        if (topErr) throw topErr;
+
+        const fallbackRecs = (topProjects || []).map((p) => ({
+          project_id: p.id,
+          score: p.views || 0,
+        }));
+
+        return res.status(200).json(fallbackRecs);
+      }
+
+      return res.status(400).json({ error: 'Invalid resource specified' });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'Database query failed' });
+    }
+  }
+
+  // --- POST REQUESTS ---
+  if (method === 'POST') {
+    try {
+      const body = req.body || {};
+
+      // Administrative Member Toggle Action
+      if (body.action === 'toggle-member') {
+        const { targetId, nextType } = body;
+
+        if (!targetId || !nextType) {
+          return res.status(400).json({ error: 'Missing targetId or nextType' });
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ account_type: nextType, updated_at: new Date().toISOString() })
+          .eq('id', targetId)
+          .select();
+
+        if (error) throw error;
+        return res.status(200).json({ success: true, data });
+      }
+
+      // Event Tracking Action
+      if (body.event) {
+        const { session_id, project_id, event_type, category, metadata } = body.event;
+
+        const { data, error } = await supabase.from('discovery_events').insert({
+          session_id: session_id || 'guest',
+          project_id: project_id || null,
+          event_type: event_type || 'view',
+          category: category || null,
+          metadata: metadata || {},
+          created_at: new Date().toISOString(),
+        });
+
+        if (error) throw error;
+        return res.status(200).json({ success: true, data });
+      }
+
+      return res.status(400).json({ error: 'Unrecognized action or event payload' });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'POST execution failed' });
+    }
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
 }
-
-function sanitizeEvent(event){if(!event||typeof event!=='object')return null;const session_id=typeof event.session_id==='string'?event.session_id.slice(0,128):null;if(!session_id)return null;const event_type=typeof event.event_type==='string'?event.event_type:null;if(!EVENT_TYPES.includes(event_type))return null;let project_id=null;if(event.project_id!=null){if(typeof event.project_id!=='string'||!UUID_RE.test(event.project_id))return null;project_id=event.project_id}const category=typeof event.category==='string'?event.category.slice(0,64):null;const tags=event.metadata&&Array.isArray(event.metadata.tags)?event.metadata.tags.filter(t=>typeof t==='string').slice(0,20).map(t=>t.slice(0,64)):[];return{session_id,project_id,event_type,category,metadata:{tags}}}
-export default async function handler(req,res){const {url,key}=config();if(!url||!key)return res.status(503).json({error:'Supabase server credentials are not configured.'});const q=req.url.includes('?')?req.url.slice(req.url.indexOf('?')+1):'';const params=new URLSearchParams(q);const resource=params.get('resource');try{if(req.method==='GET'){
-  if(resource==='recommendations'){
-    const sessionId=params.get('session_id')||'';
-    if(!sessionId)return res.status(400).json({error:'session_id is required'});
-    const limit=Math.min(20,Math.max(1,Number(params.get('limit')||5)));
-    const r=await fetch(`${url}/rest/v1/rpc/get_recommendations`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({p_session_id:sessionId,p_limit:limit})});
-    const text=await r.text();res.status(r.status).setHeader('Content-Type','application/json');return res.send(text);
-  }
-  const def=RESOURCES[resource];
-  if(!def)return res.status(400).json({error:'Use resource=profiles, resource=projects, resource=services, or resource=recommendations'});
-  const out=new URLSearchParams({select:def.select,order:def.order});if(resource==='projects'||resource==='services')out.set('published','eq.true');if(resource==='profiles')out.set('or','(account_type.eq.member,is_admin.eq.true)');
-  const r=await fetch(`${url}/rest/v1/${resource}?${out}`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
-  const text=await r.text();res.status(r.status).setHeader('Content-Type','application/json');return res.send(text)
-}if(req.method==='POST'){
-  if((req.body||{}).commission){
-    const c=sanitizeCommission(req.body.commission);
-    if(!c)return res.status(400).json({error:'Invalid commission inquiry'});
-    const r=await fetch(`${url}/rest/v1/commissions`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(c)});
-    const text=await r.text();res.status(r.status);return text?res.send(text):res.end();
-  }
-  const event=sanitizeEvent((req.body||{}).event);if(!event)return res.status(400).json({error:'Invalid event'});const r=await fetch(`${url}/rest/v1/discovery_events`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(event)});const text=await r.text();res.status(r.status);return text?res.send(text):res.end()}return res.status(405).json({error:'Method not allowed'})}catch(e){console.error(e);return res.status(500).json({error:'Supabase request failed'})}}
