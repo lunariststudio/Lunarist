@@ -733,7 +733,7 @@ async function refreshUser(){
 }
 
 function switchDashTab(tabName) {
-  const valid = ['overview','messages','commissions','projects','profile','services'];
+  const valid = ['overview','messages','projects','profile','services'];
   if(!valid.includes(tabName)) tabName='overview';
   document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
   document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
