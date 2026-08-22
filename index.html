@@ -11,6 +11,16 @@
 .bullet-item{display:flex;align-items:flex-start;gap:10px;margin-top:6px;margin-bottom:6px}.bullet-dot{color:var(--moon);font-size:22px;line-height:1;user-select:none}
 .addon-box{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:12px;margin-top:6px}
 .addon-box label{font-size:13px;text-transform:none;letter-spacing:normal;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px}
+
+/* Enhanced Profile TOS Card Styling */
+.profile-tos-card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:20px;padding:24px;margin-top:12px;position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:border-color .3s}
+.profile-tos-card:hover{border-color:rgba(201,182,255,.3)}
+.profile-tos-body{font-size:14px;line-height:1.75;color:rgba(247,244,255,.88);max-height:280px;overflow-y:auto;padding-right:8px}
+.profile-tos-body::-webkit-scrollbar{width:5px}
+.profile-tos-body::-webkit-scrollbar-track{background:transparent}
+.profile-tos-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
+.profile-tos-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,182,255,.12);border:1px solid rgba(201,182,255,.25);color:var(--moon);font:700 11px/1 IBM Plex Mono,monospace;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;border-radius:999px}
+
 .tos-box{margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);max-height:300px;overflow-y:auto;font-size:13px;color:var(--muted);line-height:1.6}
 
 /* Theme Color Selector Grid */
@@ -355,7 +365,9 @@ function profilePage(m){
   const ss=data.services.filter(s=>s.member===m.id);
   applyTheme(m.theme || 'moonlight');
   
-  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy profile link</button></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt=""><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div>${String(m.tos||'').trim()?`<div class="sectionhead" style="margin-top:38px"><div><h2>Terms of Service (TOS)</h2><p>Client policies & commission rules</p></div></div><div class="panel tos-box" style="margin-top:0"><div>${formatDescription(String(m.tos||'').trim())}</div></div>`:''}</section></div>`
+  const formattedTos = String(m.tos||'').trim();
+
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy profile link</button></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt=""><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body">${formatDescription(formattedTos)}</div></div>`:''}</section></div>`
 }
 
 function render(){
@@ -1193,8 +1205,6 @@ async function loadData(){
       is_admin:!!x.is_admin
     }));
 
-     // The public profiles API may omit TOS for legacy/security reasons.
-     // Fetch the public TOS field directly so /username profiles can display it.
      try {
        const {data: publicTosRows, error: publicTosError} = await supabaseClient
          .from('profiles')
@@ -1206,9 +1216,7 @@ async function loadData(){
            if (tosById.has(m.id)) m.tos = tosById.get(m.id);
          });
        }
-     } catch(e) {
-       // Keep API-provided TOS if the direct public query is unavailable.
-     }
+     } catch(e) {}
     
     data.projects=(Array.isArray(pp)?pp:[]).map(x=>({
       id:x.id,
@@ -1239,7 +1247,6 @@ async function loadData(){
     await refreshRecommendations();
     render();
 
-    // Fetch live YouTube view counts in background for all projects
     data.projects.forEach(async (p) => {
       const vid = extractYoutubeId(p.media_url) || extractYoutubeId(p.video) || extractYoutubeId(p.thumbnail_url);
       if (vid) {
