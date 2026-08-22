@@ -80,7 +80,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .navin{gap:14px}.navlinks{gap:4px}.navbtn{position:relative;transition:color .25s var(--ease),background .25s var(--ease),border-color .25s var(--ease),transform .25s var(--ease)}
 .navbtn:after{content:"";position:absolute;left:18%;right:18%;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--moon),var(--pink));transform:scaleX(0);transform-origin:center;transition:transform .3s var(--ease)}
 .navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
-.nav-commission{color:var(--pink)}
+.nav-commission{color:var(--pink)} .navbtn.nav-commission.active{background:rgba(255,134,200,.12);border-color:rgba(255,134,200,.35);color:var(--pink);box-shadow:0 0 0 1px rgba(255,134,200,.08) inset}
 .nav-tools{display:flex;align-items:center;gap:8px}.lang-switch{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted);padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.08em}.lang-switch span{cursor:pointer;transition:color .2s,opacity .2s}.lang-switch .active{color:var(--text)}.lang-switch .sep{opacity:.35;cursor:default}
 .btn,.card,.panel,.artistcard,.filter,.userchip,.search,.field input,.field textarea,.field select,.stat{transition:transform .32s var(--ease),border-color .32s var(--ease),background .32s var(--ease),box-shadow .32s var(--ease),color .25s var(--ease)}
 .btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(0) scale(.98)}
@@ -104,7 +104,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="messages">Messages 💬</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button><button class="filter" data-dash="services">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="commissions" data-i18n="myCommissions">My Commissions</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <script>
@@ -601,6 +601,7 @@ function render(){
     if(pm && pm.account_type!=='member' && !pm.is_admin && (state.currentUser?.id===pm.id || !!state.currentMember?.is_admin)) renderPublicClientDashboard(pm.id);
   }
   if(state.route==='admin') renderAdminStudioPage();
+  applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
   window.scrollTo({top:0,behavior:'instant'})
 }
 
@@ -731,18 +732,20 @@ async function refreshUser(){
 }
 
 function switchDashTab(tabName) {
-  document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));
-  const btn = document.querySelector(`[data-dash="${tabName}"]`);
-  if(btn) btn.classList.add('active');
-  const sec = document.getElementById('dash-'+tabName);
-  if(sec) sec.classList.add('active');
+  const valid = ['overview','messages','commissions','projects','profile','services'];
+  if(!valid.includes(tabName)) tabName='overview';
+  document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
+  document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
   const navCommission=document.getElementById('navCommissionsBtn');
-  if(navCommission) navCommission.classList.toggle('active',tabName==='commissions');
+  if(navCommission) navCommission.classList.toggle('active', tabName==='commissions');
+  const drawer=document.getElementById('drawer');
+  if(drawer) drawer.dataset.activeTab=tabName;
+  applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
 }
 
 
-async function openDashboard(){
+
+async function openDashboard(initialTab='overview'){
   if(!state.currentUser){openAuth('signin');return}
   await refreshUser();
   await loadUserConversations();
@@ -890,6 +893,8 @@ function renderClientCommissionsTab(){
     await openDashboard();
     switchDashTab('commissions');
   });
+  switchDashTab(initialTab);
+  applyLanguage(state.language || 'en');
 }
 
 function renderMessagesTab() {
@@ -1960,18 +1965,148 @@ function updateAccountButton(){
 }
 
 /* Navigation + language */
-const I18N={en:{home:'Home',discover:'Discover',services:'Services',artists:'Artists',myCommissions:'My Commissions',adminStudio:'Admin Studio',overview:'Overview',messages:'Messages',projects:'My Projects',profile:'Profile'},ja:{home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',overview:'概要',messages:'メッセージ',projects:'マイ・プロジェクト',profile:'プロフィール'}};
-function applyLanguage(lang){
-  const dict=I18N[lang]||I18N.en; document.documentElement.lang=lang==='ja'?'ja':'en'; localStorage.setItem('lunarist_lang',lang);
-  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(dict[k])el.textContent=dict[k]});
-  document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.classList.toggle('active',el.dataset.lang===lang));
-  document.querySelectorAll('[data-dash]').forEach(el=>{const k={overview:'overview',messages:'messages',commissions:'myCommissions',projects:'projects',profile:'profile',services:'services'}[el.dataset.dash];if(dict[k])el.textContent=dict[k]});
-  document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in-view'));
+const I18N={
+  en:{
+    home:'Home',discover:'Discover',services:'Services',artists:'Artists',myCommissions:'My Commissions',adminStudio:'Admin Studio',
+    overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',servicesTab:'Services',
+    memberSpace:'Member space',yourLunarist:'Your Lunarist',directMessaging:'Direct Messaging',activeCollaborations:'Active Collaborations',
+    myServices:'My services',myProjects:'My projects',editProfile:'Edit profile',clientDashboard:'Client Dashboard',
+    myCommissionsAndReviews:'My commissions & reviews',trackCommissions:'Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.',
+    welcomeBack:'Welcome back',overviewDescription:'Your profile and projects are stored in Supabase. Published work appears in Discover.',
+    hireCollective:'Hire the collective',servicesTitle:'Services.',servicesDescription:'Book Lunarist members directly for commissions and packages.',
+    discoverWork:'Discover work.',discoverDescription:'Lunarist mixes relevance with exploration, so your feed can introduce you to artists and disciplines you would not normally click.',
+    findVoice:'Find the right creative voice.',meetArtists:'Meet the artists.',forYou:'For you',curated:'Curated from what you explore.',
+    selectedWork:'Selected work',publishedProjects:'published projects',listed:'listed',
+    noProjects:'No projects yet.',noServices:'No services yet.',noCommissions:'No commissions yet.',noConversations:'No conversations yet.',
+    noProjectsDesc:'Publish your first piece of work.',noServicesDesc:'List a service artists can hire you for.',noCommissionsDesc:'When you commission a Lunarist artist, your orders and completed work will appear here.',
+    noConversationsDesc:'Message an artist from their profile or inquiry on a service to start collaborating.',
+    createManage:'Create and manage work',offerPackages:'Offer commissions & packages',
+    profileColor:'Profile Color Scheme',selectTheme:'Select a color theme accent for your profile and space.',
+    terms:'Terms of Service (TOS)',availability:'Availability',available:'Available',booked:'Booked',saveProfile:'Save profile',signOut:'Sign out',
+    changePhoto:'Change photo',displayName:'Display name',username:'Username',role:'Role',bio:'Bio',
+    attachFiles:'Attach files up to 10MB · Drop a file into the chat',attachment:'Attachment',
+    automaticPricing:'Automatic price calculation',baseService:'Base service',automaticTotal:'Automatic total',
+    fullAmount:'Full Amount',deposit:'50% Deposit',copyLink:'Copy link',close:'Close',cancel:'Cancel',approve:'Approve',edit:'Edit',delete:'Delete',
+    clientReviews:'Client reviews',reviewsFromClients:'Reviews from clients',reviewCompleted:'Review your completed commission',publishReview:'Publish review',
+    admin:'Administrator',member:'Lunarist Member',client:'Client',availableForCommissions:'Available for commissions',currentlyBooked:'Currently booked',
+    inquire:'Inquire',chat:'Chat',search:'Search',menu:'Menu',guest:'Guest',
+    activeSession:'Active Session',startedConversation:'Started conversation',loading:'Loading…',loadingReviews:'Loading reviews…',loadingCommissions:'Loading your commissions…'
+  },
+  ja:{
+    home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',
+    overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',servicesTab:'サービス',
+    memberSpace:'メンバースペース',yourLunarist:'あなたのLunarist',directMessaging:'ダイレクトメッセージ',activeCollaborations:'進行中のコラボレーション',
+    myServices:'マイサービス',myProjects:'マイプロジェクト',editProfile:'プロフィールを編集',clientDashboard:'クライアントダッシュボード',
+    myCommissionsAndReviews:'マイ・コミッションとレビュー',trackCommissions:'すべてのコミッションを確認し、納品を承認して、完了後にレビューを投稿できます。',
+    welcomeBack:'おかえりなさい',overviewDescription:'プロフィールとプロジェクトはSupabaseに保存されています。公開作品は「発見」に表示されます。',
+    hireCollective:'クリエイティブチームに依頼',servicesTitle:'サービス。',servicesDescription:'Lunaristメンバーへ直接コミッションやパッケージを依頼できます。',
+    discoverWork:'作品を発見。',discoverDescription:'Lunaristは関連性と探索を組み合わせ、普段ならクリックしないアーティストや分野との出会いを届けます。',
+    findVoice:'あなたに合うクリエイティブな才能を探す。',meetArtists:'アーティストを見る。',forYou:'あなたへのおすすめ',curated:'あなたの閲覧内容からキュレーションしています。',
+    selectedWork:'注目の作品',publishedProjects:'公開プロジェクト',listed:'件掲載',
+    noProjects:'プロジェクトはまだありません。',noServices:'サービスはまだありません。',noCommissions:'コミッションはまだありません。',noConversations:'会話はまだありません。',
+    noProjectsDesc:'最初の作品を公開しましょう。',noServicesDesc:'依頼を受けられるサービスを登録しましょう。',noCommissionsDesc:'Lunaristのアーティストへ依頼すると、注文と完了した作品がここに表示されます。',
+    noConversationsDesc:'アーティストのプロフィールまたはサービスの問い合わせからメッセージを送り、コラボレーションを始めましょう。',
+    createManage:'作品を作成・管理',offerPackages:'コミッションとパッケージを提供',
+    profileColor:'プロフィールのカラースキーム',selectTheme:'プロフィールとスペースのアクセントカラーを選択します。',
+    terms:'利用規約 (TOS)',availability:'受付状況',available:'受付中',booked:'予約済み',saveProfile:'プロフィールを保存',signOut:'サインアウト',
+    changePhoto:'写真を変更',displayName:'表示名',username:'ユーザー名',role:'役割',bio:'自己紹介',
+    attachFiles:'最大10MBのファイルを添付 · チャットへドラッグ＆ドロップ',attachment:'添付ファイル',
+    automaticPricing:'自動価格計算',baseService:'基本サービス',automaticTotal:'自動合計',fullAmount:'全額',deposit:'50%デポジット',copyLink:'リンクをコピー',close:'閉じる',cancel:'キャンセル',approve:'承認',edit:'編集',delete:'削除',
+    clientReviews:'クライアントレビュー',reviewsFromClients:'クライアントからのレビュー',reviewCompleted:'完了したコミッションをレビュー',publishReview:'レビューを公開',
+    admin:'管理者',member:'Lunaristメンバー',client:'クライアント',availableForCommissions:'コミッション受付中',currentlyBooked:'現在予約済み',
+    inquire:'問い合わせ',chat:'チャット',search:'検索',menu:'メニュー',guest:'ゲスト',activeSession:'アクティブセッション',startedConversation:'会話を開始しました',loading:'読み込み中…',loadingReviews:'レビューを読み込み中…',loadingCommissions:'コミッションを読み込み中…'
+  }
+};
+
+const UI_TRANSLATIONS={
+  en:{
+    'A creative network by Lunarist Studio':'A creative network by Lunarist Studio','Creative network · 2026':'Creative network · 2026',
+    'Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.':'Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.',
+    'Every member owns their profile and projects. Clients can discover people by discipline, style and availability.':'Every member owns their profile and projects. Clients can discover people by discipline, style and availability.',
+    'Explore Lunarist':'Explore Lunarist','Explore the work':'Explore the work','Meet our artists':'Meet our artists.','Fresh published work from the studio.':'Fresh published work from the studio.',
+    'Discover work.':'Discover work.','Find the right creative voice.':'Find the right creative voice.','Curated from what you explore.':'Curated from what you explore.',
+    'Hire the collective':'Hire the collective','Book Lunarist members directly for commissions and packages.':'Book Lunarist members directly for commissions and packages.',
+    'Edit profile':'Edit profile','Create and manage work':'Create and manage work','Offer commissions & packages':'Offer commissions & packages','Direct Messaging':'Direct Messaging','Active Collaborations':'Active Collaborations',
+    'Client Dashboard':'Client Dashboard','My commissions & reviews':'My commissions & reviews','Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.':'Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.',
+    'Automatic price calculation':'Automatic price calculation','Base service':'Base service','Full Amount':'Full Amount','50% Deposit':'50% Deposit','Add-ons & Custom Options':'Add-ons & Custom Options',
+    'Client reviews':'Client reviews','Reviews from clients':'Reviews from clients','Loading reviews…':'Loading reviews…','Loading your commissions…':'Loading your commissions…',
+    'Attach files up to 10MB · Drop a file into the chat':'Attach files up to 10MB · Drop a file into the chat','Started conversation':'Started conversation',
+    'Available for commissions':'Available for commissions','Currently booked':'Currently booked','No published projects yet.':'No published projects yet.','No services listed yet.':'No services listed yet.',
+    'Selected work':'Selected work','Services':'Services','Terms of Service':'Terms of Service','Artist Policies':'Artist Policies','Profile Color Scheme':'Profile Color Scheme',
+    'Select a color theme accent for your profile and space.':'Select a color theme accent for your profile and space.',
+    'JPG or PNG, square works best.':'JPG or PNG, square works best.','Change photo':'Change photo','Display name':'Display name','Username':'Username','Role':'Role','Bio':'Bio','Availability':'Availability',
+    'Save profile':'Save profile','Sign out':'Sign out','No commissions yet.':'No commissions yet.','When you commission a Lunarist artist, your orders and completed work will appear here.':'When you commission a Lunarist artist, your orders and completed work will appear here.',
+    'No conversations yet.':'No conversations yet.','Message an artist from their profile or inquiry on a service to start collaborating.':'Message an artist from their profile or inquiry on a service to start collaborating.',
+    'No projects yet.':'No projects yet.','Publish your first piece of work.':'Publish your first piece of work.','No services yet.':'No services yet.','List a service artists can hire you for.':'List a service artists can hire you for.',
+    'Search services, artists…':'Search services, artists…','Search projects, artists…':'Search projects, artists…','Loading commission status…':'Loading commission status…'
+  },
+  ja:{
+    'A creative network by Lunarist Studio':'Lunarist Studioによるクリエイティブネットワーク','Creative network · 2026':'クリエイティブネットワーク · 2026',
+    'Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.':'Lunaristは、すべてのアーティストが作品を公開し、すべてのプロジェクトを発見でき、訪れる人それぞれに異なるクリエイティブ体験を届けるポートフォリオです。',
+    'Every member owns their profile and projects. Clients can discover people by discipline, style and availability.':'すべてのメンバーがプロフィールと作品を管理します。クライアントは分野、スタイル、受付状況から才能を探せます。',
+    'Explore Lunarist':'Lunaristを見る','Explore the work':'作品を見る','Meet our artists':'アーティストを見る。','Fresh published work from the studio.':'スタジオから公開された最新作品。',
+    'Discover work.':'作品を発見。','Find the right creative voice.':'あなたに合うクリエイティブな才能を探す。','Curated from what you explore.':'あなたの閲覧内容からキュレーションしています。',
+    'Hire the collective':'クリエイティブチームに依頼','Book Lunarist members directly for commissions and packages.':'Lunaristメンバーへ直接コミッションやパッケージを依頼できます。',
+    'Edit profile':'プロフィールを編集','Create and manage work':'作品を作成・管理','Offer commissions & packages':'コミッションとパッケージを提供','Direct Messaging':'ダイレクトメッセージ','Active Collaborations':'進行中のコラボレーション',
+    'Client Dashboard':'クライアントダッシュボード','My commissions & reviews':'マイ・コミッションとレビュー','Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.':'すべてのコミッションを確認し、納品を承認して、完了後にレビューを投稿できます。',
+    'Automatic price calculation':'自動価格計算','Base service':'基本サービス','Full Amount':'全額','50% Deposit':'50%デポジット','Add-ons & Custom Options':'追加オプション',
+    'Client reviews':'クライアントレビュー','Reviews from clients':'クライアントからのレビュー','Loading reviews…':'レビューを読み込み中…','Loading your commissions…':'コミッションを読み込み中…',
+    'Attach files up to 10MB · Drop a file into the chat':'最大10MBのファイルを添付 · チャットへドラッグ＆ドロップ','Started conversation':'会話を開始しました',
+    'Available for commissions':'コミッション受付中','Currently booked':'現在予約済み','No published projects yet.':'公開された作品はまだありません。','No services listed yet.':'サービスはまだ登録されていません。',
+    'Selected work':'注目の作品','Services':'サービス','Terms of Service':'利用規約','Artist Policies':'アーティストポリシー','Profile Color Scheme':'プロフィールのカラースキーム',
+    'Select a color theme accent for your profile and space.':'プロフィールとスペースのアクセントカラーを選択します。',
+    'JPG or PNG, square works best.':'JPGまたはPNG、正方形がおすすめです。','Change photo':'写真を変更','Display name':'表示名','Username':'ユーザー名','Role':'役割','Bio':'自己紹介','Availability':'受付状況',
+    'Save profile':'プロフィールを保存','Sign out':'サインアウト','No commissions yet.':'コミッションはまだありません。','When you commission a Lunarist artist, your orders and completed work will appear here.':'Lunaristのアーティストへ依頼すると、注文と完了した作品がここに表示されます。',
+    'No conversations yet.':'会話はまだありません。','Message an artist from their profile or inquiry on a service to start collaborating.':'アーティストのプロフィールまたはサービスの問い合わせからメッセージを送り、コラボレーションを始めましょう。',
+    'No projects yet.':'プロジェクトはまだありません。','Publish your first piece of work.':'最初の作品を公開しましょう。','No services yet.':'サービスはまだありません。','List a service artists can hire you for.':'依頼を受けられるサービスを登録しましょう。',
+    'Search services, artists…':'サービス、アーティストを検索…','Search projects, artists…':'プロジェクト、アーティストを検索…','Loading commission status…':'コミッション状況を読み込み中…'
+  }
+};
+
+function translateInterface(lang){
+  const en=UI_TRANSLATIONS.en||{};
+  const ja=UI_TRANSLATIONS.ja||{};
+  const target=lang==='ja'?ja:en;
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node=>{
+    const parent=node.parentElement;
+    if(!parent || ['SCRIPT','STYLE','TEXTAREA','INPUT'].includes(parent.tagName) || parent.closest('script,style,textarea,input')) return;
+    const raw=node.nodeValue; const key=raw.trim();
+    if(!key) return;
+    let translated=target[key];
+    if(!translated){
+      const keys=Object.keys(en);
+      for(const k of keys){
+        if(lang==='ja' && en[k]===key){translated=ja[k];break;}
+        if(lang==='en' && ja[k]===key){translated=en[k];break;}
+      }
+    }
+    if(translated && translated!==key) node.nodeValue=raw.replace(key,translated);
+  });
+  document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{
+    const key=el.getAttribute('placeholder');
+    if(target[key]) el.setAttribute('placeholder',target[key]);
+    else { for(const k of Object.keys(en)){ if(lang==='ja' && en[k]===key){el.setAttribute('placeholder',ja[k]);break;} if(lang==='en' && ja[k]===key){el.setAttribute('placeholder',en[k]);break;} } }
+  });
+  document.querySelectorAll('[title]').forEach(el=>{
+    const key=el.getAttribute('title');
+    if(target[key]) el.setAttribute('title',target[key]);
+    else { for(const k of Object.keys(en)){ if(lang==='ja' && en[k]===key){el.setAttribute('title',ja[k]);break;} if(lang==='en' && ja[k]===key){el.setAttribute('title',en[k]);break;} } }
+  });
 }
-function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>applyLanguage(el.dataset.lang));}
+function applyLanguage(lang){
+  const safe=I18N[lang]?lang:'en'; state.language=safe;
+  const dict=I18N[safe]; document.documentElement.lang=safe==='ja'?'ja':'en'; localStorage.setItem('lunarist_lang',safe);
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(dict[k])el.textContent=dict[k]});
+  document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.classList.toggle('active',el.dataset.lang===safe));
+  document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in-view'));
+  translateInterface(safe);
+}
+function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>{applyLanguage(el.dataset.lang);render();});}
 function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
 
-document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('navCommissionsBtn').onclick=()=>{document.getElementById('navlinks').classList.remove('open');if(state.currentUser){openDashboard();setTimeout(()=>switchDashTab('commissions'),40)}else openAuth('signin')};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
+document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');if(state.currentUser){await openDashboard('commissions');}else openAuth('signin')};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
 async function capturePaypalReturnIfPresent(){
   const params=new URLSearchParams(location.search);
   const paypalStatus=params.get('paypal');
