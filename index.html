@@ -65,7 +65,14 @@ const RESERVED_ROUTES=['discover','artists','services','admin','api'];
 function pathForRoute(route){if(route==='home')return '/';if(route==='discover')return '/discover';if(route==='artists')return '/artists';if(route==='services')return '/services';if(route==='admin')return '/admin';if(route.startsWith('member:')){const m=member(route.split(':')[1]);return m?.username?('/'+m.username):'/artists'}return '/'}
 function goRoute(route,replace){state.route=route;const path=pathForRoute(route);if(location.pathname!==path){history[replace?'replaceState':'pushState']({route},'',path)}render()}
 function routeFromPath(){const seg=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,''));if(!seg)return 'home';if(seg==='discover')return 'discover';if(seg==='artists')return 'artists';if(seg==='services')return 'services';if(seg==='admin')return 'admin';if(RESERVED_ROUTES.includes(seg.toLowerCase()))return 'home';const m=memberByUsername(seg);return m?'member:'+m.id:'home'}
-function extractYoutubeId(url){if(!url)return null;const s=String(url).trim();let m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);if(m)return m[1];if(/^[A-Za-z0-9_-]{11}$/.test(s))return s;return null}
+function extractYoutubeId(url){
+  if(!url) return null;
+  const s = String(url).trim();
+  let m = s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  if(m) return m[1];
+  if(/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+  return null;
+}
 function embedToWatchUrl(u){const m=String(u||'').match(/embed\/([A-Za-z0-9_-]{11})/);return m?('https://youtu.be/'+m[1]):''}
 window.addEventListener('popstate',()=>{state.route=routeFromPath();render()});
 async function uploadProjectFile(file,kind){if(!file)return null;const ext=(file.name.split('.').pop()||'bin').toLowerCase(),path=`${state.currentUser.id}/${crypto.randomUUID()}-${kind}.${ext}`;const up=await supabaseClient.storage.from('project-media').upload(path,file,{upsert:false,contentType:file.type||undefined});if(up.error)throw up.error;const pub=supabaseClient.storage.from('project-media').getPublicUrl(path);return pub.data.publicUrl}
@@ -863,15 +870,16 @@ async function loadData(){
     await refreshRecommendations();
     render();
 
-    // Fetch live YouTube view counts in background
+    // Fetch live YouTube view counts in background for all projects
     data.projects.forEach(async (p) => {
-      const vid = extractYoutubeId(p.media_url || p.video);
+      const vid = extractYoutubeId(p.media_url) || extractYoutubeId(p.video) || extractYoutubeId(p.thumbnail_url);
       if (vid) {
         try {
           const r = await fetch('/api/youtube?videoId=' + encodeURIComponent(vid));
           const res = await r.json();
-          if (res && res.viewCount !== undefined) {
+          if (res && res.viewCount !== undefined && res.viewCount !== null) {
             p.views = Number(res.viewCount);
+            supabaseClient.from('projects').update({ views: p.views }).eq('id', p.id).then(() => {});
             render();
           }
         } catch(e) {}
