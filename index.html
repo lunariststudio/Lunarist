@@ -28,6 +28,7 @@ html[data-theme="emeraldglow"]{--moon:#8ee0ba;--pink:#51c4a0;--line:rgba(142,224
 html[data-theme="midnight"]{--moon:#8bb2ff;--pink:#a28eff;--line:rgba(139,178,255,.28);--bg:#060912}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -748,11 +749,55 @@ function showProjectForm(existing=null){
   if(existing)document.getElementById('deleteProject').onclick=async()=>{if(!confirm('Delete this project?'))return;const r=await supabaseClient.from('projects').delete().eq('id',existing.id).eq('owner_id',state.currentUser.id);if(r.error){toast(r.error.message);return}toast('Project deleted');await loadData();openDashboard()}
 }
 
-async function loadDiscoveryAnalytics(){
-  const {data,error}=await supabaseClient.from('discovery_events').select('event_type,project_id,created_at').order('created_at',{ascending:false}).limit(1000);
-  if(error)return {counts:{},total:0,error:error.message};
-  const counts={};(data||[]).forEach(e=>counts[e.event_type]=(counts[e.event_type]||0)+1);
-  return {counts,total:(data||[]).length};
+async function loadAdvancedAnalytics(allProjects,allServices){
+  const since=new Date(Date.now()-14*86400000).toISOString();
+  const [{data:events,error:evErr},{data:commissions,error:coErr}]=await Promise.all([
+    supabaseClient.from('discovery_events').select('event_type,created_at').gte('created_at',since).order('created_at',{ascending:true}).limit(5000),
+    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000)
+  ]);
+  if(evErr||coErr)return {error:(evErr||coErr).message};
+
+  // --- Engagement trend: daily view/like/save counts for the last 14 days ---
+  const days=[];
+  for(let i=13;i>=0;i--){const d=new Date(Date.now()-i*86400000);days.push(d.toISOString().slice(0,10))}
+  const trend=Object.fromEntries(days.map(d=>[d,{view:0,like:0,save:0}]));
+  (events||[]).forEach(e=>{
+    const day=String(e.created_at||'').slice(0,10);
+    if(trend[day]&&trend[day][e.event_type]!==undefined)trend[day][e.event_type]++;
+  });
+
+  // --- Revenue: what was actually charged per commission ---
+  const collected=c=>c.payment_type==='deposit'?Number(c.deposit_amount||0):Number(c.total_amount||0);
+  const rows=commissions||[];
+  const paid=rows.filter(c=>c.status==='paid'||c.status==='completed');
+  const pending=rows.filter(c=>['new','contacted','accepted'].includes(c.status));
+  const totalRevenue=paid.reduce((n,c)=>n+collected(c),0);
+  const pendingRevenue=pending.reduce((n,c)=>n+collected(c),0);
+  const depositCount=paid.filter(c=>c.payment_type==='deposit').length;
+  const fullCount=paid.filter(c=>c.payment_type!=='deposit').length;
+  const conversionRate=rows.length?Math.round((paid.length/rows.length)*100):0;
+  const avgOrderValue=paid.length?(totalRevenue/paid.length):0;
+
+  const funnelOrder=['new','contacted','accepted','paid','completed','declined','archived'];
+  const funnel=Object.fromEntries(funnelOrder.map(s=>[s,0]));
+  rows.forEach(c=>{if(funnel[c.status]!==undefined)funnel[c.status]++});
+
+  const serviceTitle=id=>(allServices||[]).find(s=>s.id===id)?.title||'Unknown service';
+  const byService={};
+  paid.forEach(c=>{const key=c.service_id||'unknown';byService[key]=(byService[key]||0)+collected(c)});
+  const topServices=Object.entries(byService).map(([id,revenue])=>({title:serviceTitle(id),revenue})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
+
+  // --- Category performance: total views per category ---
+  const byCategory={};
+  (allProjects||[]).forEach(p=>{const cat=p.category||'Uncategorized';byCategory[cat]=(byCategory[cat]||0)+Number(p.views||0)});
+  const topCategories=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  return {
+    trendDays:days,trend,
+    totalRevenue,pendingRevenue,depositCount,fullCount,conversionRate,avgOrderValue,
+    funnel,topServices,topCategories,
+    totalEvents:(events||[]).length,totalCommissions:rows.length
+  };
 }
 
 async function renderAdminStudioPage(activeTab='members'){
@@ -762,8 +807,7 @@ async function renderAdminStudioPage(activeTab='members'){
   }
   const sec = document.getElementById('adminPageView'); if(!sec) return;
   sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
-  
-  const analytics=await loadDiscoveryAnalytics();
+
   const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
     supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
     supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
@@ -774,6 +818,8 @@ async function renderAdminStudioPage(activeTab='members'){
     supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
+
+  const analytics=await loadAdvancedAnalytics(projects||[],servicesArr||[]);
 
   if(pErr || sErr){
     sec.innerHTML='<div class="panel"><h3>Studio unavailable</h3><p style="color:var(--muted)">'+esc((pErr||sErr).message)+'</p></div>';
@@ -851,7 +897,7 @@ async function renderAdminStudioPage(activeTab='members'){
         <div class="stat"><b>${Number(memberCount||0)}</b><span>Members</span></div>
         <div class="stat"><b>${Number(projectCount||0)}</b><span>Projects</span></div>
         <div class="stat"><b>${Number(serviceCount||0)}</b><span>Services</span></div>
-        <div class="stat"><b>${Number(analytics.total||0)}</b><span>Events</span></div>
+        <div class="stat"><b>${Number(analytics.totalEvents||0)}</b><span>Events (14d)</span></div>
       </div>
     </div>
 
@@ -898,11 +944,40 @@ async function renderAdminStudioPage(activeTab='members'){
     </div>
 
     <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
-      <div class="panel">
-        <div class="eyebrow">Discovery Analytics</div>
-        <h3>${Number(analytics.total||0)} tracked events</h3>
-        <div class="meta">${Object.entries(analytics.counts||{}).map(([k,v])=>esc(k)+': '+v).join(' · ')||'No events yet.'}</div>
+      ${analytics.error?`<div class="panel"><h3>Analytics unavailable</h3><p style="color:var(--muted)">${esc(analytics.error)}</p></div>`:`
+      <div class="panel" style="margin-bottom:16px">
+        <div class="eyebrow">Revenue</div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:10px">
+          <div class="stat"><b>$${analytics.totalRevenue.toFixed(2)}</b><span>Collected</span></div>
+          <div class="stat"><b>$${analytics.pendingRevenue.toFixed(2)}</b><span>Pending (in queue)</span></div>
+          <div class="stat"><b>$${analytics.avgOrderValue.toFixed(2)}</b><span>Avg. order value</span></div>
+          <div class="stat"><b>${analytics.conversionRate}%</b><span>Inquiry → paid</span></div>
+          <div class="stat"><b>${analytics.depositCount} / ${analytics.fullCount}</b><span>Deposits / Full paid</span></div>
+        </div>
       </div>
+
+      <div class="split" style="margin-bottom:16px">
+        <div class="panel">
+          <div class="eyebrow">Engagement — last 14 days</div>
+          <div style="height:220px;margin-top:10px"><canvas id="chartEngagementTrend"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="eyebrow">Commission funnel</div>
+          <div style="height:220px;margin-top:10px"><canvas id="chartFunnel"></canvas></div>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="panel">
+          <div class="eyebrow">Top services by revenue</div>
+          <div style="height:220px;margin-top:10px">${analytics.topServices.length?`<canvas id="chartRevenueByService"></canvas>`:'<div class="meta" style="padding:16px 0">No paid commissions yet.</div>'}</div>
+        </div>
+        <div class="panel">
+          <div class="eyebrow">Views by category</div>
+          <div style="height:220px;margin-top:10px">${analytics.topCategories.length?`<canvas id="chartCategoryViews"></canvas>`:'<div class="meta" style="padding:16px 0">No published projects yet.</div>'}</div>
+        </div>
+      </div>
+      `}
     </div>
 
     <div data-studio-panel="settings" style="${activeTab==='settings'?'':'display:none'}">
@@ -916,10 +991,45 @@ async function renderAdminStudioPage(activeTab='members'){
     </div>
   `;
 
+  let chartsReady=false;
+  const chartInstances={};
+  function initAnalyticsCharts(){
+    if(chartsReady||analytics.error||typeof Chart==='undefined')return;
+    chartsReady=true;
+
+    const trendCtx=document.getElementById('chartEngagementTrend');
+    if(trendCtx){
+      const labels=analytics.trendDays.map(d=>d.slice(5));
+      chartInstances.trend=new Chart(trendCtx,{type:'line',data:{labels,datasets:[
+        {label:'Views',data:analytics.trendDays.map(d=>analytics.trend[d].view),borderColor:'#c9b6ff',backgroundColor:'rgba(201,182,255,.15)',tension:.3,fill:true},
+        {label:'Likes',data:analytics.trendDays.map(d=>analytics.trend[d].like),borderColor:'#ff86c8',backgroundColor:'rgba(255,134,200,.12)',tension:.3,fill:true},
+        {label:'Saves',data:analytics.trendDays.map(d=>analytics.trend[d].save),borderColor:'#8ee0ba',backgroundColor:'rgba(142,224,186,.12)',tension:.3,fill:true}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c96ad'}}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+    }
+
+    const funnelCtx=document.getElementById('chartFunnel');
+    if(funnelCtx){
+      const labels=Object.keys(analytics.funnel);
+      chartInstances.funnel=new Chart(funnelCtx,{type:'bar',data:{labels,datasets:[{label:'Commissions',data:Object.values(analytics.funnel),backgroundColor:'#c9b6ff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+    }
+
+    const revCtx=document.getElementById('chartRevenueByService');
+    if(revCtx){
+      chartInstances.revenue=new Chart(revCtx,{type:'bar',data:{labels:analytics.topServices.map(s=>s.title),datasets:[{label:'Revenue',data:analytics.topServices.map(s=>s.revenue),backgroundColor:'#e8cf91'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true},y:{ticks:{color:'#9c96ad'},grid:{display:false}}}}});
+    }
+
+    const catCtx=document.getElementById('chartCategoryViews');
+    if(catCtx){
+      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Views',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+    }
+  }
+  if(activeTab==='analytics')initAnalyticsCharts();
+
   sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{
     sec.querySelectorAll('[data-studio-tab]').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
     sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===btn.dataset.studioTab?'block':'none');
+    if(btn.dataset.studioTab==='analytics')initAnalyticsCharts();
   });
 
   sec.querySelectorAll('[data-admin-pj-status]').forEach(el=>el.onchange=async()=>{
@@ -1066,7 +1176,26 @@ function updateAccountButton(){
   }
 }
 document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
-(async()=>{await loadData();updateAccountButton()})();
+async function capturePaypalReturnIfPresent(){
+  const params=new URLSearchParams(location.search);
+  const paypalStatus=params.get('paypal');
+  const orderId=params.get('token');
+  if(paypalStatus==='success'&&orderId){
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'capture',order_id:orderId})});
+      const d=await r.json();
+      if(r.ok&&(d.status==='COMPLETED'||d.alreadyCaptured)){toast('Payment confirmed — thank you!')}
+      else{toast('We could not confirm your payment automatically. The artist has your order on file.')}
+    }catch(e){}
+  }
+  if(paypalStatus==='cancel'){toast('Checkout was cancelled — no charge was made.')}
+  if(paypalStatus){
+    params.delete('paypal');params.delete('token');params.delete('PayerID');
+    const clean=location.pathname+(params.toString()?'?'+params.toString():'');
+    history.replaceState({},'',clean);
+  }
+}
+(async()=>{await loadData();updateAccountButton();await capturePaypalReturnIfPresent()})();
 </script>
 </body>
 </html>
