@@ -45,6 +45,10 @@
 .chat-bubble.mine{align-self:flex-end;background:var(--moon);color:#08070d;border-bottom-right-radius:4px;font-weight:500}
 .chat-bubble.other{align-self:flex-start;background:rgba(255,255,255,.08);color:var(--text);border:1px solid var(--line);border-bottom-left-radius:4px}
 .chat-meta{font-size:10px;opacity:.7;margin-top:4px;text-align:right}
+.chat-composer{padding:12px;border-top:1px solid var(--line);background:rgba(255,255,255,.025)}
+.chat-attachment-preview{display:none;align-items:center;gap:10px;padding:8px 10px;margin-bottom:9px;border:1px solid var(--line);border-radius:12px;background:rgba(201,182,255,.06)}
+.chat-attachment-preview.show{display:flex}.chat-file-chip{display:flex;align-items:center;gap:8px;min-width:0;flex:1}.chat-file-chip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.chat-file-icon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.07);font-size:16px;flex:0 0 auto}.chat-input-row{display:flex;align-items:flex-end;gap:8px}.chat-input-wrap{flex:1;display:flex;align-items:flex-end;gap:6px;border:1px solid var(--line);border-radius:14px;background:#0a0910;padding:5px 8px;transition:border-color .2s,box-shadow .2s}.chat-input-wrap:focus-within{border-color:var(--moon);box-shadow:0 0 0 3px rgba(201,182,255,.08)}.chat-input-row textarea{flex:1;min-width:0;min-height:38px;max-height:120px;resize:none;border:0!important;background:transparent!important;padding:9px 4px!important;outline:0!important}.chat-attach-btn{border:0;background:transparent;color:var(--muted);width:34px;height:34px;border-radius:10px;font-size:18px}.chat-attach-btn:hover{background:rgba(255,255,255,.07);color:var(--text)}.chat-send-btn{width:42px;height:42px;border-radius:13px;padding:0;display:grid;place-items:center}.chat-dropzone.dragover{border-color:var(--moon);background:rgba(201,182,255,.08)}.chat-bubble a.chat-file-link{display:block;text-decoration:none;margin-top:8px;padding:8px 10px;border:1px solid currentColor;border-radius:10px;opacity:.9}.chat-bubble img.chat-inline-image{display:block;max-width:240px;max-height:220px;border-radius:10px;margin-top:8px;object-fit:cover}.chat-status{font-size:10px;color:var(--muted);min-height:15px;margin-top:5px}
+
 .unread-badge{background:var(--pink);color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px;margin-left:auto}
 
 .notif-btn{position:relative;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);padding:8px 12px;border-radius:999px;display:flex;align-items:center;gap:6px;cursor:pointer}
@@ -926,22 +930,37 @@ async function selectConversation(convId) {
         <div class="meta" style="margin:0">Active Session</div>
       </div>
     </div>
-    <div class="chat-thread-container">
+    <div class="chat-thread-container chat-dropzone" id="chatDropzone">
       <div class="chat-messages-list" id="chatMsgFeed">
         ${(messages||[]).map(m => {
           const isMine = m.sender_id === state.currentUser.id;
+          const url=String(m.attachment_url||'');
+          const isImage=/\.(png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(url);
+          const attachment=url ? (isImage ? `<a href="${esc(url)}" target="_blank" rel="noopener"><img class="chat-inline-image" src="${esc(url)}" alt="Attachment" onerror="this.style.display='none'"></a>` : `<a class="chat-file-link" href="${esc(url)}" target="_blank" rel="noopener">📎 Open attachment</a>`) : '';
           return `
             <div class="chat-bubble ${isMine ? 'mine' : 'other'}">
-              <div>${esc(m.content)}</div>
-              ${m.attachment_url ? `<div style="margin-top:6px"><a href="${esc(m.attachment_url)}" target="_blank" style="text-decoration:underline;font-size:12px">📎 View Attachment</a></div>` : ''}
+              ${m.content ? `<div>${esc(m.content).replace(/\n/g,'<br>')}</div>` : ''}
+              ${attachment}
               <div class="chat-meta">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
             </div>
           `;
         }).join('')}
       </div>
-      <div class="chat-input-row">
-        <input id="chatInputText" placeholder="Type a message…">
-        <button class="btn primary" id="chatSendBtn">Send</button>
+      <div class="chat-composer">
+        <div class="chat-attachment-preview" id="chatAttachmentPreview">
+          <div class="chat-file-icon" id="chatAttachmentIcon">📎</div>
+          <div class="chat-file-chip"><b id="chatAttachmentName">Attachment</b><span class="meta" id="chatAttachmentSize"></span></div>
+          <button class="iconbtn" type="button" id="chatAttachmentRemove" title="Remove attachment">×</button>
+        </div>
+        <div class="chat-input-row">
+          <div class="chat-input-wrap">
+            <button class="chat-attach-btn" type="button" id="chatAttachBtn" title="Attach a file">📎</button>
+            <textarea id="chatInputText" rows="1" placeholder="Write a message…"></textarea>
+            <input id="chatFileInput" type="file" hidden accept="image/*,.pdf,.zip,.rar,.txt,.doc,.docx,.psd,.ai,.fig,.mp4,.mov,.webm">
+          </div>
+          <button class="btn primary chat-send-btn" id="chatSendBtn" type="button" title="Send message">➤</button>
+        </div>
+        <div class="chat-status" id="chatStatus">Attach files up to 10MB · Drop a file into the chat</div>
       </div>
     </div>
   `;
@@ -949,29 +968,74 @@ async function selectConversation(convId) {
   const feed = document.getElementById('chatMsgFeed');
   if(feed) feed.scrollTop = feed.scrollHeight;
 
+  let pendingChatFile = null;
+  const fileInput=document.getElementById('chatFileInput');
+  const attachBtn=document.getElementById('chatAttachBtn');
+  const preview=document.getElementById('chatAttachmentPreview');
+  const statusEl=document.getElementById('chatStatus');
+  const textInput=document.getElementById('chatInputText');
+  const dropzone=document.getElementById('chatDropzone');
+
+  function humanFileSize(bytes){
+    if(bytes<1024)return bytes+' B';
+    if(bytes<1024*1024)return (bytes/1024).toFixed(1)+' KB';
+    return (bytes/1024/1024).toFixed(1)+' MB';
+  }
+  function setPendingFile(file){
+    if(!file)return;
+    if(file.size>10*1024*1024){toast('Chat files must be under 10MB');return;}
+    pendingChatFile=file;
+    document.getElementById('chatAttachmentName').textContent=file.name;
+    document.getElementById('chatAttachmentSize').textContent=humanFileSize(file.size);
+    document.getElementById('chatAttachmentIcon').textContent=file.type.startsWith('image/')?'🖼️':'📎';
+    preview.classList.add('show');
+    statusEl.textContent='Ready to attach · '+humanFileSize(file.size);
+  }
+  function clearPendingFile(){pendingChatFile=null;if(fileInput)fileInput.value='';preview?.classList.remove('show');if(statusEl)statusEl.textContent='Attach files up to 10MB · Drop a file into the chat';}
+  attachBtn?.addEventListener('click',()=>fileInput?.click());
+  fileInput?.addEventListener('change',e=>setPendingFile(e.target.files?.[0]));
+  document.getElementById('chatAttachmentRemove')?.addEventListener('click',clearPendingFile);
+  ['dragenter','dragover'].forEach(ev=>dropzone?.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add('dragover')}));
+  ['dragleave','drop'].forEach(ev=>dropzone?.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove('dragover')}));
+  dropzone?.addEventListener('drop',e=>setPendingFile(e.dataTransfer.files?.[0]));
+
+  textInput?.addEventListener('input',()=>{textInput.style.height='auto';textInput.style.height=Math.min(textInput.scrollHeight,120)+'px'});
+
   const sendMsg = async () => {
-    const input = document.getElementById('chatInputText');
-    const txt = input.value.trim();
-    if(!txt) return;
-
-    input.value = '';
-    const { data: newMsg, error } = await supabaseClient.from('messages').insert({
-      conversation_id: convId,
-      sender_id: state.currentUser.id,
-      content: txt
-    }).select().single();
-
-    if(!error) {
+    const txt = textInput.value.trim();
+    if(!txt && !pendingChatFile) return;
+    const sendBtn=document.getElementById('chatSendBtn');
+    sendBtn.disabled=true;
+    if(statusEl)statusEl.textContent=pendingChatFile?'Uploading attachment…':'Sending…';
+    try{
+      let attachmentUrl=null;
+      if(pendingChatFile){
+        const ext=(pendingChatFile.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+        const path=`chat/${state.currentUser.id}/${crypto.randomUUID()}-${ext}`;
+        const up=await supabaseClient.storage.from('commission-uploads').upload(path,pendingChatFile,{upsert:false,contentType:pendingChatFile.type||'application/octet-stream'});
+        if(up.error)throw up.error;
+        attachmentUrl=supabaseClient.storage.from('commission-uploads').getPublicUrl(path).data.publicUrl;
+      }
+      const { data: newMsg, error } = await supabaseClient.from('messages').insert({
+        conversation_id: convId,
+        sender_id: state.currentUser.id,
+        content: txt,
+        attachment_url: attachmentUrl
+      }).select().single();
+      if(error)throw error;
       await supabaseClient.from('conversations').update({ last_message_at: new Date().toISOString() }).eq('id', convId);
       await sendNotification(partner.id, 'New Message', `${state.currentMember?.name || 'Someone'} sent you a message`, 'message');
-      selectConversation(convId);
-    } else {
-      toast(error.message);
-    }
+      clearPendingFile();
+      textInput.value=''; textInput.style.height='auto';
+      await selectConversation(convId);
+    }catch(e){
+      toast(e.message||'Could not send message');
+      if(statusEl)statusEl.textContent='Send failed · please try again';
+    }finally{sendBtn.disabled=false;}
   };
 
   document.getElementById('chatSendBtn').onclick = sendMsg;
-  document.getElementById('chatInputText').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
+  textInput.onkeydown = e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); } };
 
   await supabaseClient.from('messages').update({ is_read: true }).eq('conversation_id', convId).neq('sender_id', state.currentUser.id);
 }
