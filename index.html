@@ -27,6 +27,11 @@
 .drag-handle{display:flex;align-items:center;padding:0 8px 0 2px;color:var(--muted);font-size:18px;cursor:grab}
 .drag-handle:hover{color:var(--moon)}
 
+/* Portfolio Checkbox Thumbnail Grid */
+.portfolio-check-item{display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.portfolio-check-item:hover{border-color:var(--moon)}
+.portfolio-check-thumb{width:48px;height:32px;border-radius:6px;object-fit:cover;background:#000}
+
 /* Global Theme Definitions Override */
 html[data-theme="moonlight"]{--moon:#c9b6ff;--pink:#ff86c8;--line:rgba(201,182,255,.22);--bg:#08070d}
 html[data-theme="cyberpink"]{--moon:#ff86c8;--pink:#ff4da6;--line:rgba(255,134,200,.28);--bg:#0e0612}
@@ -152,7 +157,7 @@ function openService(id){
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(s.category)}</div>
     <h2>${esc(s.title)}</h2>
-    <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · ${esc(m?.role||'')}</button></div>
+    <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · View profile</button></div>
     <p>${formatDescription(s.description)}</p>
     <div class="stats">
       ${s.price_from?`<span class="stat">From ${esc(s.price_from)}</span>`:''}
@@ -376,7 +381,14 @@ async function openProject(id){
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(p.category)}</div>
     <h2>${esc(p.title)}</h2>
-    <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · ${esc(m?.role||'')}</button></div>
+    <div class="artist" style="gap:12px;margin-bottom:14px">
+      ${avatar(m)}
+      <div>
+        <div style="font-weight:700">${esc(m?.name||'Unknown artist')}</div>
+        <div class="meta" style="margin-top:0">${esc(m?.role||'')}</div>
+      </div>
+      <button class="btn" data-modal-member="${m?.id||''}" style="margin-left:auto;font-size:12px;padding:6px 12px">View Artist profile →</button>
+    </div>
     <p>${formatDescription(p.desc)}</p>
     <div class="stats"><span class="stat">👁 ${formatViews(p.views)} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div>
     <div class="tags">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
@@ -660,7 +672,7 @@ function showServiceForm(existing=null){
     </div>
     <button type="button" class="btn" id="addAddonRowBtn" style="margin-top:8px;align-self:flex-start">+ Add extra option</button>
   </div>
-  <div class="field full"><label>Portfolio examples</label><div class="meta">Link your published projects as samples of this service.</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto">${myProjects.length?myProjects.map(p=>`<label class="row" style="gap:8px"><input type="checkbox" class="svProjectLink" value="${p.id}" ${linked.has(p.id)?'checked':''}><span>${esc(p.title)}</span></label>`).join(''):'<span class="meta">Create a project first to link it here.</span>'}</div></div></div><div class="heroactions"><button class="btn primary" id="saveService">${existing?'Save changes':'Create service'}</button>${existing?`<button class="btn" id="deleteService">Delete</button>`:''}<button class="btn" id="cancelService">Cancel</button></div><p id="serviceMsg" style="color:var(--muted)"></p></div>`;
+  <div class="field full"><label>Portfolio examples</label><div class="meta">Link your published projects as samples of this service.</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto">${myProjects.length?myProjects.map(p=>`<label class="portfolio-check-item"><input type="checkbox" class="svProjectLink" value="${p.id}" ${linked.has(p.id)?'checked':''}><img src="${esc(p.thumbnail_url||p.media_url||'')}" class="portfolio-check-thumb" onerror="this.style.opacity=0"><span style="font-weight:600">${esc(p.title)}</span></label>`).join(''):'<span class="meta">Create a project first to link it here.</span>'}</div></div></div><div class="heroactions"><button class="btn primary" id="saveService">${existing?'Save changes':'Create service'}</button>${existing?`<button class="btn" id="deleteService">Delete</button>`:''}<button class="btn" id="cancelService">Cancel</button></div><p id="serviceMsg" style="color:var(--muted)"></p></div>`;
   
   const defaultCats=['Motion Design','3D Modeling','Branding','UI/UX Design','Illustration','Video Editing'];
   const existingCats=Array.from(new Set([...defaultCats,...(data.services||[]).map(s=>s.category).filter(Boolean),...(existing?.category?[existing.category]:[])])).sort();
@@ -1166,7 +1178,20 @@ async function loadData(){
       fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
       fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})
     ]);
-    data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',theme:x.theme||'moonlight',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));
+    data.members=(Array.isArray(pr)?pr:[]).map(x=>({
+      id:x.id,
+      username:x.username,
+      name:x.display_name,
+      role:x.role||'',
+      bio:x.bio||'',
+      tos:x.tos||'',
+      theme:x.theme||'moonlight',
+      avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,
+      skills:x.skills||[],
+      available:x.available!==false,
+      account_type:x.account_type||'member',
+      is_admin:!!x.is_admin
+    }));
     
     data.projects=(Array.isArray(pp)?pp:[]).map(x=>({
       id:x.id,
