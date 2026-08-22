@@ -58,16 +58,6 @@
 .notif-item:hover{background:rgba(255,255,255,.04)}
 .notif-item.unread{background:rgba(201,182,255,.06);border-left:3px solid var(--moon)}
 
-/* Status Pill Styles for Waitlist Tracker */
-.status-pill{font:700 11px/1 IBM Plex Mono,monospace;padding:6px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;text-transform:uppercase}
-.status-pill.waitlist{background:rgba(156,150,173,.15);color:#9c96ad;border:1px solid rgba(156,150,173,.3)}
-.status-pill.unpaid{background:rgba(255,125,142,.15);color:#ff7d8e;border:1px solid rgba(255,125,142,.3)}
-.status-pill.paid{background:rgba(232,207,145,.15);color:#e8cf91;border:1px solid rgba(232,207,145,.3)}
-.status-pill.wip{background:rgba(201,182,255,.15);color:#c9b6ff;border:1px solid rgba(201,182,255,.3)}
-.status-pill.delivered{background:rgba(142,224,186,.15);color:#8ee0ba;border:1px solid rgba(142,224,186,.3)}
-.status-pill.revisions{background:rgba(255,134,200,.15);color:#ff86c8;border:1px solid rgba(255,134,200,.3)}
-.status-pill.completed{background:rgba(142,224,186,.25);color:#8ee0ba;border:1px solid #8ee0ba}
-
 /* Global Theme Definitions */
 html[data-theme="moonlight"]{--moon:#c9b6ff;--pink:#ff86c8;--line:rgba(201,182,255,.22);--bg:#08070d}
 html[data-theme="cyberpink"]{--moon:#ff86c8;--pink:#ff4da6;--line:rgba(255,134,200,.28);--bg:#0e0612}
@@ -89,8 +79,8 @@ html[data-theme="midnight"]{--moon:#8bb2ff;--pink:#a28eff;--line:rgba(139,178,25
 <div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview">Overview</button><button class="filter" data-dash="messages">Messages 💬</button><button class="filter" data-dash="projects">My Projects</button><button class="filter" data-dash="profile">Profile</button><button class="filter" data-dash="services">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
-
 <script>
+// Global Error Boundary & Graceful Handling
 window.addEventListener('error', (e) => {
   console.error('[Lunarist Error Handler]', e.error || e.message);
   if(typeof toast === 'function') toast('Something went wrong. Please try again.');
@@ -100,22 +90,6 @@ let supabaseClient=null;
 const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',loadError:null,conversations:[],activeConversation:null,notifications:[]};
 const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-
-const STAGES = [
-  { key: 'waitlist', label: '⏳ Waitlist', css: 'waitlist' },
-  { key: 'unpaid', label: '💳 Unpaid', css: 'unpaid' },
-  { key: 'paid', label: '💰 Paid', css: 'paid' },
-  { key: 'wip_1', label: '🎨 WIP (Phase 1 - Rough Draft)', css: 'wip' },
-  { key: 'wip_2', label: '🎨 WIP (Phase 2 - Lineart & Base)', css: 'wip' },
-  { key: 'wip_3', label: '🎨 WIP (Phase 3 - Final Polish)', css: 'wip' },
-  { key: 'delivered', label: '📦 Delivered', css: 'delivered' },
-  { key: 'revisions', label: '🔁 Revisions Requested', css: 'revisions' },
-  { key: 'completed', label: '✅ Completed', css: 'completed' }
-];
-
-function getStageInfo(key) {
-  return STAGES.find(s => s.key === key) || { key: 'waitlist', label: '⏳ Waitlist', css: 'waitlist' };
-}
 
 function updateSeoMeta(title, desc, image) {
   const pageTitle = title ? `${title} — Lunarist Studio` : 'Lunarist Studio — Unleash Your Dream';
@@ -202,6 +176,22 @@ function card(p,feature=false){
 function serviceCard(s){const m=member(s.member);return `<article class="card" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onerror="handleImageError(this)"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
+function addonAmount(base,ao){
+  const n=Number(ao?.price||0);
+  return ao?.type==='percent' ? (base*n/100) : n;
+}
+function addonLabel(ao){
+  return ao?.type==='percent' ? ('+'+Number(ao.price||0)+'%') : ('+$'+Number(ao.price||0).toFixed(2));
+}
+function addonIcon(title){
+  const t=String(title||'').toLowerCase();
+  if(t.includes('commercial'))return '💼';
+  if(t.includes('rush')||t.includes('expedite')||t.includes('priority'))return '⚡';
+  if(t.includes('nda')||t.includes('private'))return '🔒';
+  if(t.includes('revision'))return '🔁';
+  return '✦';
+}
+
 async function sendNotification(userId, title, message, type='info', link=null) {
   if(!userId) return;
   await supabaseClient.from('notifications').insert({
@@ -213,43 +203,318 @@ async function sendNotification(userId, title, message, type='info', link=null) 
   });
 }
 
-async function openWaitlistModal(artistId) {
-  const m = member(artistId);
-  if(!m) return;
+async function loadUserNotifications() {
+  if(!state.currentUser) return;
+  const { data: list } = await supabaseClient.from('notifications')
+    .select('*')
+    .eq('user_id', state.currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
 
-  const { data: list, error } = await supabaseClient.from('commissions')
-    .select('id, client_name, project_title, status, created_at')
-    .eq('artist_id', artistId)
-    .order('created_at', { ascending: false });
+  state.notifications = list || [];
+  renderNotificationsUI();
+}
 
-  document.getElementById('modalMedia').innerHTML = `<div style="padding:28px 24px;background:#0d0b13;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px">${avatar(m)}<div><h3 style="margin:0;font-size:22px">${esc(m.name)} — Commission Waitlist</h3><div class="meta">Live order tracking & status progress</div></div></div>`;
+function renderNotificationsUI() {
+  const toggleBtn = document.getElementById('notifToggleBtn');
+  const countBadge = document.getElementById('notifBadgeCount');
+  const popoverList = document.getElementById('notifList');
 
-  if(error || !list || !list.length) {
-    document.getElementById('modalContent').innerHTML = emptyState('No active commissions on the waitlist.', 'This artist currently has an open queue.');
+  if(!state.currentUser) { if(toggleBtn) toggleBtn.style.display = 'none'; return; }
+  toggleBtn.style.display = 'inline-flex';
+
+  const unreadCount = state.notifications.filter(n => !n.is_read).length;
+  if(unreadCount > 0) {
+    countBadge.textContent = unreadCount;
+    countBadge.style.display = 'inline';
   } else {
-    document.getElementById('modalContent').innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
-        ${list.map((c, idx) => {
-          const stage = getStageInfo(c.status);
-          return `
-            <div class="row" style="padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);justify-content:space-between">
-              <div>
-                <b style="display:block;font-size:15px">#${list.length - idx} · ${esc(c.project_title || 'Custom Commission')}</b>
-                <span class="meta">Client: ${esc(c.client_name || 'Anonymous Client')} · ${new Date(c.created_at).toLocaleDateString()}</span>
-              </div>
-              <span class="status-pill ${stage.css}">${stage.label}</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    countBadge.style.display = 'none';
   }
 
+  if(!popoverList) return;
+  if(!state.notifications.length) {
+    popoverList.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">No notifications yet.</div>`;
+    return;
+  }
+
+  popoverList.innerHTML = state.notifications.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" data-notif-id="${n.id}">
+      <b style="display:block;color:var(--text)">${esc(n.title)}</b>
+      <span style="color:var(--muted)">${esc(n.message)}</span>
+      <div class="chat-meta" style="text-align:left;margin-top:2px">${new Date(n.created_at).toLocaleDateString()}</div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('[data-notif-id]').forEach(el => {
+    el.onclick = async () => {
+      const id = el.dataset.notif-id;
+      await supabaseClient.from('notifications').update({ is_read: true }).eq('id', id);
+      loadUserNotifications();
+    };
+  });
+}
+
+async function createOrGetConversation(artistId, serviceId=null, projectId=null) {
+  if(!state.currentUser) { openAuth('signin'); return null; }
+  if(state.currentUser.id === artistId) { toast("You cannot message yourself"); return null; }
+
+  const { data: existing } = await supabaseClient.from('conversations')
+    .select('*')
+    .or(`and(client_id.eq.${state.currentUser.id},artist_id.eq.${artistId}),and(client_id.eq.${artistId},artist_id.eq.${state.currentUser.id})`)
+    .maybeSingle();
+
+  if(existing) return existing;
+
+  const { data: created, error } = await supabaseClient.from('conversations').insert({
+    client_id: state.currentUser.id,
+    artist_id: artistId,
+    service_id: serviceId,
+    project_id: projectId
+  }).select().single();
+
+  if(error) { toast(error.message); return null; }
+  return created;
+}
+
+async function loadUserConversations() {
+  if(!state.currentUser) return;
+  const { data: convs, error } = await supabaseClient.from('conversations')
+    .select(`
+      *,
+      client:client_id(id, display_name, username, avatar_url),
+      artist:artist_id(id, display_name, username, avatar_url),
+      service:service_id(title),
+      messages(content, created_at, sender_id, is_read)
+    `)
+    .or(`client_id.eq.${state.currentUser.id},artist_id.eq.${state.currentUser.id}`)
+    .order('last_message_at', { ascending: false });
+
+  if(!error) state.conversations = convs || [];
+}
+
+function openService(id){
+  const s=data.services.find(x=>x.id===id);if(!s)return;
+  const m=member(s.member);
+  const examples=(s.projectIds||[]).map(pid=>data.projects.find(p=>p.id===pid)).filter(Boolean);
+  const addOns = Array.isArray(s.add_ons) ? s.add_ons : [];
+  const basePrice = parseFloat(String(s.price_from||'0').replace(/[^0-9.]/g,''))||0;
+  const canCheckout = basePrice>0;
+
+  updateSeoMeta(s.title, s.description, s.thumbnail_url);
+
+  document.getElementById('modalMedia').innerHTML=`<img src="${esc(s.thumbnail_url||'')}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
+  document.getElementById('modalContent').innerHTML=`
+    <div class="eyebrow">${esc(s.category)}</div>
+    <h2>${esc(s.title)}</h2>
+    <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · View profile</button></div>
+    <p>${formatDescription(s.description)}</p>
+    <div class="stats">
+      ${s.price_from?`<span class="stat">From ${esc(s.price_from)}</span>`:''}
+      ${s.delivery_time?`<span class="stat">${esc(s.delivery_time)}</span>`:''}
+      <button class="btn pink" id="modalDirectChatBtn" style="margin-left:auto">💬 Chat with Artist</button>
+    </div>
+
+    ${examples.length?`<div class="sectionhead" style="margin-top:22px"><div><h3 style="margin:0">Portfolio examples</h3></div></div><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${examples.map(p=>card(p)).join('')}</div>`:''}
+
+    <div style="margin-top:26px;padding:22px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.02)">
+      <h2 style="font-size:26px;margin:0 0 6px;font-style:italic">Inquire — ${esc(s.title)}</h2>
+      <p id="inquirySubtext" style="color:var(--muted);margin-top:0"></p>
+
+      <div class="formgrid" style="margin-top:16px">
+        <div class="field"><label>Your Name / Handle *</label><input id="inqName" placeholder="Your name or handle"></div>
+        <div class="field"><label>Company / Agency Name (Optional)</label><input id="inqCompany" placeholder="Studio or agency"></div>
+        <div class="field"><label>Your Email Address *</label><input id="inqEmail" type="email" placeholder="you@example.com"></div>
+        <div class="field"><label>Social Media e.g. @Handle *</label><input id="inqSocial" placeholder="@yourhandle"></div>
+        <div class="field full"><label>Target Deadline / Preferred Delivery Date (Optional)</label><input id="inqDeadline" type="date"></div>
+        <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
+      </div>
+
+      ${addOns.length?`
+        <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
+          <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">TOS Add-ons &amp; Custom Options:</div>
+          <div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
+            ${addOns.map((ao,idx)=>`
+              <div class="addon-box">
+                <label><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} ${esc(ao.title)} (${addonLabel(ao)})</label>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `:''}
+
+      <div class="field full" style="margin-top:14px"><label>Upload Brief / Asset Attachment (Optional)</label><input type="file" id="inqAttachment"><div class="meta" id="inqAttachStatus">Images or documents, up to 5MB.</div></div>
+
+      ${m?.tos?`
+        <div class="tos-box" style="max-height:220px">
+          <div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div>
+          <div>${formatDescription(m.tos)}</div>
+        </div>
+      `:''}
+
+      <div class="addon-box" style="margin-top:14px">
+        <label><input type="checkbox" id="inqAgreeTos"> I have read and agree to the ${m?.tos?"Terms of Service":"artist's terms"} (Required)</label>
+      </div>
+
+      ${canCheckout?`
+        <div class="formgrid" style="margin-top:14px">
+          <div class="field" id="depositOption" style="cursor:pointer;border:1px solid var(--gold);border-radius:12px;padding:12px;text-align:center">
+            <b style="color:var(--gold)" id="depositAmountLabel">50% Deposit</b>
+            <div class="meta" id="depositSubLabel">Save Slot</div>
+          </div>
+          <div class="field" id="fullOption" style="cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+            <b id="fullAmountLabel">Full Amount</b>
+            <div class="meta">Pay Upfront</div>
+          </div>
+        </div>
+        <button class="btn primary" id="payPaypalBtn" style="width:100%;margin-top:16px;background:#ffc439;color:#0a0810;border-color:#ffc439;font-weight:900">PayPal</button>
+        <button class="btn" id="payCardBtn" style="width:100%;margin-top:10px">💳 Debit or Credit Card</button>
+        <p style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">Powered by PayPal</p>
+      `:`
+        <button class="btn primary" id="sendInquiryBtn" style="width:100%;margin-top:16px">Send Inquiry</button>
+      `}
+      <p id="inquiryMsg" style="color:var(--danger);min-height:18px;margin-top:8px"></p>
+    </div>
+
+    <div class="tags" style="margin-top:16px">${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+  `;
+
   document.getElementById('projectModal').classList.add('open');
+
+  document.getElementById('modalDirectChatBtn')?.addEventListener('click', async()=>{
+    if(!m) return;
+    const conv = await createOrGetConversation(m.id, s.id);
+    if(conv) { closeModal(); openDashboard(); switchDashTab('messages'); selectConversation(conv.id); }
+  });
+
+  let paymentType='deposit';
+  let pendingAttachmentUrl=null;
+
+  function computeTotals(){
+    const checked=Array.from(document.querySelectorAll('.modalAddonCheck:checked'));
+    const addonTotal=checked.reduce((n,cb)=>n+addonAmount(basePrice,addOns[Number(cb.dataset.idx)]),0);
+    const total=basePrice+addonTotal;
+    return {total,deposit:total/2};
+  }
+  function refreshPaymentUI(){
+    if(!canCheckout)return;
+    const {total,deposit}=computeTotals();
+    document.getElementById('depositAmountLabel').textContent='50% Deposit ($'+deposit.toFixed(2)+')';
+    document.getElementById('fullAmountLabel').textContent='Full Amount ($'+total.toFixed(2)+')';
+    document.getElementById('inquirySubtext').textContent=`Inquiry for ${s.title} · Pay $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD (${paymentType==='deposit'?'50% Slot Deposit':'Full Amount'}) to auto-register on the waitlist.`;
+    const depEl=document.getElementById('depositOption'),fullEl=document.getElementById('fullOption');
+    depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)';
+    fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
+  }
+  if(canCheckout){
+    refreshPaymentUI();
+    document.getElementById('depositOption').onclick=()=>{paymentType='deposit';refreshPaymentUI()};
+    document.getElementById('fullOption').onclick=()=>{paymentType='full';refreshPaymentUI()};
+  }else{
+    document.getElementById('inquirySubtext').textContent=`Inquiry for ${s.title} · This artist provides a custom quote — send your brief and they'll follow up.`;
+  }
+  document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=refreshPaymentUI);
+
+  document.getElementById('inqAttachment')?.addEventListener('change',async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const statusEl=document.getElementById('inqAttachStatus');
+    if(file.size>5*1024*1024){toast('File must be under 5MB');e.target.value='';return}
+    statusEl.textContent='Uploading…';
+    try{
+      const ext=(file.name.split('.').pop()||'bin').toLowerCase();
+      const path=`inquiries/${crypto.randomUUID()}.${ext}`;
+      const up=await supabaseClient.storage.from('commission-uploads').upload(path,file,{upsert:false,contentType:file.type||undefined});
+      if(up.error)throw up.error;
+      pendingAttachmentUrl=supabaseClient.storage.from('commission-uploads').getPublicUrl(path).data.publicUrl;
+      statusEl.textContent='Attached: '+file.name;
+    }catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload attachment')}
+  });
+
+  function collectInquiry(){
+    const name=document.getElementById('inqName').value.trim();
+    const email=document.getElementById('inqEmail').value.trim();
+    const social=document.getElementById('inqSocial').value.trim();
+    const agree=document.getElementById('inqAgreeTos').checked;
+    const msgEl=document.getElementById('inquiryMsg');
+    if(!name||!email||!social){msgEl.textContent='Please fill in your name, email and social handle.';return null}
+    if(!agree){msgEl.textContent='Please agree to the Terms of Service to continue.';return null}
+    msgEl.textContent='';
+    return {
+      name,email,social,
+      company:document.getElementById('inqCompany').value.trim(),
+      target_deadline:document.getElementById('inqDeadline').value||null,
+      message:document.getElementById('inqBrief').value.trim(),
+      attachment_url:pendingAttachmentUrl,
+      addon_titles:Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>addOns[Number(cb.dataset.idx)].title)
+    };
+  }
+
+  async function submitPayment(){
+    const info=collectInquiry();if(!info)return;
+    const btns=[document.getElementById('payPaypalBtn'),document.getElementById('payCardBtn')];
+    btns.forEach(b=>b&&(b.disabled=true));
+    document.getElementById('inquiryMsg').style.color='var(--muted)';
+    document.getElementById('inquiryMsg').textContent='Redirecting to PayPal…';
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        service_id:s.id,
+        addon_titles:info.addon_titles,
+        payment_type:paymentType,
+        customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
+      })});
+      const od=await r.json();
+      if(!r.ok)throw new Error(od?.error||'Unable to start checkout.');
+      const approve=(od.links||[]).find(l=>l.rel==='approve'||l.rel==='payer-action');
+      if(approve?.href){window.location.href=approve.href}
+      else throw new Error('PayPal did not return a checkout link.');
+    }catch(e){
+      document.getElementById('inquiryMsg').style.color='var(--danger)';
+      document.getElementById('inquiryMsg').textContent=e.message||'Something went wrong starting checkout.';
+      btns.forEach(b=>b&&(b.disabled=false));
+    }
+  }
+  document.getElementById('payPaypalBtn')?.addEventListener('click',submitPayment);
+  document.getElementById('payCardBtn')?.addEventListener('click',submitPayment);
+
+  document.getElementById('sendInquiryBtn')?.addEventListener('click',async()=>{
+    const info=collectInquiry();if(!info)return;
+    const btn=document.getElementById('sendInquiryBtn');btn.disabled=true;
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        action:'inquiry_only',
+        service_id:s.id,
+        addon_titles:info.addon_titles,
+        customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
+      })});
+      const rr=await r.json();
+      if(!r.ok)throw new Error(rr?.error||'Unable to send inquiry.');
+      
+      if(m) {
+        const conv = await createOrGetConversation(m.id, s.id);
+        if(conv) {
+          const initTxt = `👋 New Inquiry for "${s.title}":\n${info.message||'No brief provided'}`;
+          await supabaseClient.from('messages').insert({ conversation_id: conv.id, sender_id: state.currentUser.id, content: initTxt, attachment_url: info.attachment_url });
+          await sendNotification(m.id, 'New Service Inquiry', `Received a new inquiry for ${s.title}`, 'inquiry');
+        }
+      }
+
+      toast('Inquiry sent — conversation started!');
+      closeModal();
+      openDashboard();
+      switchDashTab('messages');
+    }catch(e){
+      document.getElementById('inquiryMsg').textContent=e.message||'Something went wrong sending your inquiry.';
+      btn.disabled=false;
+    }
+  });
+
+  const mb=document.querySelector('[data-modal-member]');
+  if(mb)mb.onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
+  document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>{closeModal();openProject(c.dataset.project)});
 }
 
 function emptyState(title='Nothing here yet.',text='Lunarist is waiting for its next creative signal.'){return `<div class="empty" style="grid-column:1/-1"><strong style="color:var(--text);display:block;margin-bottom:6px">${esc(title)}</strong>${esc(text)}</div>`}
-function home(){const rec=personalized(),trending=[...data.projects].sort((a,b)=>b.likes-a.likes),recent=[...data.projects].sort((a,b)=>(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0));return `<div class="container"><section class="hero"><div class="eyebrow">A creative network by Lunarist Studio</div><h1>Unleash<br><em>Your Dream.</em></h1><p>Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.</p><div class="heroactions"><button class="btn primary" data-route="discover">Explore the work</button><button class="btn" data-route="artists">Meet our artists</button></div></section><section class="section"><div class="sectionhead"><div><h2>For you</h2><p>Curated from what you explore.</p></div><span class="eyebrow">Personalized</span></div><div class="grid">${rec.length?rec.slice(0,5).map((p,i)=>card(p,i===0)).join(''):emptyState('No published work yet.','Create the first Lunarist project from your member space.')}</div></section><section class="section"><div class="sectionhead"><div><h2>Trending this week</h2><p>What the Lunarist community is watching.</p></div><span class="eyebrow">Popular</span></div><div class="grid">${trending.length?trending.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section><section class="section"><div class="split"><div class="panel"><div class="sectionhead"><div><h2>Artists</h2><p>Find the right creative voice.</p></div><button class="btn" data-route="artists">View all</button></div><div class="artistgrid">${data.members.length?data.members.map(artistCard).join(''):emptyState('No public artist profiles yet.','Create an account to become one.')}</div></div><div class="panel"><div class="eyebrow">Discovery engine</div><h2 style="font-size:30px;letter-spacing:-.04em">Not everything has to match your taste.</h2><p style="color:var(--muted)">Lunarist mixes relevance with exploration, so your feed can introduce you to artists and disciplines you would not normally click.</p><button class="btn pink" data-action="reset-interest">Reset my feed</button></div></div></section><section class="section"><div class="sectionhead"><div><h2>New arrivals</h2><p>Fresh published work from the studio.</p></div></div><div class="grid">${recent.length?recent.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section></div>`}
+function home(){const rec=personalized(),trending=[...data.projects].sort((a,b)=>b.likes-a.likes),recent=[...data.projects].sort((a,b)=>(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0));return `<div class="container"><section class="hero"><div class="eyebrow">A creative network by Lunarist Studio</div><h1>Unleash<br><em>Your Dream.</em></h1><p>Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.</p><div class="heroactions">
+<button class="btn" type="button" onclick="openPublicCommissionStatus('${esc(m.username||'')}')">Commission Status</button><button class="btn primary" data-route="discover">Explore the work</button><button class="btn" data-route="artists">Meet our artists</button></div></section><section class="section"><div class="sectionhead"><div><h2>For you</h2><p>Curated from what you explore.</p></div><span class="eyebrow">Personalized</span></div><div class="grid">${rec.length?rec.slice(0,5).map((p,i)=>card(p,i===0)).join(''):emptyState('No published work yet.','Create the first Lunarist project from your member space.')}</div></section><section class="section"><div class="sectionhead"><div><h2>Trending this week</h2><p>What the Lunarist community is watching.</p></div><span class="eyebrow">Popular</span></div><div class="grid">${trending.length?trending.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section><section class="section"><div class="split"><div class="panel"><div class="sectionhead"><div><h2>Artists</h2><p>Find the right creative voice.</p></div><button class="btn" data-route="artists">View all</button></div><div class="artistgrid">${data.members.length?data.members.map(artistCard).join(''):emptyState('No public artist profiles yet.','Create an account to become one.')}</div></div><div class="panel"><div class="eyebrow">Discovery engine</div><h2 style="font-size:30px;letter-spacing:-.04em">Not everything has to match your taste.</h2><p style="color:var(--muted)">Lunarist mixes relevance with exploration, so your feed can introduce you to artists and disciplines you would not normally click.</p><button class="btn pink" data-action="reset-interest">Reset my feed</button></div></div></section><section class="section"><div class="sectionhead"><div><h2>New arrivals</h2><p>Fresh published work from the studio.</p></div></div><div class="grid">${recent.length?recent.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section></div>`}
 function artistCard(m){return `<article class="artistcard" data-member="${m.id}">${avatar(m)}<div class="artistname">${esc(m.name)}</div><div class="role">${esc(m.role)}</div>${m.is_admin?'<span class="badge" style="display:inline-block;margin-top:8px">Administrator</span>':''}<div class="tags">${(m.skills||[]).slice(0,2).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:12px;font-size:11px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available':'● Booked'}</div></article>`}
 function discover(){let list=data.projects.filter(p=>state.filter==='All'||state.filter==='Recommended'||state.filter==='Trending'||state.filter==='Newest'||p.category===state.filter||(p.tags||[]).includes(state.filter));if(state.query){const q=state.query.toLowerCase();list=list.filter(p=>(p.title+' '+p.category+' '+(p.tags||[]).join(' ')+' '+(member(p.member)?.name||'')).toLowerCase().includes(q))}list.sort((a,b)=>state.filter==='Recommended'?score(b)-score(a):state.filter==='Trending'?b.likes-a.likes:state.filter==='Newest'?(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0):score(b)-score(a));const cats=['All','Recommended','Trending','Newest',...new Set(data.projects.map(p=>p.category))];return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Explore Lunarist</div><h2 style="font-size:46px">Discover work.</h2><p>Search projects, styles and artists.</p></div><input class="search" id="searchInput" placeholder="Search projects, artists, skills…" value="${esc(state.query)}"></div><div class="discoverbar">${cats.map(c=>`<button class="filter ${state.filter===c?'active':''}" data-filter="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="grid" id="discoverGrid">${list.length?list.map(p=>card(p)).join(''):emptyState('No work found.','Try another search or filter.')}</div></section></div>`}
 function artists(){return `<div class="container"><section class="section" style="padding-top:55px"><div class="eyebrow">The Lunarist collective</div><h2 style="font-size:52px;letter-spacing:-.05em;margin:10px 0">Meet the artists.</h2><p style="color:var(--muted);max-width:650px">Every member owns their profile and projects. Clients can discover people by discipline, style and availability.</p><div class="artistgrid" style="margin-top:28px">${data.members.length?data.members.map(artistCard).join(''):emptyState('No public artist profiles yet.','Create an account to become one.')}</div></section></div>`}
@@ -262,7 +527,7 @@ function profilePage(m){
   
   const formattedTos = String(m.tos||'').trim();
 
-  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn" id="openWaitlistBtn" data-artist-id="${m.id}">📋 View Public Waitlist</button><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body">${formatDescription(formattedTos)}</div></div>`:''}</section></div>`
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':' · Lunarist Member'}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body">${formatDescription(formattedTos)}</div></div>`:''}</section></div>`
 }
 
 function render(){
@@ -284,11 +549,6 @@ function bind(){
   document.querySelectorAll('[data-service]').forEach(c=>c.onclick=()=>openService(c.dataset.service));
   document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>goRoute('member:'+c.dataset.member));
   document.getElementById('copyProfileLink')?.addEventListener('click',(e)=>{const url=location.origin+'/'+e.currentTarget.dataset.username;navigator.clipboard?.writeText(url).then(()=>toast('Profile link copied')).catch(()=>toast(url))});
-  
-  document.getElementById('openWaitlistBtn')?.addEventListener('click', (e) => {
-    openWaitlistModal(e.currentTarget.dataset.artistId);
-  });
-
   document.getElementById('profDirectChatBtn')?.addEventListener('click', async()=>{
     const m = member(state.route.split(':')[1]);
     if(!m) return;
@@ -311,44 +571,63 @@ function bind(){
   });
 }
 
+async function openProject(id){
+  const p=data.projects.find(x=>x.id===id);if(!p)return;
+  await track(p);
+  const m=member(p.member);
+  const linkedServices=data.services.filter(sv=>(sv.projectIds||[]).includes(p.id));
+
+  updateSeoMeta(p.title, p.desc, p.image);
+
+  document.getElementById('modalMedia').innerHTML=p.video?`<iframe src="${esc(p.video)}${p.video.includes('?')?'&':'?'}autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
+  
+  document.getElementById('modalContent').innerHTML=`
+    <div class="eyebrow">${esc(p.category)}</div>
+    <h2>${esc(p.title)}</h2>
+    <div class="artist" style="gap:12px;margin-bottom:14px">
+      ${avatar(m)}
+      <div>
+        <div style="font-weight:700">${esc(m?.name||'Unknown artist')}</div>
+        <div class="meta" style="margin-top:0">${esc(m?.role||'')}</div>
+      </div>
+      <button class="btn" data-modal-member="${m?.id||''}" style="margin-left:auto;font-size:12px;padding:6px 12px">View Artist profile →</button>
+    </div>
+    <p>${formatDescription(p.desc)}</p>
+    <div class="stats"><span class="stat">👁 ${formatViews(p.views)} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div>
+    <div class="tags">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    
+    ${linkedServices.length?`
+      <div style="margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
+        <div class="eyebrow" style="margin-bottom:8px">Commission / Order Package</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${linkedServices.map(sv=>`
+            <div class="row" style="justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:12px">
+              <div>
+                <b style="display:block;font-size:14px">${esc(sv.title)}</b>
+                <span class="meta">${sv.price_from?'From '+esc(sv.price_from):''} ${sv.delivery_time?'· '+esc(sv.delivery_time):''}</span>
+              </div>
+              <button class="btn primary" data-open-service="${sv.id}" style="font-size:12px;padding:8px 14px">💼 View Service</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `:''}
+  `;
+
+  document.getElementById('projectModal').classList.add('open');
+  document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};
+  document.getElementById('saveBtn').onclick=()=>{track(p,'save');toast('Saved to this browser')};
+  document.querySelector('[data-modal-member]').onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
+  document.querySelectorAll('[data-open-service]').forEach(b=>b.onclick=()=>{closeModal();openService(b.dataset.openService)});
+}
+
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML='';updateSeoMeta('','','')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';document.getElementById('authUsernameWrap').style.display=m?'flex':'none';document.getElementById('authDisplayWrap').style.display=m?'flex':'none';document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';document.getElementById('authModeHint').textContent=m?'':'Use Google or email/password';document.getElementById('authMessage').textContent='';document.getElementById('authModal').classList.add('open')}
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
-
-async function authSubmit(){
-  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();
-  if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}
-  document.getElementById('authSubmit').disabled=true;
-  try{
-    if(state.authMode==='signup'){
-      const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});
-      if(error)throw error;
-      document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';
-      if(d.session){closeAuth();await refreshUser();openDashboard()}
-    }else{
-      const {error}=await supabaseClient.auth.signInWithPassword({email,password});
-      if(error)throw error;
-      closeAuth();await refreshUser();openDashboard()
-    }
-  }catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}
-  finally{document.getElementById('authSubmit').disabled=false}
-}
-
-async function signInWithGoogle(){
-  document.getElementById('googleAuth').disabled=true;
-  try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});if(error)throw error}
-  catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}
-}
-
-async function resetPassword(){
-  const email=document.getElementById('authEmail').value.trim();
-  if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}
-  document.getElementById('forgotPassword').disabled=true;
-  try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}
-  catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}
-  finally{document.getElementById('forgotPassword').disabled=false}
-}
+async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
+async function signInWithGoogle(){document.getElementById('googleAuth').disabled=true;try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});if(error)throw error}catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}}
+async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
 
 async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
@@ -379,6 +658,7 @@ async function refreshUser(){
     applyTheme(state.selectedTheme);
     document.getElementById('accountName').textContent=state.currentMember?.name||'Member';
     document.getElementById('accountAvatar').outerHTML=`<img class="avatar" id="accountAvatar" src="${esc(state.currentMember?.avatar||'')}" alt="" onerror="handleImageError(this)">`;
+    loadUserNotifications();
   }else{
     const navAdmin = document.getElementById('navAdminBtn');
     if(navAdmin) navAdmin.style.display='none';
@@ -389,23 +669,957 @@ async function refreshUser(){
   }
 }
 
-function openDashboard(){
+function switchDashTab(tabName) {
+  document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));
+  const btn = document.querySelector(`[data-dash="${tabName}"]`);
+  if(btn) btn.classList.add('active');
+  const sec = document.getElementById('dash-'+tabName);
+  if(sec) sec.classList.add('active');
+}
+
+async function openDashboard(){
   if(!state.currentUser){openAuth('signin');return}
+  await refreshUser();
+  await loadUserConversations();
+  const m=state.currentMember;
+  if(!m){toast('Your profile could not be loaded.');return}
+  
+  const [{data:ps},{data:ss}]=await Promise.all([
+    supabaseClient.from('projects').select('*').eq('owner_id',m.id).order('created_at',{ascending:false}),
+    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,status,published,featured,views,add_ons,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('created_at',{ascending:false})
+  ]);
+  
+  state.myProjects=(ps||[]).sort((a,b)=>(a.position||0)-(b.position||0));
+  const userServices = (ss && ss.length) ? ss : data.services.filter(s => s.member === m.id);
+
+  const themeOptions = [
+    { key: 'moonlight', name: 'Moonlight', c1: '#c9b6ff', c2: '#ff86c8' },
+    { key: 'cyberpink', name: 'Cyber Pink', c1: '#ff86c8', c2: '#ff4da6' },
+    { key: 'goldember', name: 'Gold Ember', c1: '#e8cf91', c2: '#ff9e42' },
+    { key: 'emeraldglow', name: 'Emerald Glow', c1: '#8ee0ba', c2: '#51c4a0' },
+    { key: 'midnight', name: 'Midnight Blue', c1: '#8bb2ff', c2: '#a28eff' }
+  ];
+
+  document.getElementById('dashTitle').textContent=m.name+' · '+roleLabel(m);
+  document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile and projects are stored in Supabase. Published work appears in Discover.</p><div class="stats"><span class="stat">${roleLabel(m)}</span><span class="stat">${(state.myProjects).length} projects</span><span class="stat">${(state.myProjects).reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div>${(m.account_type!=='member'&&!m.is_admin)?'<p class="meta" style="margin-top:10px">You\'re a Lunarist User — ask a Studio admin to promote you to Lunarist Member to publish work.</p>':''}</div>`;
+  const canPublish=m.account_type==='member'||m.is_admin;
+  document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(state.myProjects).length?(state.myProjects).map((p,idx)=>`<div class="listitem draggable" draggable="true" data-id="${p.id}" data-index="${idx}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
+  
+  renderMessagesTab();
+
+  document.getElementById('dash-profile').innerHTML=`
+    <div class="panel">
+      <div class="eyebrow">Edit profile</div>
+      <div class="row" style="margin:12px 0 18px">
+        <img class="avatar" id="pfAvatarPreview" style="width:64px;height:64px" src="${esc(m.avatar||'')}" alt="" onerror="handleImageError(this)">
+        <div>
+          <button class="btn" id="pfAvatarBtn" type="button">Change photo</button>
+          <input type="file" id="pfAvatarFile" accept="image/*" style="display:none">
+          <div class="meta" id="pfAvatarStatus">JPG or PNG, square works best.</div>
+        </div>
+      </div>
+      <div class="formgrid">
+        <div class="field"><label>Display name</label><input id="pfName" value="${esc(m.name)}"></div>
+        <div class="field"><label>Username</label><input id="pfUsername" value="${esc(m.username)}" maxlength="32" pattern="[a-z0-9_]+"><div class="meta">${esc(location.host)}/<span id="pfUsernamePreview">${esc(m.username)}</span></div></div>
+        <div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div>
+        <div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio)}</textarea></div>
+        
+        <div class="field full">
+          <label>Profile Color Scheme</label>
+          <div class="meta">Select a color theme accent for your profile and space.</div>
+          <div class="theme-picker-grid" id="themePickerGrid">
+            ${themeOptions.map(t=>`
+              <div class="theme-option ${(m.theme===t.key || (!m.theme && t.key==='moonlight')) ? 'selected' : ''}" data-theme-val="${t.key}">
+                <div class="theme-swatches">
+                  <span class="theme-swatch" style="background:${t.c1}"></span>
+                  <span class="theme-swatch" style="background:${t.c2}"></span>
+                </div>
+                <span style="font-size:12px;font-weight:700">${t.name}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="field full" style="margin-top:6px">
+          <label style="font-size:12px;font-weight:700;color:var(--moon)">Terms of Service (TOS)</label>
+          <div class="meta" style="margin-bottom:6px">Specify your client policies, payment terms, revision limits, or commercial use rules. Supports bullet points.</div>
+          <textarea id="pfTos" style="min-height:180px;line-height:1.6;font-family:inherit" placeholder="• 50% upfront payment required before starting work&#10;• Includes 2 free revisions per project&#10;• Commercial license available as an add-on">${esc(m.tos||'')}</textarea>
+        </div>
+        <div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div>
+      </div>
+      <button class="btn primary" style="margin-top:16px" id="saveProfile">Save profile</button>
+      <button class="btn" style="margin:16px 0 0 8px" id="signOut">Sign out</button>
+    </div>
+  `;
+  
+  document.getElementById('dash-services').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My services</div><h3 style="margin:4px 0">Offer commissions & packages</h3></div><button class="btn primary" id="addService">+ New service</button></div><div id="serviceList" style="margin-top:12px">${userServices.length?userServices.map(s=>`<div class="listitem"><img class="listthumb" src="${esc(s.thumbnail_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(s.title)}</b><div class="meta">${esc(s.category)} · ${esc(s.status||(s.published?'published':'draft'))} · ${(s.service_projects||s.projectIds||[]).length} linked project(s)</div></div><button class="btn" data-edit-service="${s.id}">Edit</button></div>`).join(''):emptyState('No services yet.','List a service artists can hire you for.')}</div><div id="serviceForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can offer services.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create services.')}</div>`;
   document.getElementById('drawer').classList.add('open');
+  bindDashboard(state.myProjects,userServices)
+}
+
+function renderMessagesTab() {
+  const container = document.getElementById('dash-messages');
+  if(!container) return;
+
+  if(!state.conversations.length) {
+    container.innerHTML = `<div class="panel">${emptyState('No conversations yet.','Message an artist from their profile or inquiry on a service to start collaborating.')}</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Direct Messaging</div>
+      <h3 style="margin:4px 0 14px">Active Collaborations</h3>
+      <div class="split" style="grid-template-columns:1fr;gap:12px">
+        <div id="conversationsList" style="display:flex;flex-direction:column;gap:8px">
+          ${state.conversations.map(c => {
+            const partner = c.client_id === state.currentUser.id ? c.artist : c.client;
+            const lastMsg = c.messages?.[c.messages.length - 1];
+            const unreadCount = c.messages?.filter(m => !m.is_read && m.sender_id !== state.currentUser.id).length || 0;
+            return `
+              <div class="listitem" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)" data-select-conv="${c.id}">
+                <img class="avatar" src="${esc(partner?.avatar_url || 'https://i.pravatar.cc/160?u='+partner?.id)}" style="width:36px;height:36px" onerror="handleImageError(this)">
+                <div class="grow">
+                  <b>${esc(partner?.display_name || partner?.username || 'User')}</b>
+                  ${c.service?.title ? `<span class="tag" style="margin-left:6px">${esc(c.service.title)}</span>` : ''}
+                  <div class="meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${esc(lastMsg?.content || 'Started conversation')}</div>
+                </div>
+                ${unreadCount ? `<span class="unread-badge">${unreadCount}</span>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div id="activeChatBox" style="display:none"></div>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-select-conv]').forEach(el => {
+    el.onclick = () => selectConversation(el.dataset.selectConv);
+  });
+}
+
+async function selectConversation(convId) {
+  state.activeConversation = state.conversations.find(c => c.id === convId);
+  if(!state.activeConversation) return;
+
+  const { data: messages } = await supabaseClient.from('messages')
+    .select('*')
+    .eq('conversation_id', convId)
+    .order('created_at', { ascending: true });
+
+  const partner = state.activeConversation.client_id === state.currentUser.id ? state.activeConversation.artist : state.activeConversation.client;
+
+  const chatBox = document.getElementById('activeChatBox');
+  if(!chatBox) return;
+  chatBox.style.display = 'block';
+
+  chatBox.innerHTML = `
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)">
+      <img class="avatar" src="${esc(partner?.avatar_url || 'https://i.pravatar.cc/160?u='+partner?.id)}" style="width:32px;height:32px" onerror="handleImageError(this)">
+      <div>
+        <b style="font-size:14px">${esc(partner?.display_name || partner?.username || 'User')}</b>
+        <div class="meta" style="margin:0">Active Session</div>
+      </div>
+    </div>
+    <div class="chat-thread-container">
+      <div class="chat-messages-list" id="chatMsgFeed">
+        ${(messages||[]).map(m => {
+          const isMine = m.sender_id === state.currentUser.id;
+          return `
+            <div class="chat-bubble ${isMine ? 'mine' : 'other'}">
+              <div>${esc(m.content)}</div>
+              ${m.attachment_url ? `<div style="margin-top:6px"><a href="${esc(m.attachment_url)}" target="_blank" style="text-decoration:underline;font-size:12px">📎 View Attachment</a></div>` : ''}
+              <div class="chat-meta">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="chat-input-row">
+        <input id="chatInputText" placeholder="Type a message…">
+        <button class="btn primary" id="chatSendBtn">Send</button>
+      </div>
+    </div>
+  `;
+
+  const feed = document.getElementById('chatMsgFeed');
+  if(feed) feed.scrollTop = feed.scrollHeight;
+
+  const sendMsg = async () => {
+    const input = document.getElementById('chatInputText');
+    const txt = input.value.trim();
+    if(!txt) return;
+
+    input.value = '';
+    const { data: newMsg, error } = await supabaseClient.from('messages').insert({
+      conversation_id: convId,
+      sender_id: state.currentUser.id,
+      content: txt
+    }).select().single();
+
+    if(!error) {
+      await supabaseClient.from('conversations').update({ last_message_at: new Date().toISOString() }).eq('id', convId);
+      await sendNotification(partner.id, 'New Message', `${state.currentMember?.name || 'Someone'} sent you a message`, 'message');
+      selectConversation(convId);
+    } else {
+      toast(error.message);
+    }
+  };
+
+  document.getElementById('chatSendBtn').onclick = sendMsg;
+  document.getElementById('chatInputText').onkeydown = e => { if(e.key === 'Enter') sendMsg(); };
+
+  await supabaseClient.from('messages').update({ is_read: true }).eq('conversation_id', convId).neq('sender_id', state.currentUser.id);
+}
+
+function bindDashboard(ps,ss){
+  document.querySelectorAll('[data-dash]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dash-'+b.dataset.dash).classList.add('active')});
+  let pendingAvatarUrl=null;
+  const pfUsername=document.getElementById('pfUsername');
+  if(pfUsername){
+    pfUsername.oninput=()=>{const clean=pfUsername.value.toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32);if(clean!==pfUsername.value)pfUsername.value=clean;document.getElementById('pfUsernamePreview').textContent=clean||'username'};
+  }
+  
+  document.querySelectorAll('.theme-option').forEach(opt => {
+    opt.onclick = () => {
+      document.querySelectorAll('.theme-option').forEach(x => x.classList.remove('selected'));
+      opt.classList.add('selected');
+      const val = opt.dataset.themeVal;
+      applyTheme(val);
+    };
+  });
+
+  document.getElementById('pfAvatarBtn')?.addEventListener('click',()=>document.getElementById('pfAvatarFile').click());
+  document.getElementById('pfAvatarFile')?.addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}});
+  
+  document.getElementById('saveProfile')?.addEventListener('click',async()=>{
+    const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
+    const selectedThemeVal = document.querySelector('.theme-option.selected')?.dataset.themeVal || 'moonlight';
+    const payload={
+      display_name:document.getElementById('pfName').value.trim(),
+      username,
+      role:document.getElementById('pfRole').value.trim(),
+      bio:document.getElementById('pfBio').value.trim(),
+      tos:document.getElementById('pfTos').value.trim(),
+      theme:selectedThemeVal,
+      available:document.getElementById('pfAvail').value==='1',
+      updated_at:new Date().toISOString()
+    };
+    if(pendingAvatarUrl)payload.avatar_url=pendingAvatarUrl;
+    const {data,error}=await supabaseClient.from('profiles').update(payload).eq('id',state.currentUser.id).select().single();
+    if(error){toast(error.code==='23505'?'That username is already taken.':error.message);return}
+    toast('Profile saved');
+    await refreshUser();
+    updateAccountButton();
+    await loadData();
+    if(state.route.startsWith('member:')&&state.route.split(':')[1]===state.currentUser.id)goRoute('member:'+state.currentUser.id,true);
+    openDashboard()
+  });
+
+  document.getElementById('signOut')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();closeDash();toast('Signed out');await refreshUser();render()});
+  document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());
+  document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));
+  document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());
+  document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)));
+
+  setupProjectDragAndDrop();
+}
+
+function setupProjectDragAndDrop(){
+  const container=document.getElementById('projectList');
+  if(!container)return;
+
+  container.querySelectorAll('.listitem.draggable').forEach(item=>{
+    item.addEventListener('dragstart',(e)=>{
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',item.dataset.id);
+    });
+
+    item.addEventListener('dragend',async()=>{
+      item.classList.remove('dragging');
+      await saveNewProjectOrder();
+    });
+
+    item.addEventListener('dragover',(e)=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      const draggingItem=container.querySelector('.dragging');
+      if(!draggingItem||draggingItem===item)return;
+
+      const rect=item.getBoundingClientRect();
+      const next=(e.clientY-rect.top)/(rect.bottom-rect.top)>0.5;
+      container.insertBefore(draggingItem,next?item.nextSibling:item);
+    });
+  });
+
+  async function saveNewProjectOrder(){
+    const items=Array.from(container.querySelectorAll('.listitem.draggable'));
+    const updates=items.map((el,index)=>({
+      id:el.dataset.id,
+      position:index+1
+    }));
+
+    if(state.myProjects&&state.myProjects.length){
+      state.myProjects.sort((a,b)=>{
+        const idxA=updates.findIndex(u=>u.id===a.id);
+        const idxB=updates.findIndex(u=>u.id===b.id);
+        return idxA-idxB;
+      });
+    }
+
+    for(const update of updates){
+      await supabaseClient.from('projects').update({position:update.position}).eq('id',update.id);
+    }
+    toast('Project order saved');
+    await loadData();
+  }
+}
+
+function showServiceForm(existing=null){
+  const f=document.getElementById('serviceForm');if(!f)return;
+  const myProjects=state.myProjects||[];
+  const linked=new Set((existing?.service_projects||existing?.projectIds||[]).map(x=>typeof x==='object'?x.project_id:x));
+  const isMember=state.currentMember?.account_type==='member'||state.currentMember?.is_admin;
+  const existingAddons = Array.isArray(existing?.add_ons) ? existing.add_ons : [];
+
+  f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} service</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="svTitle" value="${esc(existing?.title||'')}" placeholder="Motion design package"></div><div class="field"><label>Category</label><select id="svCategorySelect"></select><input id="svCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="svTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="svDesc">${esc(existing?.description||'')}</textarea></div><div class="field"><label>Starting price</label><input id="svPrice" value="${esc(existing?.price_from||'')}" placeholder="$300"></div><div class="field"><label>Delivery time</label><input id="svDelivery" value="${esc(existing?.delivery_time||'')}" placeholder="5–7 days"></div><div class="field full"><label>Thumbnail URL</label><input id="svThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="svThumbFile" type="file" accept="image/*"></div><div class="field"><label>Status</label><select id="svStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div>
+  <div class="field full">
+    <label>Service Add-ons</label>
+    <div class="meta">Offer extra options (e.g. Commercial License, Rush Order, Extra Revision).</div>
+    <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+      ${existingAddons.map((ao,i)=>`
+        <div class="row addonRow" style="gap:8px">
+          <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2">
+          <select class="aoType" style="flex:1">
+            <option value="fixed" ${(!ao.type||ao.type==='fixed')?'selected':''}>Fixed ($)</option>
+            <option value="percent" ${ao.type==='percent'?'selected':''}>Percentage (%)</option>
+          </select>
+          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price||''}" style="flex:1">
+          <button type="button" class="btn removeAddonBtn">×</button>
+        </div>
+      `).join('')}
+    </div>
+    <button type="button" class="btn" id="addAddonRowBtn" style="margin-top:8px;align-self:flex-start">+ Add extra option</button>
+  </div>
+  <div class="field full"><label>Portfolio examples</label><div class="meta">Link your published projects as samples of this service.</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto">${myProjects.length?myProjects.map(p=>`<label class="portfolio-check-item"><input type="checkbox" class="svProjectLink" value="${p.id}" ${linked.has(p.id)?'checked':''}><img src="${esc(p.thumbnail_url||p.media_url||'')}" class="portfolio-check-thumb" onerror="handleImageError(this)"><span style="font-weight:600">${esc(p.title)}</span></label>`).join(''):'<span class="meta">Create a project first to link it here.</span>'}</div></div></div><div class="heroactions"><button class="btn primary" id="saveService">${existing?'Save changes':'Create service'}</button>${existing?`<button class="btn" id="deleteService">Delete</button>`:''}<button class="btn" id="cancelService">Cancel</button></div><p id="serviceMsg" style="color:var(--muted)"></p></div>`;
+  
+  const defaultCats=['Motion Design','3D Modeling','Branding','UI/UX Design','Illustration','Video Editing'];
+  const existingCats=Array.from(new Set([...defaultCats,...(data.services||[]).map(s=>s.category).filter(Boolean),...(existing?.category?[existing.category]:[])])).sort();
+  const catSelect=document.getElementById('svCategorySelect'),catNewInput=document.getElementById('svCategoryNew');
+  catSelect.innerHTML=existingCats.map(c=>`<option value="${esc(c)}" ${existing?.category===c?'selected':''}>${esc(c)}</option>`).join('')+`<option value="__NEW__">+ Add new category…</option>`;
+  if(existing?.category&&!existingCats.includes(existing.category)){catSelect.value='__NEW__';catNewInput.style.display='block';catNewInput.value=existing.category}
+  catSelect.onchange=()=>{if(catSelect.value==='__NEW__'){catNewInput.style.display='block';catNewInput.focus()}else{catNewInput.style.display='none'}};
+  
+  const addonContainer = document.getElementById('addonContainer');
+  const addAddonRow = (title='', price='', type='fixed') => {
+    const row = document.createElement('div');
+    row.className = 'row addonRow';
+    row.style.gap = '8px';
+    row.innerHTML = `<input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
+    row.querySelector('.removeAddonBtn').onclick = () => row.remove();
+    row.querySelector('.aoType').onchange = (e) => { row.querySelector('.aoPrice').placeholder = e.target.value==='percent'?'Percent (%)':'Price ($)'; };
+    addonContainer.appendChild(row);
+  };
+
+  document.querySelectorAll('.addonRow').forEach(row=>{
+    const typeSel=row.querySelector('.aoType');
+    if(typeSel)typeSel.onchange=(e)=>{row.querySelector('.aoPrice').placeholder=e.target.value==='percent'?'Percent (%)':'Price ($)';};
+  });
+  document.querySelectorAll('.removeAddonBtn').forEach(b => b.onclick = (e) => e.target.closest('.addonRow').remove());
+  document.getElementById('addAddonRowBtn').onclick = () => addAddonRow();
+
+  document.getElementById('cancelService').onclick=()=>f.innerHTML='';
+  document.getElementById('saveService').onclick=async()=>{
+    const title=document.getElementById('svTitle').value.trim(),categorySelectVal=catSelect.value,categoryNewVal=catNewInput.value.trim(),category=categorySelectVal==='__NEW__'?categoryNewVal:categorySelectVal,tags=document.getElementById('svTags').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
+    let status=document.getElementById('svStatus').value;
+    if(!title||!category){document.getElementById('serviceMsg').textContent='Title and category are required.';return}
+    if(isMember&&status!=='archived'&&status!=='draft'){status='published'}
+    
+    const addonRows = Array.from(document.querySelectorAll('.addonRow'));
+    const add_ons = addonRows.map(r=>{
+      const t = r.querySelector('.aoTitle').value.trim();
+      const p = parseFloat(r.querySelector('.aoPrice').value);
+      const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
+      return (t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
+    }).filter(Boolean);
+
+    const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;
+    let thumbnail_url=document.getElementById('svThumb').value.trim()||null;
+    const checkedProjectIds=Array.from(document.querySelectorAll('.svProjectLink:checked')).map(el=>el.value);
+    if(!thumbnail_url&&!thumbFile&&checkedProjectIds.length){const linkedProj=myProjects.find(p=>p.id===checkedProjectIds[0]);if(linkedProj)thumbnail_url=linkedProj.thumbnail_url||linkedProj.media_url||null;}
+    try{if(thumbFile)thumbnail_url=await uploadProjectFile(thumbFile,'service-thumb')}catch(e){document.getElementById('serviceMsg').textContent='Upload failed: '+(e.message||'Unable to upload file.');return}
+    
+    const keySlug=(title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+state.currentUser.id.slice(0,8)).slice(0,120);
+    const rawPrice=document.getElementById('svPrice').value.replace(/[^0-9.]/g,'');
+    const parsedAmount=parseFloat(rawPrice);
+    const amountNum=(!isNaN(parsedAmount)&&parsedAmount>0)?parsedAmount:1;
+    const payload={key:keySlug,slug:keySlug,label:title,amount:amountNum,artist_id:state.currentUser.id,owner_id:state.currentUser.id,title,category,tags,description:document.getElementById('svDesc').value.trim(),price_from:document.getElementById('svPrice').value.trim(),delivery_time:document.getElementById('svDelivery').value.trim(),thumbnail_url,status,published:status==='published',add_ons};
+    
+    let result=existing?await supabaseClient.from('services').update(payload).eq('id',existing.id).or(`owner_id.eq.${state.currentUser.id},artist_id.eq.${state.currentUser.id}`).select().single():await supabaseClient.from('services').insert(payload).select().single();
+    if(result.error){document.getElementById('serviceMsg').textContent=result.error.message;return}
+    
+    const serviceId=result.data.id;
+    const checked=new Set(checkedProjectIds);
+    const toAdd=[...checked].filter(id=>!linked.has(id));
+    const toRemove=[...linked].filter(id=>!checked.has(id));
+    if(toAdd.length){const r=await supabaseClient.from('service_projects').insert(toAdd.map(project_id=>({service_id:serviceId,project_id})));if(r.error){toast(r.error.message)}}
+    if(toRemove.length){const r=await supabaseClient.from('service_projects').delete().eq('service_id',serviceId).in('project_id',toRemove);if(r.error){toast(r.error.message)}}
+    
+    toast(existing?'Service updated':'Service created');
+    await loadData();
+    openDashboard()
+  };
+  if(existing)document.getElementById('deleteService').onclick=async()=>{if(!confirm('Delete this service?'))return;const r=await supabaseClient.from('services').delete().eq('id',existing.id).or(`owner_id.eq.${state.currentUser.id},artist_id.eq.${state.currentUser.id}`);if(r.error){toast(r.error.message);return}toast('Service deleted');await loadData();openDashboard()}
+}
+
+function showProjectForm(existing=null){
+  const f=document.getElementById('projectForm');if(!f)return;
+  const isMember=state.currentMember?.account_type==='member'||state.currentMember?.is_admin;
+  
+  f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} project</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="pjTitle" value="${esc(existing?.title||'')}" placeholder="Project title"></div><div class="field"><label>Category</label><select id="pjCategorySelect"></select><input id="pjCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="pjTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="pjDesc">${esc(existing?.description||'')}</textarea></div><div class="field full"><label>Thumbnail URL</label><input id="pjThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Media URL</label><input id="pjMedia" value="${esc(existing?.media_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="pjThumbFile" type="file" accept="image/*"></div>
+  <div class="field"><label>Media upload</label><input id="pjMediaFile" type="file" accept="image/*,video/*,.pdf,.zip"></div>
+  <div class="field full"><label>YouTube video</label><input id="pjYoutube" value="${esc(embedToWatchUrl(existing?.media_url))}" placeholder="Paste a YouTube link…"><div class="meta" id="pjYoutubeStatus">Paste a link to auto-fill the video, thumbnail and description.</div></div>
+  <div class="field"><label>Media type</label><select id="pjType"><option value="image" ${existing?.media_type!=='video'?'selected':''}>Image</option><option value="video" ${existing?.media_type==='video'?'selected':''}>Video</option></select></div><div class="field"><label>Status</label><select id="pjStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div></div><div class="heroactions"><button class="btn primary" id="saveProject">${existing?'Save changes':'Create project'}</button>${existing?`<button class="btn" id="deleteProject">Delete</button>`:''}<button class="btn" id="cancelProject">Cancel</button></div><p id="projectMsg" style="color:var(--muted)"></p></div>`;
+  
+  const defaultCats=['Motion Design','3D Modeling','Branding','UI/UX Design','Illustration','Video Editing'];
+  const existingCats=Array.from(new Set([...defaultCats,...(data.projects||[]).map(p=>p.category).filter(Boolean),...(existing?.category?[existing.category]:[])])).sort();
+  const catSelect=document.getElementById('pjCategorySelect'),catNewInput=document.getElementById('pjCategoryNew');
+  catSelect.innerHTML=existingCats.map(c=>`<option value="${esc(c)}" ${existing?.category===c?'selected':''}>${esc(c)}</option>`).join('')+`<option value="__NEW__">+ Add new category…</option>`;
+  if(existing?.category&&!existingCats.includes(existing.category)){catSelect.value='__NEW__';catNewInput.style.display='block';catNewInput.value=existing.category}
+  catSelect.onchange=()=>{if(catSelect.value==='__NEW__'){catNewInput.style.display='block';catNewInput.focus()}else{catNewInput.style.display='none'}};
+  
+  document.getElementById('cancelProject').onclick=()=>f.innerHTML='';
+  const pjYoutube=document.getElementById('pjYoutube');
+  
+  async function fetchYoutubeIntoForm(){
+    const vid=extractYoutubeId(pjYoutube.value);
+    const statusEl=document.getElementById('pjYoutubeStatus');
+    if(!vid){if(pjYoutube.value.trim())statusEl.textContent="That doesn't look like a YouTube link.";return}
+    statusEl.textContent='Fetching from YouTube…';
+    try{
+      const r=await fetch('/api/youtube?videoId='+encodeURIComponent(vid));
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error||'Could not fetch this video.');
+      document.getElementById('pjMedia').value='https://www.youtube.com/embed/'+vid;
+      document.getElementById('pjType').value='video';
+      if(!document.getElementById('pjThumb').value.trim())document.getElementById('pjThumb').value='https://img.youtube.com/vi/'+vid+'/hqdefault.jpg';
+      if(!document.getElementById('pjTitle').value.trim()&&d.title)document.getElementById('pjTitle').value=d.title;
+      if(d.description)document.getElementById('pjDesc').value=d.description;
+      statusEl.textContent='Loaded "'+(d.title||'video')+'" — description filled in from YouTube.'
+    }catch(e){statusEl.textContent=e.message||'Could not fetch this video.'}
+  }
+  
+  pjYoutube.addEventListener('change',fetchYoutubeIntoForm);
+  pjYoutube.addEventListener('paste',()=>setTimeout(fetchYoutubeIntoForm,60));
+  
+  document.getElementById('saveProject').onclick=async()=>{
+    const title=document.getElementById('pjTitle').value.trim(),categorySelectVal=catSelect.value,categoryNewVal=catNewInput.value.trim(),category=categorySelectVal==='__NEW__'?categoryNewVal:categorySelectVal,tags=document.getElementById('pjTags').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
+    let status=document.getElementById('pjStatus').value;
+    if(!title||!category){document.getElementById('projectMsg').textContent='Title and category are required.';return}
+    if(isMember&&status!=='archived'&&status!=='draft'){status='published'}
+    
+    const thumbFile=document.getElementById('pjThumbFile').files?.[0]||null,mediaFile=document.getElementById('pjMediaFile').files?.[0]||null;
+    let thumbnail_url=document.getElementById('pjThumb').value.trim()||null,media_url=document.getElementById('pjMedia').value.trim()||null;
+    try{
+      if(thumbFile)thumbnail_url=await uploadProjectFile(thumbFile,'thumbnail');
+      if(mediaFile)media_url=await uploadProjectFile(mediaFile,'media');
+    }catch(e){document.getElementById('projectMsg').textContent='Upload failed: '+(e.message||'Unable to upload file.');return}
+    
+    const payload={
+      owner_id: state.currentUser.id,
+      title,
+      slug:(title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+state.currentUser.id.slice(0,8)).slice(0,120),
+      category,
+      tags,
+      description:document.getElementById('pjDesc').value.trim(),
+      thumbnail_url,
+      media_url,
+      media_type:document.getElementById('pjType').value,
+      status,
+      published:status==='published'
+    };
+    
+    let result=existing?await supabaseClient.from('projects').update(payload).eq('id',existing.id).eq('owner_id',state.currentUser.id).select().single():await supabaseClient.from('projects').insert(payload).select().single();
+    if(result.error){document.getElementById('projectMsg').textContent=result.error.message;return}
+    
+    toast(existing?'Project updated':'Project created');
+    await loadData();
+    openDashboard()
+  };
+  
+  if(existing)document.getElementById('deleteProject').onclick=async()=>{if(!confirm('Delete this project?'))return;const r=await supabaseClient.from('projects').delete().eq('id',existing.id).eq('owner_id',state.currentUser.id);if(r.error){toast(r.error.message);return}toast('Project deleted');await loadData();openDashboard()}
+}
+
+async function loadAdvancedAnalytics(allProjects,allServices){
+  const since=new Date(Date.now()-14*86400000).toISOString();
+  const [{data:events,error:evErr},{data:commissions,error:coErr}]=await Promise.all([
+    supabaseClient.from('discovery_events').select('event_type,created_at').gte('created_at',since).order('created_at',{ascending:true}).limit(5000),
+    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000)
+  ]);
+  if(evErr||coErr)return {error:(evErr||coErr).message};
+
+  const days=[];
+  for(let i=13;i>=0;i--){const d=new Date(Date.now()-i*86400000);days.push(d.toISOString().slice(0,10))}
+  const trend=Object.fromEntries(days.map(d=>[d,{view:0,like:0,save:0}]));
+  (events||[]).forEach(e=>{
+    const day=String(e.created_at||'').slice(0,10);
+    if(trend[day]&&trend[day][e.event_type]!==undefined)trend[day][e.event_type]++;
+  });
+
+  const collected=c=>c.payment_type==='deposit'?Number(c.deposit_amount||0):Number(c.total_amount||0);
+  const rows=commissions||[];
+  const paid=rows.filter(c=>c.status==='paid'||c.status==='completed');
+  const pending=rows.filter(c=>['new','contacted','accepted'].includes(c.status));
+  const totalRevenue=paid.reduce((n,c)=>n+collected(c),0);
+  const pendingRevenue=pending.reduce((n,c)=>n+collected(c),0);
+  const depositCount=paid.filter(c=>c.payment_type==='deposit').length;
+  const fullCount=paid.filter(c=>c.payment_type!=='deposit').length;
+  const conversionRate=rows.length?Math.round((paid.length/rows.length)*100):0;
+  const avgOrderValue=paid.length?(totalRevenue/paid.length):0;
+
+  const funnelOrder=['new','contacted','accepted','paid','completed','declined','archived'];
+  const funnel=Object.fromEntries(funnelOrder.map(s=>[s,0]));
+  rows.forEach(c=>{if(funnel[c.status]!==undefined)funnel[c.status]++});
+
+  const serviceTitle=id=>(allServices||[]).find(s=>s.id===id)?.title||'Unknown service';
+  const byService={};
+  paid.forEach(c=>{const key=c.service_id||'unknown';byService[key]=(byService[key]||0)+collected(c)});
+  const topServices=Object.entries(byService).map(([id,revenue])=>({title:serviceTitle(id),revenue})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
+
+  const byCategory={};
+  (allProjects||[]).forEach(p=>{const cat=p.category||'Uncategorized';byCategory[cat]=(byCategory[cat]||0)+Number(p.views||0)});
+  const topCategories=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  return {
+    trendDays:days,trend,
+    totalRevenue,pendingRevenue,depositCount,fullCount,conversionRate,avgOrderValue,
+    funnel,topServices,topCategories,
+    totalEvents:(events||[]).length,totalCommissions:rows.length
+  };
+}
+
+async function renderAdminStudioPage(activeTab='members'){
+  if(!state.currentUser||!state.currentMember?.is_admin){
+    document.getElementById('adminPageView').innerHTML='<div class="panel"><h3>Access Restricted</h3><p style="color:var(--muted)">You must be an administrator to view this page.</p></div>';
+    return;
+  }
+  const sec = document.getElementById('adminPageView'); if(!sec) return;
+  sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
+
+  const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
+    supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
+    supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
+    supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
+    supabaseClient.from('projects').select('*',{count:'exact',head:true}),
+    supabaseClient.from('services').select('*',{count:'exact',head:true}),
+    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
+    supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
+    supabaseClient.from('studio_settings').select('key,value').order('key')
+  ]);
+
+  const analytics=await loadAdvancedAnalytics(projects||[],servicesArr||[]);
+
+  if(pErr || sErr){
+    sec.innerHTML='<div class="panel"><h3>Studio unavailable</h3><p style="color:var(--muted)">'+esc((pErr||sErr).message)+'</p></div>';
+    return;
+  }
+
+  const allProjects = projects || [];
+  const allServices = servicesArr || [];
+  const pendingProjects = allProjects.filter(p=>p.status==='pending');
+  const pendingServices = allServices.filter(s=>s.status==='pending');
+  const totalPending = pendingProjects.length + pendingServices.length;
+  const settingsMap = Object.fromEntries((settings||[]).map(x=>[x.key,x.value]));
+
+  const getMemberName = (id) => {
+    const m = (members||[]).find(x=>x.id===id);
+    return m ? (m.display_name || '@'+m.username) : 'Unknown';
+  };
+
+  const projectRow = p => `
+    <div class="listitem" style="align-items:center">
+      <div class="grow">
+        <b>${esc(p.title)}</b>
+        <div class="meta">📁 Project · ${esc(p.category||'Uncategorized')} · By ${esc(getMemberName(p.owner_id))} ${p.featured?'· ⭐ Featured':''}</div>
+      </div>
+      <div class="row" style="gap:6px">
+        <select data-admin-pj-status="${p.id}" style="width:auto;padding:6px 10px">
+          <option value="draft" ${p.status==='draft'?'selected':''}>Draft</option>
+          <option value="pending" ${p.status==='pending'?'selected':''}>Pending</option>
+          <option value="published" ${p.status==='published'?'selected':''}>Published</option>
+          <option value="archived" ${p.status==='archived'?'selected':''}>Archived</option>
+        </select>
+        ${p.status==='pending'?`<button class="btn primary" style="padding:6px 12px;font-size:12px" data-admin-pj-approve="${p.id}">Approve</button>`:''}
+        <button class="btn" style="padding:6px 12px;font-size:12px" data-admin-feature="${p.id}">${p.featured?'Unfeature':'Feature'}</button>
+      </div>
+    </div>`;
+
+  const serviceRow = s => `
+    <div class="listitem" style="align-items:center">
+      <div class="grow">
+        <b>${esc(s.title)}</b>
+        <div class="meta">💼 Service · ${esc(s.category||'Uncategorized')} · By ${esc(getMemberName(s.owner_id||s.artist_id))} ${s.price_from?'· From '+esc(s.price_from):''}</div>
+      </div>
+      <div class="row" style="gap:6px">
+        <select data-admin-sv-status="${s.id}" style="width:auto;padding:6px 10px">
+          <option value="draft" ${s.status==='draft'?'selected':''}>Draft</option>
+          <option value="pending" ${s.status==='pending'?'selected':''}>Pending</option>
+          <option value="published" ${s.status==='published'?'selected':''}>Published</option>
+          <option value="archived" ${s.status==='archived'?'selected':''}>Archived</option>
+        </select>
+        ${s.status==='pending'?`<button class="btn primary" style="padding:6px 12px;font-size:12px" data-admin-sv-approve="${s.id}">Approve</button>`:''}
+      </div>
+    </div>`;
+
+  const memberRows = (members||[]).map(m=>`
+    <div class="listitem" style="align-items:center">
+      <div class="grow">
+        <b>${esc(m.display_name||m.username||'Unnamed member')}</b>
+        <div class="meta">@${esc(m.username||'member')} · ${esc(m.role||'Member')} · ${m.is_admin?'Administrator':(m.account_type==='member'?'Lunarist Member':'User')}</div>
+      </div>
+      ${m.is_admin?'':`<button class="btn" style="padding:6px 12px;font-size:12px" data-toggle-membertype="${m.id}" data-current="${m.account_type||'user'}">${m.account_type==='member'?'Revoke Member':'Promote to Member'}</button>`}
+    </div>`).join('')||'<div class="meta">No members found</div>';
+
+  sec.innerHTML = `
+    <div class="sectionhead">
+      <div>
+        <div class="eyebrow">Studio Management</div>
+        <h2 style="font-size:42px;margin:4px 0">Admin Studio</h2>
+        <p>Manage members, review pending submissions, and configure studio settings.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
+        <div class="stat"><b>${Number(totalPending)}</b><span>Pending Review</span></div>
+        <div class="stat"><b>${Number(memberCount||0)}</b><span>Members</span></div>
+        <div class="stat"><b>${Number(projectCount||0)}</b><span>Projects</span></div>
+        <div class="stat"><b>${Number(serviceCount||0)}</b><span>Services</span></div>
+        <div class="stat"><b>${Number(analytics.totalEvents||0)}</b><span>Events (14d)</span></div>
+      </div>
+    </div>
+
+    <div class="heroactions" style="margin:16px 0;flex-wrap:wrap">
+      <button class="filter ${activeTab==='overview'?'active':''}" data-studio-tab="overview">Queue (${totalPending})</button>
+      <button class="filter ${activeTab==='projects'?'active':''}" data-studio-tab="projects">Projects (${allProjects.length})</button>
+      <button class="filter ${activeTab==='services'?'active':''}" data-studio-tab="services">Services (${allServices.length})</button>
+      <button class="filter ${activeTab==='members'?'active':''}" data-studio-tab="members">Members (${Number(memberCount||0)})</button>
+      <button class="filter ${activeTab==='analytics'?'active':''}" data-studio-tab="analytics">Analytics</button>
+      <button class="filter ${activeTab==='settings'?'active':''}" data-studio-tab="settings">Settings</button>
+    </div>
+
+    <div data-studio-panel="overview" style="${activeTab==='overview'?'':'display:none'}">
+      <div class="panel">
+        <div class="eyebrow">Review Queue</div>
+        <h3>${totalPending ? totalPending + ' item(s) awaiting moderation' : 'Review queue is empty 🎉'}</h3>
+        <div style="margin-top:12px">
+          ${pendingProjects.length ? `<div class="eyebrow" style="margin:12px 0 6px">Pending Projects (${pendingProjects.length})</div>` + pendingProjects.map(projectRow).join('') : ''}
+          ${pendingServices.length ? `<div class="eyebrow" style="margin:12px 0 6px">Pending Services (${pendingServices.length})</div>` + pendingServices.map(serviceRow).join('') : ''}
+          ${!totalPending ? '<div class="meta" style="padding:16px 0">No pending projects or services to review right now.</div>' : ''}
+        </div>
+      </div>
+    </div>
+
+    <div data-studio-panel="projects" style="${activeTab==='projects'?'':'display:none'}">
+      <div class="panel">
+        <div class="eyebrow">All Submitted Projects</div>
+        <div style="margin-top:12px">${allProjects.map(projectRow).join('') || '<div class="meta">No projects found.</div>'}</div>
+      </div>
+    </div>
+
+    <div data-studio-panel="services" style="${activeTab==='services'?'':'display:none'}">
+      <div class="panel">
+        <div class="eyebrow">All Submitted Services</div>
+        <div style="margin-top:12px">${allServices.map(serviceRow).join('') || '<div class="meta">No services found.</div>'}</div>
+      </div>
+    </div>
+
+    <div data-studio-panel="members" style="${activeTab==='members'?'':'display:none'}">
+      <div class="panel">
+        <div class="eyebrow">Members Management</div>
+        <div style="margin-top:12px">${memberRows}</div>
+      </div>
+    </div>
+
+    <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
+      ${analytics.error?`<div class="panel"><h3>Analytics unavailable</h3><p style="color:var(--muted)">${esc(analytics.error)}</p></div>`:`
+      <div class="panel" style="margin-bottom:16px">
+        <div class="eyebrow">Revenue</div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:10px">
+          <div class="stat"><b>$${analytics.totalRevenue.toFixed(2)}</b><span>Collected</span></div>
+          <div class="stat"><b>$${analytics.pendingRevenue.toFixed(2)}</b><span>Pending (in queue)</span></div>
+          <div class="stat"><b>$${analytics.avgOrderValue.toFixed(2)}</b><span>Avg. order value</span></div>
+          <div class="stat"><b>${analytics.conversionRate}%</b><span>Inquiry → paid</span></div>
+          <div class="stat"><b>${analytics.depositCount} / ${analytics.fullCount}</b><span>Deposits / Full paid</span></div>
+        </div>
+      </div>
+
+      <div class="split" style="margin-bottom:16px">
+        <div class="panel">
+          <div class="eyebrow">Engagement — last 14 days</div>
+          <div style="height:220px;margin-top:10px"><canvas id="chartEngagementTrend"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="eyebrow">Commission funnel</div>
+          <div style="height:220px;margin-top:10px"><canvas id="chartFunnel"></canvas></div>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="panel">
+          <div class="eyebrow">Top services by revenue</div>
+          <div style="height:220px;margin-top:10px">${analytics.topServices.length?`<canvas id="chartRevenueByService"></canvas>`:'<div class="meta" style="padding:16px 0">No paid commissions yet.</div>'}</div>
+        </div>
+        <div class="panel">
+          <div class="eyebrow">Views by category</div>
+          <div style="height:220px;margin-top:10px">${analytics.topCategories.length?`<canvas id="chartCategoryViews"></canvas>`:'<div class="meta" style="padding:16px 0">No published projects yet.</div>'}</div>
+        </div>
+      </div>
+      `}
+    </div>
+
+    <div data-studio-panel="settings" style="${activeTab==='settings'?'':'display:none'}">
+      <div class="panel">
+        <div class="eyebrow">Studio Settings</div>
+        <div class="field" style="margin-top:10px"><label>Studio name</label><input id="studioName" value="${esc(settingsMap.site_name||'Lunarist Studio')}"></div>
+        <div class="field" style="margin-top:10px"><label>Tagline</label><input id="studioTagline" value="${esc(settingsMap.tagline||'Unleash Your Dream.')}"></div>
+        <button class="btn primary" id="saveStudioSettings" style="margin-top:14px">Save settings</button>
+        <p id="studioSettingsMsg" class="meta" style="margin-top:8px"></p>
+      </div>
+    </div>
+  `;
+
+  let chartsReady=false;
+  const chartInstances={};
+  function initAnalyticsCharts(){
+    if(chartsReady||analytics.error||typeof Chart==='undefined')return;
+    chartsReady=true;
+
+    const trendCtx=document.getElementById('chartEngagementTrend');
+    if(trendCtx){
+      const labels=analytics.trendDays.map(d=>d.slice(5));
+      chartInstances.trend=new Chart(trendCtx,{type:'line',data:{labels,datasets:[
+        {label:'Views',data:analytics.trendDays.map(d=>analytics.trend[d].view),borderColor:'#c9b6ff',backgroundColor:'rgba(201,182,255,.15)',tension:.3,fill:true},
+        {label:'Likes',data:analytics.trendDays.map(d=>analytics.trend[d].like),borderColor:'#ff86c8',backgroundColor:'rgba(255,134,200,.12)',tension:.3,fill:true},
+        {label:'Saves',data:analytics.trendDays.map(d=>analytics.trend[d].save),borderColor:'#8ee0ba',backgroundColor:'rgba(142,224,186,.12)',tension:.3,fill:true}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c96ad'}}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+    }
+
+    const funnelCtx=document.getElementById('chartFunnel');
+    if(funnelCtx){
+      const labels=Object.keys(analytics.funnel);
+      chartInstances.funnel=new Chart(funnelCtx,{type:'bar',data:{labels,datasets:[{label:'Commissions',data:Object.values(analytics.funnel),backgroundColor:'#c9b6ff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+    }
+
+    const revCtx=document.getElementById('chartRevenueByService');
+    if(revCtx){
+      chartInstances.revenue=new Chart(revCtx,{type:'bar',data:{labels:analytics.topServices.map(s=>s.title),datasets:[{label:'Revenue',data:analytics.topServices.map(s=>s.revenue),backgroundColor:'#e8cf91'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true},y:{ticks:{color:'#9c96ad'},grid:{display:false}}}}});
+    }
+
+    const catCtx=document.getElementById('chartCategoryViews');
+    if(catCtx){
+      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Views',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+    }
+  }
+  if(activeTab==='analytics')initAnalyticsCharts();
+
+  sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{
+    sec.querySelectorAll('[data-studio-tab]').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===btn.dataset.studioTab?'block':'none');
+    if(btn.dataset.studioTab==='analytics')initAnalyticsCharts();
+  });
+
+  sec.querySelectorAll('[data-admin-pj-status]').forEach(el=>el.onchange=async()=>{
+    const id = el.dataset.adminPjStatus;
+    const r=await supabaseClient.from('projects').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error){toast(r.error.message)}else{
+      toast('Project status updated');
+      const item = allProjects.find(x=>x.id===id);
+      if(item) await sendNotification(item.owner_id, 'Project Status Changed', `Your project "${item.title}" is now ${el.value}`, 'approval');
+      await loadData();
+      renderAdminStudioPage('projects');
+    }
+  });
+
+  sec.querySelectorAll('[data-admin-pj-approve]').forEach(btn=>btn.onclick=async()=>{
+    const id = btn.dataset.adminPjApprove;
+    const r=await supabaseClient.from('projects').update({status:'published',published:true,updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error){toast(r.error.message)}else{
+      toast('Project approved & published!');
+      const item = allProjects.find(x=>x.id===id);
+      if(item) await sendNotification(item.owner_id, 'Project Approved 🎉', `Your project "${item.title}" has been published to Discover!`, 'approval');
+      await loadData();
+      renderAdminStudioPage('overview');
+    }
+  });
+
+  sec.querySelectorAll('[data-admin-sv-status]').forEach(el=>el.onchange=async()=>{
+    const id = el.dataset.adminSvStatus;
+    const r=await supabaseClient.from('services').update({status:el.value,published:el.value==='published',updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error){toast(r.error.message)}else{
+      toast('Service status updated');
+      const item = allServices.find(x=>x.id===id);
+      if(item) await sendNotification(item.owner_id||item.artist_id, 'Service Status Changed', `Your service "${item.title}" is now ${el.value}`, 'approval');
+      await loadData();
+      renderAdminStudioPage('services');
+    }
+  });
+
+  sec.querySelectorAll('[data-admin-sv-approve]').forEach(btn=>btn.onclick=async()=>{
+    const id = btn.dataset.adminSvApprove;
+    const r=await supabaseClient.from('services').update({status:'published',published:true,updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error){toast(r.error.message)}else{
+      toast('Service approved & published!');
+      const item = allServices.find(x=>x.id===id);
+      if(item) await sendNotification(item.owner_id||item.artist_id, 'Service Approved 🎉', `Your service "${item.title}" is now live!`, 'approval');
+      await loadData();
+      renderAdminStudioPage('overview');
+    }
+  });
+
+  sec.querySelectorAll('[data-admin-feature]').forEach(el=>el.onclick=async()=>{
+    const id=el.dataset.adminFeature;
+    const item=allProjects.find(x=>x.id===id);
+    const r=await supabaseClient.from('projects').update({featured:!item?.featured,updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error){toast(r.error.message)}else{toast(item?.featured?'Removed from featured':'Added to featured');await loadData();renderAdminStudioPage('projects')}
+  });
+
+  sec.querySelectorAll('[data-toggle-membertype]').forEach(el => el.onclick = async () => {
+    const id = el.dataset.toggleMembertype;
+    const next = el.dataset.current === 'member' ? 'user' : 'member';
+    el.disabled = true;
+
+    try {
+      const res = await fetch('/api/lunarist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })
+      });
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        toast('Error: ' + (result.error || 'Failed to update member'));
+        el.disabled = false;
+      } else {
+        toast(next === 'member' ? 'Promoted to Lunarist Member' : 'Reverted to User');
+        await sendNotification(id, 'Account Role Updated', `You have been ${next === 'member' ? 'promoted to Lunarist Member' : 'reverted to User'}.`, 'system');
+        await loadData();
+        await refreshUser();
+        renderAdminStudioPage('members');
+      }
+    } catch (err) {
+      toast('Error connecting to server');
+      el.disabled = false;
+    }
+  });
+
+  document.getElementById('saveStudioSettings')?.addEventListener('click',async()=>{
+    const msg=document.getElementById('studioSettingsMsg');
+    const rows=[['site_name',document.getElementById('studioName').value.trim()],['tagline',document.getElementById('studioTagline').value.trim()]];
+    for(const [key,value] of rows){
+      const r=await supabaseClient.from('studio_settings').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});
+      if(r.error){msg.textContent=r.error.message;return}
+    }
+    msg.textContent='Settings saved.';toast('Studio settings saved');
+  });
 }
 
 function closeDash(){document.getElementById('drawer').classList.remove('open')}
 
-async function loadConfig(){
-  const r=await fetch('/api/config');
-  if(!r.ok)throw new Error('Lunarist configuration missing.');
-  const c=await r.json();
-  if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');
-  supabaseClient=window.supabase.createClient(c.url,c.anonKey);
-  supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});
-  await refreshUser();
+/* Public Commission Status — Phase 9 */
+const PUBLIC_COMMISSION_STATUSES = [
+  {key:'waitlist', label:'Waitlist', desc:'Your commission is currently waiting to be started.'},
+  {key:'unpaid', label:'Unpaid', desc:'The commission has been accepted and is awaiting payment.'},
+  {key:'paid', label:'Paid', desc:'Payment has been received and the commission is ready to begin.'},
+  {key:'wip1', label:'WIP 1', desc:'Work in progress — first production phase.'},
+  {key:'wip2', label:'WIP 2', desc:'Work in progress — second production phase.'},
+  {key:'wip3', label:'WIP 3', desc:'Work in progress — final production phase.'},
+  {key:'delivered', label:'Delivered', desc:'The work has been delivered to the client.'},
+  {key:'revisions', label:'Revisions', desc:'The client revision stage is currently active.'},
+  {key:'completed', label:'Completed', desc:'The commission is completed.'}
+];
+
+function commissionStatusLabel(status){
+  return PUBLIC_COMMISSION_STATUSES.find(x=>x.key===status)?.label || status || 'Waitlist';
+}
+function commissionStatusDesc(status){
+  return PUBLIC_COMMISSION_STATUSES.find(x=>x.key===status)?.desc || '';
+}
+function commissionStatusIndex(status){
+  const i=PUBLIC_COMMISSION_STATUSES.findIndex(x=>x.key===status);
+  return i<0?0:i;
+}
+function ensureCommissionStatusModal(){
+  if(document.getElementById('publicCommissionStatusModal')) return;
+  const el=document.createElement('div');
+  el.id='publicCommissionStatusModal';
+  el.className='modal';
+  el.innerHTML=`
+    <div class="modalbox" style="max-width:760px;width:min(92vw,760px);max-height:88vh;overflow:auto">
+      <div class="sectionhead" style="margin-bottom:12px">
+        <div><div class="eyebrow">Commission</div><h2 id="publicCommissionTitle">Commission Status</h2></div>
+        <button class="btn" type="button" id="publicCommissionClose">Close</button>
+      </div>
+      <div id="publicCommissionBody"></div>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')});
+  document.getElementById('publicCommissionClose').onclick=()=>el.classList.remove('open');
+}
+async function openPublicCommissionStatus(username){
+  ensureCommissionStatusModal();
+  const modal=document.getElementById('publicCommissionStatusModal');
+  const body=document.getElementById('publicCommissionBody');
+  const title=document.getElementById('publicCommissionTitle');
+  modal.classList.add('open');
+  body.innerHTML='<div class="panel"><div class="meta">Loading commission status…</div></div>';
+
+  try{
+    const u=String(username||'').trim();
+    const r=await fetch('/api/lunarist?resource=commissions&username='+encodeURIComponent(u));
+    if(!r.ok) throw new Error(await r.text());
+    const rows=await r.json();
+    const commissions=Array.isArray(rows)?rows:[];
+    title.textContent=(u?'@'+u+' — ':'')+'Commission Status';
+
+    if(!commissions.length){
+      body.innerHTML='<div class="panel"><h3>No public commissions yet</h3><p class="meta">There are no commissions currently visible for this artist.</p></div>';
+      return;
+    }
+
+    body.innerHTML=commissions.map(c=>{
+      const client=c.client_name||c.customer_name||c.client?.display_name||c.client?.username||'Client';
+      const service=c.service_title||c.service_name||c.service?.title||'Commission Service';
+      const status=c.status||'waitlist';
+      const idx=commissionStatusIndex(status);
+      return `<div class="panel" style="margin-bottom:14px">
+        <div class="row" style="justify-content:space-between;gap:12px;align-items:flex-start">
+          <div>
+            <div class="eyebrow">Commission</div>
+            <h3 style="margin:4px 0 8px">${esc(service)}</h3>
+            <div class="meta"><b>Client:</b> ${esc(client)}</div>
+          </div>
+          <span class="pill">${esc(commissionStatusLabel(status))}</span>
+        </div>
+        <div class="commission-status-track" style="display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;margin-top:18px">
+          ${PUBLIC_COMMISSION_STATUSES.map((s,i)=>`
+            <div title="${esc(s.label)}" style="text-align:center">
+              <div style="height:6px;border-radius:99px;background:${i<=idx?'var(--accent)':'rgba(255,255,255,.10)'}"></div>
+              <div class="meta" style="font-size:10px;margin-top:5px">${esc(s.label)}</div>
+            </div>`).join('')}
+        </div>
+        <p class="meta" style="margin-top:14px">${esc(commissionStatusDesc(status))}</p>
+      </div>`;
+    }).join('');
+  }catch(e){
+    body.innerHTML='<div class="panel"><h3>Commission status unavailable</h3><p class="meta">'+esc(e.message||'Unable to load commission status.')+'</p></div>';
+  }
 }
 
+async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});await refreshUser()}
 async function loadData(){
   state.loadError=null;
   try{
@@ -429,6 +1643,19 @@ async function loadData(){
       account_type:x.account_type||'member',
       is_admin:!!x.is_admin
     }));
+
+     try {
+       const {data: publicTosRows, error: publicTosError} = await supabaseClient
+         .from('profiles')
+         .select('id,tos')
+         .not('tos','is',null);
+       if (!publicTosError && Array.isArray(publicTosRows)) {
+         const tosById = new Map(publicTosRows.map(x=>[x.id, x.tos||'']));
+         data.members.forEach(m=>{
+           if (tosById.has(m.id)) m.tos = tosById.get(m.id);
+         });
+       }
+     } catch(e) {}
     
     data.projects=(Array.isArray(pp)?pp:[]).map(x=>({
       id:x.id,
@@ -456,7 +1683,24 @@ async function loadData(){
     
     state.backendReady=true;
     if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}
+    await refreshRecommendations();
     render();
+
+    data.projects.forEach(async (p) => {
+      const vid = extractYoutubeId(p.media_url) || extractYoutubeId(p.video) || extractYoutubeId(p.thumbnail_url);
+      if (vid) {
+        try {
+          const r = await fetch('/api/youtube?videoId=' + encodeURIComponent(vid));
+          const res = await r.json();
+          if (res && res.viewCount !== undefined && res.viewCount !== null) {
+            p.views = Number(res.viewCount);
+            supabaseClient.from('projects').update({ views: p.views }).eq('id', p.id).then(() => {});
+            render();
+          }
+        } catch(e) {}
+      }
+    });
+
   }catch(e){
     state.backendReady=false;
     state.loadError=e.message||'Unable to connect to Supabase.';
@@ -477,21 +1721,27 @@ function updateAccountButton(){
     document.getElementById('accountName').textContent='Guest';
   }
 }
-
-document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');
-document.getElementById('modalClose').onclick=closeModal;
-document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};
-document.getElementById('drawerClose').onclick=closeDash;
-document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};
-document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');
-document.getElementById('authClose').onclick=closeAuth;
-document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};
-document.getElementById('authSubmit').onclick=authSubmit;
-document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');
-document.getElementById('googleAuth').onclick=signInWithGoogle;
-document.getElementById('forgotPassword').onclick=resetPassword;
-
-(async()=>{await loadData();updateAccountButton()})();
+document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
+async function capturePaypalReturnIfPresent(){
+  const params=new URLSearchParams(location.search);
+  const paypalStatus=params.get('paypal');
+  const orderId=params.get('token');
+  if(paypalStatus==='success'&&orderId){
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'capture',order_id:orderId})});
+      const d=await r.json();
+      if(r.ok&&(d.status==='COMPLETED'||d.alreadyCaptured)){toast('Payment confirmed — thank you!')}
+      else{toast('We could not confirm your payment automatically. The artist has your order on file.')}
+    }catch(e){}
+  }
+  if(paypalStatus==='cancel'){toast('Checkout was cancelled — no charge was made.')}
+  if(paypalStatus){
+    params.delete('paypal');params.delete('token');params.delete('PayerID');
+    const clean=location.pathname+(params.toString()?'?'+params.toString():'');
+    history.replaceState({},'',clean);
+  }
+}
+(async()=>{await loadData();updateAccountButton();await capturePaypalReturnIfPresent()})();
 </script>
 </body>
 </html>
