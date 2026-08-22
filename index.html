@@ -89,7 +89,7 @@ window.addEventListener('error', (e) => {
 let supabaseClient=null;
 const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',loadError:null,conversations:[],activeConversation:null,notifications:[]};
 const data={members:[],projects:[],services:[],recommendations:[]};
-function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
 function updateSeoMeta(title, desc, image) {
   const pageTitle = title ? `${title} — Lunarist Studio` : 'Lunarist Studio — Unleash Your Dream';
