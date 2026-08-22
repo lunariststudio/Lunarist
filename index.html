@@ -41,6 +41,7 @@
 
 .chat-thread-container{display:flex;flex-direction:column;height:480px;border:1px solid var(--line);border-radius:18px;background:rgba(16,14,24,.96);overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
 .chat-messages-list{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.client-review-form[hidden]{display:none!important}.client-review-form textarea{min-height:100px;resize:vertical}.client-review-form .btn{transition:transform .18s ease,box-shadow .18s ease}.client-review-form .btn:hover{transform:translateY(-1px)}
 .chat-bubble{max-width:80%;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.5;word-break:break-word}
 .chat-bubble.mine{align-self:flex-end;background:var(--moon);color:#08070d;border-bottom-right-radius:4px;font-weight:500}
 .chat-bubble.other{align-self:flex-start;background:rgba(255,255,255,.08);color:var(--text);border:1px solid var(--line);border-bottom-left-radius:4px}
@@ -870,7 +871,7 @@ function renderClientCommissionsTab(){
       <div style="display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;margin:10px 0 16px">${PUBLIC_COMMISSION_STATUSES.map((st,i)=>`<div title="${esc(st.label)}"><div style="height:5px;border-radius:99px;background:${i<=idx?'var(--moon)':'rgba(255,255,255,.1)'}"></div><div class="meta" style="font-size:9px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.label)}</div></div>`).join('')}</div>
       ${canApprove?`<button class="btn primary" data-approve-commission="${c.id}">✓ Approve delivery & complete</button>`:''}
       ${review?`<div style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)"><div class="eyebrow">Your review</div><div style="color:var(--gold);font-size:18px;margin:3px 0">${'★'.repeat(Number(review.rating||0))}${'☆'.repeat(5-Number(review.rating||0))}</div><div style="font-size:13px;color:var(--muted)">${esc(review.review)}</div></div>`:''}
-      ${canReview?`<div class="client-review-form" data-review-form="${c.id}" style="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:14px"><div class="eyebrow">Review your completed commission</div><div class="field" style="margin-top:8px"><label>Rating</label><select data-review-rating="${c.id}"><option value="5">★★★★★ — Excellent</option><option value="4">★★★★☆ — Great</option><option value="3">★★★☆☆ — Good</option><option value="2">★★☆☆☆ — Needs work</option><option value="1">★☆☆☆☆ — Poor</option></select></div><div class="field" style="margin-top:8px"><label>Your review</label><textarea data-review-text="${c.id}" placeholder="Tell future clients about your experience…"></textarea></div><button class="btn pink" style="margin-top:8px" data-submit-review="${c.id}">Publish review</button></div>`:''}
+      ${canReview?`<div style="margin-top:12px"><button class="btn pink" type="button" data-open-review="${c.id}">★ Leave Review</button><div class="client-review-form" data-review-form="${c.id}" hidden style="margin-top:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)"><div class="row" style="justify-content:space-between;align-items:center;gap:10px"><div><div class="eyebrow">Review your completed commission</div><div class="meta">Share your experience with ${esc(artist.display_name||artist.username||'this artist')}.</div></div><button class="btn" type="button" data-close-review="${c.id}">Cancel</button></div><div class="field" style="margin-top:12px"><label>Rating</label><select data-review-rating="${c.id}"><option value="5">★★★★★ — Excellent</option><option value="4">★★★★☆ — Great</option><option value="3">★★★☆☆ — Good</option><option value="2">★★☆☆☆ — Needs work</option><option value="1">★☆☆☆☆ — Poor</option></select></div><div class="field" style="margin-top:10px"><label>Your review</label><textarea data-review-text="${c.id}" rows="4" maxlength="1000" placeholder="Tell future clients about your experience…"></textarea><div class="meta" style="margin-top:5px">Minimum 10 characters.</div></div><button class="btn primary" type="button" style="margin-top:8px" data-submit-review="${c.id}">Publish Review</button></div></div>`:''}
     </article>`;
   }).join('')}</div></div>`;
 
@@ -881,6 +882,15 @@ function renderClientCommissionsTab(){
     toast('Commission completed.');
     await openDashboard();
     switchDashTab('commissions');
+  });
+  document.querySelectorAll('[data-open-review]').forEach(btn=>btn.onclick=()=>{
+    const form=document.querySelector(`[data-review-form="${btn.dataset.openReview}"]`);
+    if(form){form.hidden=false;btn.hidden=true;form.querySelector('select,textarea')?.focus();}
+  });
+  document.querySelectorAll('[data-close-review]').forEach(btn=>btn.onclick=()=>{
+    const form=document.querySelector(`[data-review-form="${btn.dataset.closeReview}"]`);
+    const opener=document.querySelector(`[data-open-review="${btn.dataset.closeReview}"]`);
+    if(form){form.hidden=true;} if(opener){opener.hidden=false;}
   });
   document.querySelectorAll('[data-submit-review]').forEach(btn=>btn.onclick=async()=>{
     const id=btn.dataset.submitReview; const rating=Number(document.querySelector(`[data-review-rating="${id}"]`)?.value||5); const text=document.querySelector(`[data-review-text="${id}"]`)?.value.trim()||'';
