@@ -104,9 +104,14 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="commissions" data-i18n="myCommissions">My Commissions</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
+<style>
+.lunarist-direct-badge{background:linear-gradient(135deg,rgba(255,112,196,.22),rgba(201,182,255,.2));border:1px solid rgba(255,150,218,.55);color:#ffd5f1;box-shadow:0 6px 20px rgba(255,112,196,.12);font-weight:800;letter-spacing:.02em}
+.thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
+.lunarist-direct-label{display:inline-flex;align-items:center;gap:6px;margin-top:8px;color:#ffc9ea;font-size:11px;font-weight:800;letter-spacing:.02em}
+</style>
 <script>
 // Global Error Boundary & Graceful Handling
 window.addEventListener('error', (e) => {
@@ -189,14 +194,16 @@ async function track(p,type='view'){state.session.interests[p.category]=(state.s
 function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.pravatar.cc/160?u=unknown')}" alt="${esc(m?.name||'Artist')}" loading="lazy" onerror="handleImageError(this)">`}
 function card(p,feature=false){
   const m=member(p.member);
+  const directBadge=p.lunarist_direct?`<span class="badge lunarist-direct-badge" title="Commissioned and purchased directly through Lunarist Studio">✦ Lunarist Studio Commission</span>`:'';
   return `<article class="card ${feature?'feature':''}" data-project="${p.id}">
     <div class="thumb">
       <img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy" onerror="handleImageError(this)">
-      <div class="overlay"><span class="badge">${esc(p.category)}</span></div>
+      <div class="overlay"><span class="badge">${esc(p.category)}</span>${directBadge}</div>
     </div>
     <div class="cardbody">
       <div class="title">${esc(p.title)}</div>
       <div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')} · ${formatViews(p.views)} views</span></div>
+      ${p.lunarist_direct?`<div class="lunarist-direct-label">✦ Purchased through Lunarist Studio</div>`:''}
       <div class="tags">${(p.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     </div>
   </article>`;
@@ -587,14 +594,12 @@ async function loadArtistReviews(artistId){
 
 function render(){
   document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));
-  document.getElementById('navCommissionsBtn')?.classList.toggle('active', state.route==='commissions');
   if(!state.route.startsWith('member:')){ 
     applyTheme(state.currentMember?.theme || 'moonlight');
     updateSeoMeta('', '', '');
   }
   let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route==='commissions'?`<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Client Dashboard</div><h1 style="margin:4px 0">My Commissions</h1><p>Track your commissions, approve deliveries, and leave reviews for completed work.</p></div></div><div id="dash-commissions" style="margin-top:20px"></div></section></div>`:state.route==='admin'?`<div class="container"><section class="section" style="padding-top:55px" id="adminPageView"></section></div>`:state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
   document.getElementById('view').innerHTML=html;
-  if(state.route==='commissions') document.getElementById('drawer')?.classList.remove('open');
   bind();
   if(state.route.startsWith('member:')) {
     const pid=state.route.split(':')[1];
@@ -647,7 +652,7 @@ async function openProject(id){
   document.getElementById('modalMedia').innerHTML=p.video?`<iframe src="${esc(p.video)}${p.video.includes('?')?'&':'?'}autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
   
   document.getElementById('modalContent').innerHTML=`
-    <div class="eyebrow">${esc(p.category)}</div>
+    <div class="eyebrow">${esc(p.category)} ${p.lunarist_direct?`<span class="badge lunarist-direct-badge" title="Commissioned and purchased directly through Lunarist Studio" style="margin-left:8px;vertical-align:middle">✦ Lunarist Studio Commission</span>`:''}</div>
     <h2>${esc(p.title)}</h2>
     <div class="artist" style="gap:12px;margin-bottom:14px">
       ${avatar(m)}
@@ -735,10 +740,12 @@ async function refreshUser(){
 }
 
 function switchDashTab(tabName) {
-  const valid = ['overview','messages','projects','profile','services'];
+  const valid = ['overview','messages','commissions','projects','profile','services'];
   if(!valid.includes(tabName)) tabName='overview';
   document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
   document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
+  const navCommission=document.getElementById('navCommissionsBtn');
+  if(navCommission) navCommission.classList.toggle('active', tabName==='commissions');
   const drawer=document.getElementById('drawer');
   if(drawer) drawer.dataset.activeTab=tabName;
   applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
@@ -748,7 +755,6 @@ function switchDashTab(tabName) {
 
 async function openCommissionsPage(){
   if(!state.currentUser){openAuth('signin');return}
-  closeDash();
   await refreshUser();
   const m=state.currentMember;
   if(!m){toast('Your profile could not be loaded.');return}
@@ -793,6 +799,7 @@ async function openDashboard(initialTab='overview'){
   document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(state.myProjects).length?(state.myProjects).map((p,idx)=>`<div class="listitem draggable" draggable="true" data-id="${p.id}" data-index="${idx}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
   
   renderMessagesTab();
+  renderClientCommissionsTab();
 
   document.getElementById('dash-profile').innerHTML=`
     <div class="panel">
@@ -908,6 +915,7 @@ function renderClientCommissionsTab(){
     await openDashboard();
     switchDashTab('commissions');
   });
+  switchDashTab(initialTab);
   applyLanguage(state.language || 'en');
 }
 
@@ -1930,6 +1938,7 @@ async function loadData(){
       published:x.published,
       status:x.status||(x.published?'published':'draft'),
       featured:!!x.featured,
+      lunarist_direct:!!x.lunarist_direct,
       thumbnail_url:x.thumbnail_url,
       media_url:x.media_url,
       media_type:x.media_type
