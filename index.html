@@ -133,6 +133,21 @@ function openService(id){
       </div>
     `:''}
 
+    <div class="panel" style="margin-top:22px;padding:18px">
+      <div class="eyebrow">Commission / Inquire</div>
+      <h3 style="margin:4px 0 12px">Interested in this service?</h3>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>Name</label><input id="commissionName" maxlength="100" placeholder="Your name"></div>
+        <div class="field"><label>Email</label><input id="commissionEmail" type="email" maxlength="160" placeholder="you@example.com"></div>
+        <div class="field full"><label>Project brief</label><textarea id="commissionMessage" maxlength="4000" placeholder="Tell the artist what you need, timeline, references, and goals." style="min-height:120px"></textarea></div>
+        <div class="field"><label>Budget / currency</label><input id="commissionBudget" maxlength="80" placeholder="e.g. $300 USD"></div>
+      </div>
+      <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" id="commissionSubmit">Send inquiry</button>
+        <button class="btn" id="commissionPay" ${basePrice>0?'':'disabled'}>Pay service ${basePrice>0?'$'+basePrice.toFixed(2):'—'}</button>
+      </div>
+      <div class="meta" id="commissionMsg" style="margin-top:8px"></div>
+    </div>
     <div class="tags" style="margin-top:16px">${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${examples.length?`<div class="sectionhead" style="margin-top:22px"><div><h3 style="margin:0">Portfolio examples</h3></div></div><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${examples.map(p=>card(p)).join('')}</div>`:''}
   `;
@@ -150,6 +165,42 @@ function openService(id){
       };
     });
   }
+
+
+  const commissionMsg=document.getElementById('commissionMsg');
+  const getCommissionData=()=>({
+    service_id:s.id,
+    name:(document.getElementById('commissionName')?.value||'').trim(),
+    email:(document.getElementById('commissionEmail')?.value||'').trim(),
+    message:(document.getElementById('commissionMessage')?.value||'').trim(),
+    budget:(document.getElementById('commissionBudget')?.value||'').trim(),
+    addon_titles:[...document.querySelectorAll('.modalAddonCheck:checked')].map(c=>c.parentElement?.textContent?.replace(/\+\$[\d.]+/,'').trim()).filter(Boolean)
+  });
+  document.getElementById('commissionSubmit')?.addEventListener('click',async()=>{
+    const d=getCommissionData();
+    if(!d.name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)||!d.message){if(commissionMsg)commissionMsg.textContent='Please provide your name, valid email, and project brief.';return}
+    if(commissionMsg)commissionMsg.textContent='Sending inquiry…';
+    try{
+      const r=await fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({commission:d})});
+      const j=await r.json();
+      if(!r.ok)throw new Error(j.error||'Unable to send inquiry');
+      if(commissionMsg)commissionMsg.textContent='Inquiry sent. The artist can follow up with you.';
+      toast('Commission inquiry sent');
+    }catch(e){if(commissionMsg)commissionMsg.textContent=e.message}
+  });
+  document.getElementById('commissionPay')?.addEventListener('click',async()=>{
+    const d=getCommissionData();
+    if(!d.name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)){if(commissionMsg)commissionMsg.textContent='Enter your name and email before paying.';return}
+    if(commissionMsg)commissionMsg.textContent='Creating PayPal checkout…';
+    try{
+      const r=await fetch('/api/paypal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:s.id,addon_titles:d.addon_titles,customer:{name:d.name,email:d.email}})});
+      const j=await r.json();
+      if(!r.ok)throw new Error(j.error||'Unable to create PayPal order');
+      const approve=(j.links||[]).find(x=>x.rel==='approve');
+      if(!approve?.href)throw new Error('PayPal approval link was not returned.');
+      window.location.href=approve.href;
+    }catch(e){if(commissionMsg)commissionMsg.textContent=e.message}
+  });
 
   const mb=document.querySelector('[data-modal-member]');
   if(mb)mb.onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
