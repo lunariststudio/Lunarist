@@ -45,6 +45,12 @@ const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().t
 const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function formatDescription(text){if(!text)return '';const escaped=esc(text);const formatted=escaped.replace(/(?:^|\n)[-*\u2022]\s+(.+)/g,'<div class="bullet-item"><span class="bullet-dot">•</span><span>$1</span></div>');return formatted.replace(/\n/g,'<br>')}
+function formatViews(n){
+  n=Number(n||0);
+  if(n>=1000000)return (n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'K';
+  return n.toLocaleString();
+}
 function applyTheme(themeName){
   state.selectedTheme = themeName || 'moonlight';
   document.documentElement.setAttribute('data-theme', state.selectedTheme);
@@ -86,7 +92,20 @@ async function refreshRecommendations(){
 }
 async function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);(p.tags||[]).forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{});}
 function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.pravatar.cc/160?u=unknown')}" alt="${esc(m?.name||'Artist')}">`}
-function card(p,feature=false){const m=member(p.member);return `<article class="card ${feature?'feature':''}" data-project="${p.id}"><div class="thumb"><img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy"><div class="overlay"><span class="badge">${esc(p.category)}</span></div></div><div class="cardbody"><div class="title">${esc(p.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')} · ${Number(p.views||0).toLocaleString()} views</span></div><div class="tags">${(p.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
+function card(p,feature=false){
+  const m=member(p.member);
+  return `<article class="card ${feature?'feature':''}" data-project="${p.id}">
+    <div class="thumb">
+      <img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy">
+      <div class="overlay"><span class="badge">${esc(p.category)}</span></div>
+    </div>
+    <div class="cardbody">
+      <div class="title">${esc(p.title)}</div>
+      <div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')} · ${formatViews(p.views)} views</span></div>
+      <div class="tags">${(p.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    </div>
+  </article>`;
+}
 function serviceCard(s){const m=member(s.member);return `<article class="card" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onerror="this.style.opacity=0"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
@@ -195,7 +214,7 @@ async function openProject(id){
     <h2>${esc(p.title)}</h2>
     <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · ${esc(m?.role||'')}</button></div>
     <p>${formatDescription(p.desc)}</p>
-    <div class="stats"><span class="stat">👁 ${Number(p.views||0).toLocaleString()} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div>
+    <div class="stats"><span class="stat">👁 ${formatViews(p.views)} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div>
     <div class="tags">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     
     ${linkedServices.length?`
@@ -295,7 +314,7 @@ async function openDashboard(){
   document.getElementById('dashTitle').textContent=m.name+' · '+roleLabel(m);
   document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile and projects are stored in Supabase. Published work appears in Discover.</p><div class="stats"><span class="stat">${roleLabel(m)}</span><span class="stat">${(ps||[]).length} projects</span><span class="stat">${(ps||[]).reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div>${(m.account_type!=='member'&&!m.is_admin)?'<p class="meta" style="margin-top:10px">You\'re a Lunarist User — ask a Studio admin to promote you to Lunarist Member to publish work.</p>':''}</div>`;
   const canPublish=m.account_type==='member'||m.is_admin;
-  document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(ps||[]).length?(ps||[]).map(p=>`<div class="listitem"><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="this.style.display='none'"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${Number(p.views||0)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
+  document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(ps||[]).length?(ps||[]).map(p=>`<div class="listitem"><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="this.style.display='none'"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
   
   document.getElementById('dash-profile').innerHTML=`
     <div class="panel">
@@ -805,7 +824,67 @@ async function renderAdminStudioPage(activeTab='members'){
 
 function closeDash(){document.getElementById('drawer').classList.remove('open')}
 async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});await refreshUser()}
-async function loadData(){state.loadError=null;try{if(!supabaseClient)await loadConfig();const [pr,pp,sv]=await Promise.all([fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})]);data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',theme:x.theme||'moonlight',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));data.projects=(Array.isArray(pp)?pp:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],views:Number(x.views||0),likes:Number(x.likes||0),created_at:x.created_at,video:x.media_type==='video'?x.media_url:'',image:x.thumbnail_url||x.media_url||'',desc:x.description||'',description:x.description||'',published:x.published,status:x.status||(x.published?'published':'draft'),featured:!!x.featured,thumbnail_url:x.thumbnail_url,media_url:x.media_url,media_type:x.media_type}));data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));state.backendReady=true;if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}await refreshRecommendations();render()}catch(e){state.backendReady=false;state.loadError=e.message||'Unable to connect to Supabase.';render()}}
+async function loadData(){
+  state.loadError=null;
+  try{
+    if(!supabaseClient)await loadConfig();
+    const [pr,pp,sv]=await Promise.all([
+      fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
+      fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
+      fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})
+    ]);
+    data.members=(Array.isArray(pr)?pr:[]).map(x=>({id:x.id,username:x.username,name:x.display_name,role:x.role||'',bio:x.bio||'',tos:x.tos||'',theme:x.theme||'moonlight',avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,skills:x.skills||[],available:x.available!==false,account_type:x.account_type||'member',is_admin:!!x.is_admin}));
+    
+    data.projects=(Array.isArray(pp)?pp:[]).map(x=>({
+      id:x.id,
+      member:x.owner_id||x.artist_id,
+      title:x.title,
+      category:x.category,
+      tags:x.tags||[],
+      views:Number(x.views||0),
+      likes:Number(x.likes||0),
+      created_at:x.created_at,
+      video:x.media_type==='video'?x.media_url:'',
+      image:x.thumbnail_url||x.media_url||'',
+      desc:x.description||'',
+      description:x.description||'',
+      published:x.published,
+      status:x.status||(x.published?'published':'draft'),
+      featured:!!x.featured,
+      thumbnail_url:x.thumbnail_url,
+      media_url:x.media_url,
+      media_type:x.media_type
+    }));
+
+    data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));
+    
+    state.backendReady=true;
+    if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}
+    await refreshRecommendations();
+    render();
+
+    // Fetch live YouTube view counts in background
+    data.projects.forEach(async (p) => {
+      const vid = extractYoutubeId(p.media_url || p.video);
+      if (vid) {
+        try {
+          const r = await fetch('/api/youtube?videoId=' + encodeURIComponent(vid));
+          const res = await r.json();
+          if (res && res.viewCount !== undefined) {
+            p.views = Number(res.viewCount);
+            render();
+          }
+        } catch(e) {}
+      }
+    });
+
+  }catch(e){
+    state.backendReady=false;
+    state.loadError=e.message||'Unable to connect to Supabase.';
+    render()
+  }
+}
+
 function updateAccountButton(){
   const b=document.getElementById('accountBtn');
   const isAdmin = state.currentMember?.is_admin;
