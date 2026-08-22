@@ -20,6 +20,13 @@
 .theme-swatches{display:flex;gap:6px;align-items:center}
 .theme-swatch{width:16px;height:16px;border-radius:50%}
 
+/* Drag and drop item styling */
+.listitem.draggable{cursor:grab;user-select:none;transition:background 0.15s, opacity 0.15s;align-items:center}
+.listitem.draggable:active{cursor:grabbing}
+.listitem.dragging{opacity:0.35;background:rgba(255,255,255,0.08);border-radius:12px}
+.drag-handle{display:flex;align-items:center;padding:0 8px 0 2px;color:var(--muted);font-size:18px;cursor:grab}
+.drag-handle:hover{color:var(--moon)}
+
 /* Global Theme Definitions Override */
 html[data-theme="moonlight"]{--moon:#c9b6ff;--pink:#ff86c8;--line:rgba(201,182,255,.22);--bg:#08070d}
 html[data-theme="cyberpink"]{--moon:#ff86c8;--pink:#ff4da6;--line:rgba(255,134,200,.28);--bg:#0e0612}
@@ -453,7 +460,7 @@ async function openDashboard(){
   if(!m){toast('Your profile could not be loaded.');return}
   
   const [{data:ps},{data:ss}]=await Promise.all([
-    supabaseClient.from('projects').select('id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,status,published,featured,views,likes,created_at,updated_at').eq('owner_id',m.id).order('created_at',{ascending:false}),
+    supabaseClient.from('projects').select('id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,status,published,featured,views,likes,created_at,updated_at,position').eq('owner_id',m.id).order('position',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false}),
     supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,status,published,featured,views,add_ons,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('created_at',{ascending:false})
   ]);
   
@@ -471,7 +478,7 @@ async function openDashboard(){
   document.getElementById('dashTitle').textContent=m.name+' · '+roleLabel(m);
   document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile and projects are stored in Supabase. Published work appears in Discover.</p><div class="stats"><span class="stat">${roleLabel(m)}</span><span class="stat">${(ps||[]).length} projects</span><span class="stat">${(ps||[]).reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div>${(m.account_type!=='member'&&!m.is_admin)?'<p class="meta" style="margin-top:10px">You\'re a Lunarist User — ask a Studio admin to promote you to Lunarist Member to publish work.</p>':''}</div>`;
   const canPublish=m.account_type==='member'||m.is_admin;
-  document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(ps||[]).length?(ps||[]).map(p=>`<div class="listitem"><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="this.style.display='none'"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
+  document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(ps||[]).length?(ps||[]).map((p,idx)=>`<div class="listitem draggable" draggable="true" data-id="${p.id}" data-index="${idx}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="this.style.display='none'"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
   
   document.getElementById('dash-profile').innerHTML=`
     <div class="panel">
@@ -571,7 +578,60 @@ function bindDashboard(ps,ss){
   document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());
   document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));
   document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());
-  document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)))
+  document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)));
+
+  setupProjectDragAndDrop();
+}
+
+function setupProjectDragAndDrop(){
+  const container=document.getElementById('projectList');
+  if(!container)return;
+
+  container.querySelectorAll('.listitem.draggable').forEach(item=>{
+    item.addEventListener('dragstart',(e)=>{
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',item.dataset.id);
+    });
+
+    item.addEventListener('dragend',async()=>{
+      item.classList.remove('dragging');
+      await saveNewProjectOrder();
+    });
+
+    item.addEventListener('dragover',(e)=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      const draggingItem=container.querySelector('.dragging');
+      if(!draggingItem||draggingItem===item)return;
+
+      const rect=item.getBoundingClientRect();
+      const next=(e.clientY-rect.top)/(rect.bottom-rect.top)>0.5;
+      container.insertBefore(draggingItem,next?item.nextSibling:item);
+    });
+  });
+
+  async function saveNewProjectOrder(){
+    const items=Array.from(container.querySelectorAll('.listitem.draggable'));
+    const updates=items.map((el,index)=>({
+      id:el.dataset.id,
+      position:index+1
+    }));
+
+    if(state.myProjects&&state.myProjects.length){
+      state.myProjects.sort((a,b)=>{
+        const idxA=updates.findIndex(u=>u.id===a.id);
+        const idxB=updates.findIndex(u=>u.id===b.id);
+        return idxA-idxB;
+      });
+    }
+
+    for(const update of updates){
+      await supabaseClient.from('projects').update({position:update.position}).eq('id',update.id);
+    }
+    toast('Project order saved');
+    await loadData();
+  }
 }
 
 function showServiceForm(existing=null){
@@ -757,7 +817,6 @@ async function loadAdvancedAnalytics(allProjects,allServices){
   ]);
   if(evErr||coErr)return {error:(evErr||coErr).message};
 
-  // --- Engagement trend: daily view/like/save counts for the last 14 days ---
   const days=[];
   for(let i=13;i>=0;i--){const d=new Date(Date.now()-i*86400000);days.push(d.toISOString().slice(0,10))}
   const trend=Object.fromEntries(days.map(d=>[d,{view:0,like:0,save:0}]));
@@ -766,7 +825,6 @@ async function loadAdvancedAnalytics(allProjects,allServices){
     if(trend[day]&&trend[day][e.event_type]!==undefined)trend[day][e.event_type]++;
   });
 
-  // --- Revenue: what was actually charged per commission ---
   const collected=c=>c.payment_type==='deposit'?Number(c.deposit_amount||0):Number(c.total_amount||0);
   const rows=commissions||[];
   const paid=rows.filter(c=>c.status==='paid'||c.status==='completed');
@@ -787,7 +845,6 @@ async function loadAdvancedAnalytics(allProjects,allServices){
   paid.forEach(c=>{const key=c.service_id||'unknown';byService[key]=(byService[key]||0)+collected(c)});
   const topServices=Object.entries(byService).map(([id,revenue])=>({title:serviceTitle(id),revenue})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
 
-  // --- Category performance: total views per category ---
   const byCategory={};
   (allProjects||[]).forEach(p=>{const cat=p.category||'Uncategorized';byCategory[cat]=(byCategory[cat]||0)+Number(p.views||0)});
   const topCategories=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -1120,6 +1177,7 @@ async function loadData(){
       views:Number(x.views||0),
       likes:Number(x.likes||0),
       created_at:x.created_at,
+      position:x.position,
       video:x.media_type==='video'?x.media_url:'',
       image:x.thumbnail_url||x.media_url||'',
       desc:x.description||'',
