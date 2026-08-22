@@ -1,23 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-// Priority given to Service Role Key for administrative actions, fallback to Anon Key
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, serviceKey);
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export default async function handler(req, res) {
-  const { method } = req;
-  const { resource, session_id, limit } = req.query;
-
-  // Set CORS and JSON Headers
+  // Set CORS and Response Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (method === 'OPTIONS') {
+  if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+
+  // Graceful check for environment variables to avoid FUNCTION_INVOCATION_FAILED
+  if (!supabaseUrl || !serviceKey) {
+    return res.status(500).json({ 
+      error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment variables.' 
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, serviceKey);
+  const { method } = req;
+  const { resource, session_id, limit } = req.query || {};
 
   // --- GET REQUESTS ---
   if (method === 'GET') {
@@ -85,7 +90,6 @@ export default async function handler(req, res) {
           }
         }
 
-        // Fallback: Return top viewed published projects
         const { data: topProjects, error: topErr } = await supabase
           .from('projects')
           .select('id, views')
@@ -114,7 +118,6 @@ export default async function handler(req, res) {
     try {
       const body = req.body || {};
 
-      // Administrative Member Toggle Action
       if (body.action === 'toggle-member') {
         const { targetId, nextType } = body;
 
@@ -132,7 +135,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, data });
       }
 
-      // Event Tracking Action
       if (body.event) {
         const { session_id, project_id, event_type, category, metadata } = body.event;
 
