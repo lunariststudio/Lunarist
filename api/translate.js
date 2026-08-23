@@ -20,7 +20,7 @@ async function getUser(c,auth){
   return await r.json();
 }
 async function translate(c,text){
-  const r=await fetch(c.deeplUrl,{method:'POST',headers:{Authorization:`DeepL-Auth-Key ${c.deeplKey}`,'Content-Type':'application/json'},body:JSON.stringify({text:[text],source_lang:'EN',target_lang:'JA',preserve_formatting:true,formality:'prefer_more',custom_instructions:['Translate as clear, professional Japanese Terms of Service for a creative commission marketplace. Preserve bullets, numbering, payment amounts, deadlines, revision counts, and legal meaning. Do not add or remove obligations.']})});
+  const r=await fetch(c.deeplUrl,{method:'POST',headers:{Authorization:`DeepL-Auth-Key ${c.deeplKey}`,'Content-Type':'application/json'},body:JSON.stringify({text:[text],source_lang:'EN',target_lang:'JA',preserve_formatting:true,formality:'prefer_more'})});
   const d=await r.json();
   if(!r.ok)throw Object.assign(new Error(d?.message||'DeepL translation failed.'),{status:r.status});
   const out=d?.translations?.[0]?.text;
