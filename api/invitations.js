@@ -30,11 +30,23 @@ export default async function handler(req,res){
     const user=await userFromToken(url,key,token);
     const action=req.method==='GET'?(new URL(req.url,`https://${req.headers.host||'localhost'}`)).searchParams.get('action'):(req.body||{}).action;
 
+    if(action==='reserve'){
+      const code=String((req.body||{}).code||'').trim().toUpperCase();
+      const email=String((req.body||{}).email||'').trim().toLowerCase();
+      const nonce=String((req.body||{}).nonce||'').trim();
+      if(!/^[A-Z0-9]{8,32}$/.test(code))return res.status(400).json({error:'Invalid invitation code.'});
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'A valid email is required.'});
+      if(!/^[A-Za-z0-9_-]{24,80}$/.test(nonce))return res.status(400).json({error:'Invalid invitation reservation.'});
+      const result=await rpc(url,key,'reserve_member_invitation',{p_code:code,p_email:email,p_nonce:nonce});
+      return res.status(200).json(result||{success:true});
+    }
     if(action==='redeem'){
       if(!user?.id)return res.status(401).json({error:'Sign in is required to redeem an invitation.'});
       const code=String((req.body||{}).code||'').trim();
+      const nonce=String((req.body||{}).nonce||'').trim();
       if(!/^[A-Z0-9]{8,32}$/i.test(code))return res.status(400).json({error:'Invalid invitation code.'});
-      const result=await rpc(url,key,'redeem_member_invitation',{p_code:code},token);
+      if(nonce && !/^[A-Za-z0-9_-]{24,80}$/.test(nonce))return res.status(400).json({error:'Invalid invitation reservation.'});
+      const result=await rpc(url,key,'redeem_member_invitation',{p_code:code,p_nonce:nonce||null},token);
       return res.status(200).json(result||{success:true});
     }
 
