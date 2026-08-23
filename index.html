@@ -29,7 +29,7 @@
 .profile-tos-body::-webkit-scrollbar{width:5px}
 .profile-tos-body::-webkit-scrollbar-track{background:transparent}
 .profile-tos-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
-.profile-tos-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,182,255,.12);border:1px solid rgba(201,182,255,.25);color:var(--moon);font:700 11px/1 IBM Plex Mono,monospace;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;border-radius:999px}
+.translate-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.translate-preview{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:12px;padding:10px;white-space:pre-wrap;display:none}.profile-tos-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,182,255,.12);border:1px solid rgba(201,182,255,.25);color:var(--moon);font:700 11px/1 IBM Plex Mono,monospace;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;border-radius:999px}
 
 .tos-box{margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);max-height:300px;overflow-y:auto;font-size:13px;color:var(--muted);line-height:1.6}
 
@@ -362,7 +362,7 @@ function openService(id){
         <div class="field"><label>Your Email Address *</label><input id="inqEmail" type="email" placeholder="you@example.com"></div>
         <div class="field"><label>Social Media e.g. @Handle *</label><input id="inqSocial" placeholder="@yourhandle"></div>
         <div class="field full"><label>Target Deadline / Preferred Delivery Date (Optional)</label><input id="inqDeadline" type="date"></div>
-        <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
+        <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea><div class="translate-row"><button class="btn" type="button" id="translateInquiryJa">🇯🇵 Translate brief to Japanese</button><span class="meta" id="inquiryTranslateStatus"></span></div><div id="inqBriefJa" class="translate-preview"></div></div>
       </div>
 
       <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
@@ -382,8 +382,9 @@ function openService(id){
 
       ${m?.tos?`
         <div class="tos-box" style="max-height:220px">
-          <div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div>
-          <div>${formatDescription(m.tos)}</div>
+          <div class="row" style="justify-content:space-between;align-items:center"><div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div><button class="btn" type="button" id="toggleInquiryTosJa" style="padding:6px 9px;font-size:11px">🇯🇵 日本語</button></div>
+          <div id="inquiryTosOriginal">${formatDescription(m.tos)}</div>
+          ${m.tos_ja?`<div id="inquiryTosJa" style="display:none">${formatDescription(m.tos_ja)}</div>`:'<div id="inquiryTosJa" class="meta" style="display:none">Japanese translation is not available yet.</div>'}
         </div>
       `:''}
 
@@ -420,6 +421,16 @@ function openService(id){
     if(!m) return;
     const conv = await createOrGetConversation(m.id, s.id);
     if(conv) { closeModal(); openDashboard(); switchDashTab('messages'); selectConversation(conv.id); }
+  });
+
+  document.getElementById('toggleInquiryTosJa')?.addEventListener('click',()=>{
+    const ja=document.getElementById('inquiryTosJa'), orig=document.getElementById('inquiryTosOriginal'), b=document.getElementById('toggleInquiryTosJa'); if(!ja||!orig)return;
+    const show=ja.style.display==='none'; ja.style.display=show?'block':'none'; orig.style.display=show?'none':'block'; b.textContent=show?'EN':'🇯🇵 日本語';
+  });
+  document.getElementById('translateInquiryJa')?.addEventListener('click',async()=>{
+    const source=document.getElementById('inqBrief')?.value.trim(), box=document.getElementById('inqBriefJa'), st=document.getElementById('inquiryTranslateStatus');
+    if(!source){st.textContent='Write a brief first.';return} st.textContent='Translating…';
+    try{const r=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,target:'ja'})});const j=await r.json();if(!r.ok)throw Error(j.error||'Translation failed');box.textContent=j.translation||'';box.style.display='block';st.textContent='Japanese version ready.'; window.__inqBriefJa=j.translation||''}catch(e){st.textContent=e.message||'Translation failed.'}
   });
 
   let paymentType='deposit';
@@ -491,6 +502,7 @@ function openService(id){
       company:document.getElementById('inqCompany').value.trim(),
       target_deadline:document.getElementById('inqDeadline').value||null,
       message:document.getElementById('inqBrief').value.trim(),
+      message_ja:window.__inqBriefJa||'',
       attachment_url:pendingAttachmentUrl,
       addon_titles:Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>addOns[Number(cb.dataset.idx)].title)
     };
@@ -703,7 +715,7 @@ async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   state.currentUser=session?.user||null;
   if(state.currentUser){
-    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,theme').eq('id',state.currentUser.id).maybeSingle();
+    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,tos_ja,theme').eq('id',state.currentUser.id).maybeSingle();
     if(!p){
       const fallback={id:state.currentUser.id,username:(state.currentUser.email||'member').split('@')[0].replace(/[^a-z0-9_]/gi,'').slice(0,32)||'member',display_name:state.currentUser.email||'Lunarist member',role:'',bio:'',skills:[],available:true,account_type:'user',theme:'moonlight'};
       const r=await supabaseClient.from('profiles').insert(fallback).select().single();
@@ -717,6 +729,7 @@ async function refreshUser(){
       role:p.role||'',
       bio:p.bio||'',
       tos:p.tos||'',
+      tos_ja:p.tos_ja||'',
       theme:p.theme||'moonlight',
       avatar:p.avatar_url||'https://i.pravatar.cc/160?u='+p.id,
       skills:p.skills||[],
@@ -838,6 +851,8 @@ async function openDashboard(initialTab='overview'){
           <label style="font-size:12px;font-weight:700;color:var(--moon)">Terms of Service (TOS)</label>
           <div class="meta" style="margin-bottom:6px">Specify your client policies, payment terms, revision limits, or commercial use rules. Supports bullet points.</div>
           <textarea id="pfTos" style="min-height:180px;line-height:1.6;font-family:inherit" placeholder="• 50% upfront payment required before starting work&#10;• Includes 2 free revisions per project&#10;• Commercial license available as an add-on">${esc(m.tos||'')}</textarea>
+          <div class="translate-row"><button class="btn" type="button" id="translateTosJa">🇯🇵 Auto-translate TOS to Japanese</button><span class="meta" id="tosTranslateStatus">Japanese version is saved with your profile.</span></div>
+          <textarea id="pfTosJa" style="min-height:150px;line-height:1.6;font-family:inherit;margin-top:8px" placeholder="Japanese translation will appear here…">${esc(m.tos_ja||'')}</textarea>
         </div>
         <div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div>
       </div>
@@ -1128,6 +1143,11 @@ function bindDashboard(ps,ss){
   document.getElementById('pfAvatarBtn')?.addEventListener('click',()=>document.getElementById('pfAvatarFile').click());
   document.getElementById('pfAvatarFile')?.addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}});
   
+  document.getElementById('translateTosJa')?.addEventListener('click',async()=>{
+    const source=document.getElementById('pfTos')?.value.trim(); const out=document.getElementById('pfTosJa'); const st=document.getElementById('tosTranslateStatus');
+    if(!source){st.textContent='Add your TOS first.';return} st.textContent='Translating…';
+    try{const r=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:source,target:'ja'})});const j=await r.json();if(!r.ok)throw Error(j.error||'Translation failed');out.value=j.translation||'';st.textContent='Japanese translation ready — save your profile to keep it.'}catch(e){st.textContent=e.message||'Translation failed.'}
+  });
   document.getElementById('saveProfile')?.addEventListener('click',async()=>{
     const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
     const selectedThemeVal = document.querySelector('.theme-option.selected')?.dataset.themeVal || 'moonlight';
@@ -1137,6 +1157,7 @@ function bindDashboard(ps,ss){
       role:document.getElementById('pfRole').value.trim(),
       bio:document.getElementById('pfBio').value.trim(),
       tos:document.getElementById('pfTos').value.trim(),
+      tos_ja:document.getElementById('pfTosJa').value.trim(),
       theme:selectedThemeVal,
       available:document.getElementById('pfAvail').value==='1',
       updated_at:new Date().toISOString()
@@ -1468,7 +1489,7 @@ async function renderAdminStudioPage(activeTab='members'){
     supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
     supabaseClient.from('projects').select('*',{count:'exact',head:true}),
     supabaseClient.from('services').select('*',{count:'exact',head:true}),
-    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
+    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,tos_ja,theme').order('display_name').limit(200),
     supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
@@ -1899,7 +1920,7 @@ async function loadData(){
       name:x.display_name,
       role:x.role||'',
       bio:x.bio||'',
-      tos:x.tos||'',
+      tos:x.tos||'',tos_ja:x.tos_ja||'',
       theme:x.theme||'moonlight',
       avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,
       skills:x.skills||[],
@@ -1911,12 +1932,12 @@ async function loadData(){
      try {
        const {data: publicTosRows, error: publicTosError} = await supabaseClient
          .from('profiles')
-         .select('id,tos')
+         .select('id,tos,tos_ja')
          .not('tos','is',null);
        if (!publicTosError && Array.isArray(publicTosRows)) {
-         const tosById = new Map(publicTosRows.map(x=>[x.id, x.tos||'']));
+         const tosById = new Map(publicTosRows.map(x=>[x.id, {tos:x.tos||'',tos_ja:x.tos_ja||''}]));
          data.members.forEach(m=>{
-           if (tosById.has(m.id)) m.tos = tosById.get(m.id);
+           if (tosById.has(m.id)) { const tv=tosById.get(m.id); m.tos=tv.tos; m.tos_ja=tv.tos_ja; }
          });
        }
      } catch(e) {}

@@ -52,6 +52,7 @@ function buildInquiryRow({service,service_id,customer,selected,status,paypal_ord
     social:str(customer.social,120),
     target_deadline:customer.target_deadline||null,
     message:str(customer.message,4000)||(paypal_order_id?'PayPal service purchase':'Service inquiry'),
+    message_ja:str(customer.message_ja,4000),
     attachment_url:str(customer.attachment_url,500),
     budget:`USD ${Number(total_amount||0).toFixed(2)}`,
     payment_type:payment_type==='deposit'?'deposit':'full',
