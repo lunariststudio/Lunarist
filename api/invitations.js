@@ -15,8 +15,8 @@ async function rest(url,key,path,options={}){
   return body;
 }
 async function isAdmin(url,key,userId){
-  const rows=await rest(url,key,`profiles?select=id,is_admin&id=eq.${encodeURIComponent(userId)}&limit=1`);
-  return !!rows?.[0]?.is_admin;
+  const rows=await rest(url,key,`profiles?select=id,is_admin,role&id=eq.${encodeURIComponent(userId)}&limit=1`);
+  const p=rows?.[0]; return !!p && (p.is_admin===true || ['administrator','admin'].includes(String(p.role||'').trim().toLowerCase()));
 }
 async function rpc(url,key,name,body,token){
   return await rest(url,key,`rpc/${name}`,{method:'POST',headers:token?{Authorization:`Bearer ${token}`}:{},body:JSON.stringify(body||{})});

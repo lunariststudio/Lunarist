@@ -820,7 +820,7 @@ async function refreshUser(){
       const r=await supabaseClient.from('profiles').insert(fallback).select().single();
       if(!r.error)p=r.data;
     }
-    const isStudioAdmin = !!p?.is_admin || state.currentUser?.email === 'lunariststudio@gmail.com';
+    const isStudioAdmin = !!p?.is_admin || ['administrator','admin'].includes(String(p?.role||'').trim().toLowerCase()) || state.currentUser?.email === 'lunariststudio@gmail.com';
     state.currentMember=p?{
       id:p.id,
       username:p.username,
