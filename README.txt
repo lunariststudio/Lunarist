@@ -1,11 +1,23 @@
-Lunarist DeepL TOS / Inquire translation
+Lunarist DeepL + fixed deployment package
 
-1. Deploy index.html as your current Lunarist frontend.
-2. Deploy api/translate.js as Vercel /api/translate.js.
-3. Add Vercel environment variable:
-   DEEPL_API_KEY=your_key_here
-   Optional: DEEPL_API_URL=https://api.deepl.com/v2/translate
-   For a DeepL Free key, the function automatically uses api-free.deepl.com when the key ends with :fx.
-4. Run supabase/migrations/20260823_add_tos_japanese.sql.
+Included Vercel API functions:
+- api/config.js
+- api/lunarist.js
+- api/paypal.js
+- api/youtube.js
+- api/translate.js
 
-The DeepL key is server-side only and is never placed in the HTML.
+Required Vercel environment variables:
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+PAYPAL_CLIENT_ID
+PAYPAL_CLIENT_SECRET
+DEEPL_API_KEY
+Optional: DEEPL_API_URL
+Optional: YOUTUBE_API_KEY
+
+Run the included Supabase migration before saving Japanese TOS:
+supabase/migrations/20260823_add_tos_japanese.sql
+
+The Member Space no longer contains My Commissions; the standalone /commissions page remains the only commission dashboard entry.

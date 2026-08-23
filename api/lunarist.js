@@ -12,7 +12,7 @@ function sanitizeCommission(c){
   const budget=typeof c.budget==='string'?c.budget.trim().slice(0,80):'';
   const addon_titles=Array.isArray(c.addon_titles)?c.addon_titles.filter(x=>typeof x==='string').slice(0,10).map(x=>x.slice(0,120)):[];
   if(!service_id||!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!message)return null;
-  return{service_id,name,email,message,message_ja,budget,addon_titles};
+  return{service_id,name,email,message,budget,addon_titles};
 }
 
 function sanitizeEvent(event){if(!event||typeof event!=='object')return null;const session_id=typeof event.session_id==='string'?event.session_id.slice(0,128):null;if(!session_id)return null;const event_type=typeof event.event_type==='string'?event.event_type:null;if(!EVENT_TYPES.includes(event_type))return null;let project_id=null;if(event.project_id!=null){if(typeof event.project_id!=='string'||!UUID_RE.test(event.project_id))return null;project_id=event.project_id}const category=typeof event.category==='string'?event.category.slice(0,64):null;const tags=event.metadata&&Array.isArray(event.metadata.tags)?event.metadata.tags.filter(t=>typeof t==='string').slice(0,20).map(t=>t.slice(0,64)):[];return{session_id,project_id,event_type,category,metadata:{tags}}}
