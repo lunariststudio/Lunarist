@@ -16,7 +16,45 @@ function sanitizeCommission(c){
 }
 
 function sanitizeEvent(event){if(!event||typeof event!=='object')return null;const session_id=typeof event.session_id==='string'?event.session_id.slice(0,128):null;if(!session_id)return null;const event_type=typeof event.event_type==='string'?event.event_type:null;if(!EVENT_TYPES.includes(event_type))return null;let project_id=null;if(event.project_id!=null){if(typeof event.project_id!=='string'||!UUID_RE.test(event.project_id))return null;project_id=event.project_id}const category=typeof event.category==='string'?event.category.slice(0,64):null;const tags=event.metadata&&Array.isArray(event.metadata.tags)?event.metadata.tags.filter(t=>typeof t==='string').slice(0,20).map(t=>t.slice(0,64)):[];return{session_id,project_id,event_type,category,metadata:{tags}}}
-export default async function handler(req,res){const {url,key}=config();if(!url||!key)return res.status(503).json({error:'Supabase server credentials are not configured.'});const q=req.url.includes('?')?req.url.slice(req.url.indexOf('?')+1):'';const params=new URLSearchParams(q);const resource=params.get('resource');try{if(req.method==='GET'){
+
+async function userFromToken(url,key,token){
+  if(!token)return null;
+  const r=await fetch(`${url}/auth/v1/user`,{headers:{apikey:key,Authorization:`Bearer ${token}`}});
+  if(!r.ok)return null;
+  return await r.json();
+}
+async function isAdmin(url,key,userId){
+  const r=await fetch(`${url}/rest/v1/profiles?select=id,is_admin&id=eq.${encodeURIComponent(userId)}&limit=1`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
+  const rows=await r.json();
+  const p=Array.isArray(rows)?rows[0]:null;
+  return !!p && p.is_admin===true;
+}
+async function toggleMember(req,res,url,key){
+  const auth=String(req.headers.authorization||'');
+  const token=auth.startsWith('Bearer ')?auth.slice(7):'';
+  const user=await userFromToken(url,key,token);
+  if(!user?.id)return res.status(401).json({error:'Sign in is required.'});
+  if(!(await isAdmin(url,key,user.id)))return res.status(403).json({error:'Administrator access required.'});
+
+  const targetId=String((req.body||{}).targetId||'');
+  const nextType=String((req.body||{}).nextType||'');
+  if(!UUID_RE.test(targetId))return res.status(400).json({error:'Invalid member id.'});
+  if(!['user','member'].includes(nextType))return res.status(400).json({error:'Invalid account type.'});
+
+  const r=await fetch(`${url}/rest/v1/rpc/admin_set_account_type`,{
+    method:'POST',
+    headers:{apikey:key,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+    body:JSON.stringify({p_target_id:targetId,p_account_type:nextType})
+  });
+  const text=await r.text();
+  let body=null;try{body=text?JSON.parse(text):null}catch{body=text}
+  if(!r.ok)return res.status(400).json({error:body?.message||body?.error||body?.hint||'Unable to update member.'});
+  return res.status(200).json(body||{success:true});
+}
+
+export default async function handler(req,res){const {url,key}=config();if(!url||!key)return res.status(503).json({error:'Supabase server credentials are not configured.'});const q=req.url.includes('?')?req.url.slice(req.url.indexOf('?')+1):'';const params=new URLSearchParams(q);const resource=params.get('resource');try{
+if(req.method==='POST'&&(req.body||{}).action==='toggle-member')return await toggleMember(req,res,url,key);
+if(req.method==='GET'){
   if(resource==='recommendations'){
     const sessionId=params.get('session_id')||'';
     if(!sessionId)return res.status(400).json({error:'session_id is required'});

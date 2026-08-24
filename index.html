@@ -13,6 +13,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
+
 <!-- Dynamic SEO & OpenGraph Meta Tags -->
 <meta property="og:type" content="website">
 <meta property="og:title" id="ogTitle" content="Lunarist Studio — Unleash Your Dream">
@@ -38,7 +39,7 @@
 .profile-tos-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
 .profile-tos-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,182,255,.12);border:1px solid rgba(201,182,255,.25);color:var(--moon);font:700 11px/1 IBM Plex Mono,monospace;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;border-radius:999px}
 
-.tos-box{margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);max-height:300px;overflow-y:auto;font-size:13px;color:var(--muted);line-height:1.6}
+.tos-translation-note{font-size:11px;letter-spacing:.04em;color:var(--muted);margin-top:8px}.tos-box{margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);max-height:300px;overflow-y:auto;font-size:13px;color:var(--muted);line-height:1.6}
 
 .theme-picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:8px}
 .theme-option{border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:12px;padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.2s}
@@ -111,9 +112,9 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="commissions" data-i18n="myCommissions">My Commissions</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
-<div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation</label><input id="authInvite" autocomplete="off" placeholder="Invitation code"><div class="meta" id="authInviteHint">A one-time Lunarist Member invitation is required.</div></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
+<div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once. Google signup uses the email entered above.</div></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <style>
 .lunarist-direct-badge{background:linear-gradient(135deg,rgba(255,112,196,.22),rgba(201,182,255,.2));border:1px solid rgba(255,150,218,.55);color:#ffd5f1;box-shadow:0 6px 20px rgba(255,112,196,.12);font-weight:800;letter-spacing:.02em}
 .thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
@@ -127,7 +128,7 @@ window.addEventListener('error', (e) => {
 });
 
 let supabaseClient=null;
-const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',loadError:null,conversations:[],activeConversation:null,notifications:[],myCommissions:[],myCommissionError:null,myReviews:[]};
+const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',inviteCode:'',loadError:null,conversations:[],activeConversation:null,notifications:[],myCommissions:[],myCommissionError:null,myReviews:[]};
 const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
@@ -388,14 +389,15 @@ function openService(id){
       <div class="field full" style="margin-top:14px"><label>Upload Brief / Asset Attachment (Optional)</label><input type="file" id="inqAttachment"><div class="meta" id="inqAttachStatus">Images or documents, up to 5MB.</div></div>
 
       ${m?.tos?`
-        <div class="tos-box" style="max-height:220px">
+        <div class="tos-box" id="inquiryTosBox" style="max-height:220px">
           <div class="eyebrow" style="margin-bottom:6px">Terms of Service (TOS)</div>
-          <div>${formatDescription(m.tos)}</div>
+          <div id="inquiryTosText">${formatDescription((state.language==='ja'&&m.tos_ja)?m.tos_ja:m.tos)}</div>
+          ${state.language==='ja'&&!m.tos_ja?`<div class="meta" id="inquiryTosTranslationStatus" style="margin-top:8px">Japanese translation will be generated by the artist when their TOS is saved.</div>`:''}
         </div>
       `:''}
 
       <div class="addon-box" style="margin-top:14px">
-        <label><input type="checkbox" id="inqAgreeTos"> I have read and agree to the ${m?.tos?"Terms of Service":"artist's terms"} (Required)</label>
+        <label><input type="checkbox" id="inqAgreeTos"> <span data-i18n="I have read and agree to the">I have read and agree to the</span> <span id="inqTosAgreementName">${m?.tos?"Terms of Service":"artist's terms"}</span> <span data-i18n="(Required)">(Required)</span></label>
       </div>
 
       ${canCheckout?`
@@ -422,6 +424,16 @@ function openService(id){
   `;
 
   document.getElementById('projectModal').classList.add('open');
+
+  if(state.language==='ja' && m?.tos && !m.tos_ja){
+    const status=document.getElementById('inquiryTosTranslationStatus');
+    if(status)status.textContent='Translating Terms of Service…';
+    fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'translate_profile_tos',profile_id:m.id})})
+      .then(r=>r.json().then(d=>({ok:r.ok,d}))).then(({ok,d})=>{
+        if(ok && d.translation){m.tos_ja=d.translation;const el=document.getElementById('inquiryTosText');if(el)el.innerHTML=formatDescription(d.translation);if(status)status.remove();}
+        else if(status)status.textContent='Japanese translation is temporarily unavailable; showing the original TOS.';
+      }).catch(()=>{if(status)status.textContent='Japanese translation is temporarily unavailable; showing the original TOS.'});
+  }
 
   document.getElementById('modalDirectChatBtn')?.addEventListener('click', async()=>{
     if(!m) return;
@@ -455,7 +467,7 @@ function openService(id){
     refreshPriceBreakdown();
     document.getElementById('depositAmountLabel').textContent='50% Deposit ($'+deposit.toFixed(2)+')';
     document.getElementById('fullAmountLabel').textContent='Full Amount ($'+total.toFixed(2)+')';
-    document.getElementById('inquirySubtext').textContent=`Inquiry for ${s.title} · Pay $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD (${paymentType==='deposit'?'50% Slot Deposit':'Full Amount'}) to auto-register on the waitlist.`;
+    document.getElementById('inquirySubtext').textContent=state.language==='ja'?`「${s.title}」へのお問い合わせ · $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD（${paymentType==='deposit'?'50%枠確保デポジット':'全額'}）を支払うとウェイトリストに自動登録されます。`:`Inquiry for ${s.title} · Pay $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD (${paymentType==='deposit'?'50% Slot Deposit':'Full Amount'}) to auto-register on the waitlist.`;
     const depEl=document.getElementById('depositOption'),fullEl=document.getElementById('fullOption');
     depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)';
     fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
@@ -465,7 +477,7 @@ function openService(id){
     document.getElementById('depositOption').onclick=()=>{paymentType='deposit';refreshPaymentUI()};
     document.getElementById('fullOption').onclick=()=>{paymentType='full';refreshPaymentUI()};
   }else{
-    document.getElementById('inquirySubtext').textContent=`Inquiry for ${s.title} · This artist provides a custom quote — send your brief and they'll follow up.`;
+    document.getElementById('inquirySubtext').textContent=state.language==='ja'?`「${s.title}」へのお問い合わせ · このアーティストは個別見積もりに対応しています。概要を送信すると、後ほどご連絡します。`:`Inquiry for ${s.title} · This artist provides a custom quote — send your brief and they'll follow up.`;
   }
   document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=refreshPaymentUI);
 
@@ -562,6 +574,10 @@ function openService(id){
     }
   });
 
+  applyLanguage(state.language||'en');
+  const agreeName=document.getElementById('inqTosAgreementName');
+  if(agreeName) agreeName.textContent=state.language==='ja'?(m?.tos?'利用規約':'アーティストの規約'):(m?.tos?'Terms of Service':"artist's terms");
+
   const mb=document.querySelector('[data-modal-member]');
   if(mb)mb.onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
   document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>{closeModal();openProject(c.dataset.project)});
@@ -580,12 +596,35 @@ function profilePage(m){
   applyTheme(m.theme || 'moonlight');
   updateSeoMeta(`${m.name} (@${m.username})`, m.bio, m.avatar);
   
-  const formattedTos = String(m.tos||'').trim();
+  const formattedTos = String((state.language==='ja' && m.tos_ja ? m.tos_ja : m.tos)||'').trim();
   const isClientProfile = m.account_type !== 'member' && !m.is_admin;
   const canViewClientDashboard = isClientProfile && (state.currentUser?.id === m.id || !!state.currentMember?.is_admin);
   const clientDash = canViewClientDashboard ? `<div class="panel" id="publicClientDashboard" style="margin-top:42px"><div class="eyebrow">Client Dashboard</div><h2 style="margin:4px 0">My commissions &amp; reviews</h2><p class="meta">Your completed commissions, current orders, and reviews are all collected here.</p><div id="publicClientCommissions" style="margin-top:16px"><div class="meta">Loading your commissions…</div></div></div>` : '';
 
-  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body">${formatDescription(formattedTos)}</div></div>`:''}${clientDash}</section></div>`
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body" id="profileTosBody">${formatDescription(formattedTos)}</div></div>`:''}${clientDash}</section></div>`
+}
+
+async function ensureProfileTosJapanese(m){
+  if(!m || !m.id || !String(m.tos||'').trim() || String(m.tos_ja||'').trim()) return m?.tos_ja||'';
+  const body=document.getElementById('profileTosBody');
+  if(body){body.innerHTML='<div class="meta" style="padding:4px 0">日本語の利用規約を翻訳中…</div>'}
+  try{
+    const r=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'translate_profile_tos',profile_id:m.id})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok || !d.translation) throw new Error(d.error||'Translation failed');
+    m.tos_ja=d.translation;
+    const known=member(m.id);
+    if(known) known.tos_ja=d.translation;
+    if(state.currentMember?.id===m.id) state.currentMember.tos_ja=d.translation;
+    const currentBody=document.getElementById('profileTosBody');
+    if(currentBody) currentBody.innerHTML=formatDescription(d.translation);
+    return d.translation;
+  }catch(e){
+    console.error('Profile TOS translation failed',e);
+    const currentBody=document.getElementById('profileTosBody');
+    if(currentBody) currentBody.innerHTML=formatDescription(m.tos);
+    return '';
+  }
 }
 
 async function loadArtistReviews(artistId){
@@ -612,6 +651,7 @@ function render(){
     const pid=state.route.split(':')[1];
     loadArtistReviews(pid);
     const pm=member(pid);
+    if(pm && state.language==='ja' && String(pm.tos||'').trim() && !String(pm.tos_ja||'').trim()) ensureProfileTosJapanese(pm);
     if(pm && pm.account_type!=='member' && !pm.is_admin && (state.currentUser?.id===pm.id || !!state.currentMember?.is_admin)) renderPublicClientDashboard(pm.id);
   }
   if(state.route==='commissions') renderClientCommissionsTab();
@@ -700,106 +740,91 @@ async function openProject(id){
 
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML='';updateSeoMeta('','','')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
-function getInvitationFromLocation(){
-  const params=new URLSearchParams(window.location.search);
-  let code=(params.get('invite')||params.get('invitation')||'').trim();
-  if(!code){
-    const m=window.location.pathname.match(/\/(?:invite|invitation)\/([A-Za-z0-9_-]+)/i);
-    if(m) code=m[1];
-  }
-  return code.toUpperCase();
-}
-function pendingInvitation(){
-  try{const raw=localStorage.getItem('lunarist_pending_invitation');return raw?JSON.parse(raw):null}catch{return null}
-}
-function savePendingInvitation(v){localStorage.setItem('lunarist_pending_invitation',JSON.stringify(v))}
-function clearPendingInvitation(){localStorage.removeItem('lunarist_pending_invitation')}
-function setInvitationFromUrl(){
-  const code=getInvitationFromLocation();
-  if(code){localStorage.setItem('lunarist_invitation_code',code);return code}
-  return (localStorage.getItem('lunarist_invitation_code')||'').trim().toUpperCase();
-}
 function openAuth(mode='signin'){
-  state.authMode=mode;
-  const m=mode==='signup';
-  const inviteCode=setInvitationFromUrl();
+  state.authMode=mode;const m=mode==='signup';
+  const invite=state.inviteCode||localStorage.getItem('lunarist_pending_invite')||'';
   document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';
-  document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';
+  document.getElementById('authSubtitle').textContent=m?(invite?'You were invited to join Lunarist as a Member.':'Member accounts require a one-time invitation.'):'Save work, publish projects and manage your creative profile.';
   document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';
   document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';
   document.getElementById('authUsernameWrap').style.display=m?'flex':'none';
   document.getElementById('authDisplayWrap').style.display=m?'flex':'none';
   document.getElementById('authInviteWrap').style.display=m?'flex':'none';
-  document.getElementById('authInvite').value=inviteCode||'';
-  document.getElementById('authInvite').readOnly=!!inviteCode;
-  document.getElementById('authInviteHint').textContent=inviteCode?'Invitation detected. This code can be used once.':'A one-time Lunarist Member invitation is required.';
+  document.getElementById('authInvite').value=invite;
   document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';
-  document.getElementById('authModeHint').textContent=m?'Member registration requires an invitation.':'Use Google or email/password';
+  document.getElementById('authModeHint').textContent=m?(invite?'One-time invitation detected.':'Open a valid invitation link first.'):'Use Google or email/password';
   document.getElementById('authMessage').textContent='';
   document.getElementById('authModal').classList.add('open');
+  const google=document.getElementById('googleAuth');
+  google.textContent=m?'Continue with Google (invitation required)':'Continue with Google';
 }
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
 async function reserveInvitation(code,email){
-  const normalizedCode=(code||'').trim().toUpperCase();
-  const normalizedEmail=(email||'').trim().toLowerCase();
-  if(!normalizedCode) throw new Error('A Lunarist Member invitation is required.');
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) throw new Error('Enter a valid email address for the invitation.');
-  const nonce=crypto.randomUUID()+'-'+crypto.randomUUID();
-  const {data,error}=await supabaseClient.rpc('reserve_member_invitation',{p_code:normalizedCode,p_email:normalizedEmail,p_nonce:nonce});
-  if(error) throw error;
-  if(!data?.success) throw new Error('This invitation could not be reserved.');
-  savePendingInvitation({code:normalizedCode,email:normalizedEmail,nonce,created_at:new Date().toISOString()});
-  return data;
+  code=String(code||'').trim().toUpperCase();email=String(email||'').trim().toLowerCase();
+  if(!code||!email)return null;
+  const nonce=crypto.randomUUID().replace(/-/g,'')+Math.random().toString(36).slice(2,10);
+  const r=await fetch('/api/invitations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reserve',code,email,nonce})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to reserve invitation.');
+  localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code,email,nonce,at:Date.now()}));
+  localStorage.setItem('lunarist_pending_invite',code);state.inviteCode=code;return d;
+}
+function pendingInvitationReservation(){try{const r=JSON.parse(localStorage.getItem('lunarist_invite_reservation')||'null');if(r&&r.code&&r.email&&r.nonce)return r}catch{}return null}
+async function redeemInvitation(code,nonce){
+  code=String(code||'').trim().toUpperCase(); if(!code)return false;
+  const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'redeem',code,nonce:nonce||pendingInvitationReservation()?.nonce||''})});
+  const d=await r.json(); if(!r.ok)throw new Error(d.error||'Invitation could not be redeemed.');
+  localStorage.removeItem('lunarist_pending_invite');localStorage.removeItem('lunarist_invite_reservation');state.inviteCode='';return true;
 }
 async function redeemPendingInvitation(){
-  const pending=pendingInvitation();
-  if(!pending?.code||!pending?.nonce||!state.currentUser) return;
-  const currentEmail=(state.currentUser.email||'').trim().toLowerCase();
-  if(pending.email && currentEmail && pending.email!==currentEmail){
-    document.getElementById('authMessage').textContent='This invitation is reserved for a different email address.';
-    return;
-  }
+  if(!state.currentUser)return;
+  const code=state.inviteCode||localStorage.getItem('lunarist_pending_invite'); if(!code)return;
   try{
-    const {data,error}=await supabaseClient.rpc('redeem_member_invitation',{p_code:pending.code,p_nonce:pending.nonce});
-    if(error) throw error;
-    if(data?.success){clearPendingInvitation();localStorage.removeItem('lunarist_invitation_code');await refreshUser();}
+    let r=pendingInvitationReservation();
+    const currentEmail=String(state.currentUser.email||'').trim().toLowerCase();
+    if(!currentEmail)throw new Error('Your account does not have an email address available for this invitation.');
+    if(!r || r.code!==String(code).trim().toUpperCase() || String(r.email||'').toLowerCase()!==currentEmail){
+      r=await reserveInvitation(code,currentEmail);
+    }
+    await redeemInvitation(code,r?.nonce);await refreshUser();toast('Welcome to Lunarist — your Member invitation is active.');
+    if(document.getElementById('authModal')?.classList.contains('open'))closeAuth();
+    if(state.currentMember?.account_type==='member')openDashboard();
   }catch(e){
-    const msg=e?.message||'';
-    if(/already_redeemed/i.test(msg)){clearPendingInvitation();localStorage.removeItem('lunarist_invitation_code');return}
-    console.warn('Invitation redemption pending:',msg);
+    if(!/already used|invalid|expired|different email|reservation/i.test(e.message||''))toast(e.message||'Invitation could not be redeemed.');
+    localStorage.removeItem('lunarist_pending_invite');localStorage.removeItem('lunarist_invite_reservation');state.inviteCode='';
   }
 }
 async function authSubmit(){
-  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();
+  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim(),invite=document.getElementById('authInvite').value.trim().toUpperCase();
   if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}
   document.getElementById('authSubmit').disabled=true;
   try{
     if(state.authMode==='signup'){
-      const code=document.getElementById('authInvite').value.trim().toUpperCase();
-      await reserveInvitation(code,email);
-      const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});
-      if(error){throw error}
-      document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';
-      if(d.session){await redeemPendingInvitation();closeAuth();await refreshUser();openDashboard()}
-    }else{
-      const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(!invite||!/^[A-Z0-9]{8,32}$/.test(invite))throw new Error('A valid one-time invitation code is required to create a Member account.');
+      await reserveInvitation(invite,email);
+      const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username,invite_code:invite}}});
       if(error)throw error;
-      closeAuth();await refreshUser();openDashboard();
+      document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';
+      if(d.session){await redeemInvitation(invite,pendingInvitationReservation()?.nonce);closeAuth();await refreshUser();openDashboard()}
+    }else{
+      const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()
     }
-  }catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}
-  finally{document.getElementById('authSubmit').disabled=false}
+  }catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}
 }
 async function signInWithGoogle(){
-  document.getElementById('googleAuth').disabled=true;
+  const btn=document.getElementById('googleAuth');btn.disabled=true;
   try{
-    if(state.authMode==='signup'){
+    const isSignup=state.authMode==='signup';
+    let redirect=window.location.origin+'/?oauth=google';
+    if(isSignup){
       const email=document.getElementById('authEmail').value.trim();
-      const code=document.getElementById('authInvite').value.trim().toUpperCase();
-      await reserveInvitation(code,email);
+      const invite=document.getElementById('authInvite').value.trim().toUpperCase();
+      if(!email)throw new Error('Enter the Google account email first so the invitation can be reserved to it.');
+      if(!invite||!/^[A-Z0-9]{8,32}$/.test(invite))throw new Error('A valid one-time invitation code is required for Google signup.');
+      const reservation=await reserveInvitation(invite,email);
+      redirect=window.location.origin+'/?oauth=google&invite='+encodeURIComponent(invite)+'&nonce='+encodeURIComponent(reservation.nonce);
     }
-    const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});
-    if(error)throw error;
-  }catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}
+    const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:redirect}});if(error)throw error;
+  }catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';btn.disabled=false}
 }
 async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
 
@@ -807,7 +832,7 @@ async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   state.currentUser=session?.user||null;
   if(state.currentUser){
-    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,theme').eq('id',state.currentUser.id).maybeSingle();
+    let {data:p}=await supabaseClient.from('profiles').select('id,username,display_name,role,bio,avatar_url,skills,available,is_admin,account_type,tos,tos_ja,theme').eq('id',state.currentUser.id).maybeSingle();
     if(!p){
       const fallback={id:state.currentUser.id,username:(state.currentUser.email||'member').split('@')[0].replace(/[^a-z0-9_]/gi,'').slice(0,32)||'member',display_name:state.currentUser.email||'Lunarist member',role:'',bio:'',skills:[],available:true,account_type:'user',theme:'moonlight'};
       const r=await supabaseClient.from('profiles').insert(fallback).select().single();
@@ -821,6 +846,7 @@ async function refreshUser(){
       role:p.role||'',
       bio:p.bio||'',
       tos:p.tos||'',
+      tos_ja:p.tos_ja||'',
       theme:p.theme||'moonlight',
       avatar:p.avatar_url||'https://i.pravatar.cc/160?u='+p.id,
       skills:p.skills||[],
@@ -844,7 +870,7 @@ async function refreshUser(){
 }
 
 function switchDashTab(tabName) {
-  const valid = ['overview','messages','commissions','projects','profile','services'];
+  const valid = ['overview','messages','projects','profile','services'];
   if(!valid.includes(tabName)) tabName='overview';
   document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
   document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
@@ -903,9 +929,18 @@ async function openDashboard(initialTab='overview'){
   document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(state.myProjects).length?(state.myProjects).map((p,idx)=>`<div class="listitem draggable" draggable="true" data-id="${p.id}" data-index="${idx}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
   
   renderMessagesTab();
-  renderClientCommissionsTab();
 
   document.getElementById('dash-profile').innerHTML=`
+    ${(m.account_type!=='member'&&!m.is_admin)?`<div class="panel" style="margin-bottom:16px">
+      <div class="eyebrow">Redeem Invitation</div>
+      <h3 style="margin:4px 0">Become a Lunarist Member</h3>
+      <p class="meta">Enter a one-time invitation code from a Studio admin to unlock publishing.</p>
+      <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+        <input id="pfInviteCode" maxlength="64" autocomplete="one-time-code" placeholder="INVITATION CODE" style="text-transform:uppercase;letter-spacing:.08em;max-width:260px">
+        <button class="btn primary" id="pfRedeemInvite" type="button">Redeem Code</button>
+      </div>
+      <p class="meta" id="pfInviteMsg" style="min-height:18px;margin-top:8px"></p>
+    </div>`:''}
     <div class="panel">
       <div class="eyebrow">Edit profile</div>
       <div class="row" style="margin:12px 0 18px">
@@ -942,6 +977,10 @@ async function openDashboard(initialTab='overview'){
           <label style="font-size:12px;font-weight:700;color:var(--moon)">Terms of Service (TOS)</label>
           <div class="meta" style="margin-bottom:6px">Specify your client policies, payment terms, revision limits, or commercial use rules. Supports bullet points.</div>
           <textarea id="pfTos" style="min-height:180px;line-height:1.6;font-family:inherit" placeholder="• 50% upfront payment required before starting work&#10;• Includes 2 free revisions per project&#10;• Commercial license available as an add-on">${esc(m.tos||'')}</textarea>
+          <div class="row" style="justify-content:space-between;margin-top:8px;gap:8px;flex-wrap:wrap">
+            <div class="meta" id="pfTosJaStatus">${m.tos_ja?'Japanese translation ready.':'Japanese translation will be generated automatically when you save.'}</div>
+            <button class="btn" type="button" id="translateTosJaBtn">🇯🇵 Translate to Japanese</button>
+          </div>
         </div>
         <div class="field"><label>Availability</label><select id="pfAvail"><option value="1" ${m.available?'selected':''}>Available</option><option value="0" ${!m.available?'selected':''}>Booked</option></select></div>
       </div>
@@ -1006,8 +1045,7 @@ function renderClientCommissionsTab(){
     if(error){toast(error.message);btn.disabled=false;return;}
     toast('Commission completed.');
     await openDashboard();
-    switchDashTab('commissions');
-  });
+    });
   document.querySelectorAll('[data-submit-review]').forEach(btn=>btn.onclick=async()=>{
     const id=btn.dataset.submitReview; const rating=Number(document.querySelector(`[data-review-rating="${id}"]`)?.value||5); const text=document.querySelector(`[data-review-text="${id}"]`)?.value.trim()||'';
     if(text.length<10){toast('Please write at least 10 characters.');return;}
@@ -1017,8 +1055,7 @@ function renderClientCommissionsTab(){
     if(error){toast(error.message);btn.disabled=false;return;}
     toast('Thank you — your review is published.');
     await openDashboard();
-    switchDashTab('commissions');
-  });
+    });
   switchDashTab(initialTab);
   applyLanguage(state.language || 'en');
 }
@@ -1232,15 +1269,48 @@ function bindDashboard(ps,ss){
   document.getElementById('pfAvatarBtn')?.addEventListener('click',()=>document.getElementById('pfAvatarFile').click());
   document.getElementById('pfAvatarFile')?.addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}});
   
+  document.getElementById('translateTosJaBtn')?.addEventListener('click',async()=>{
+    const text=document.getElementById('pfTos')?.value.trim();
+    const status=document.getElementById('pfTosJaStatus');
+    if(!text){toast('Enter your English TOS first.');return}
+    const btn=document.getElementById('translateTosJaBtn');btn.disabled=true;
+    if(status)status.textContent='Translating with DeepL…';
+    try{
+      const r=await fetch('/api/translate',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'translate_tos',text})});
+      const d=await r.json();if(!r.ok)throw new Error(d?.error||'Translation failed.');
+      state.currentMember.tos_ja=d.translation||'';
+      if(status)status.textContent='Japanese translation ready. Save profile to publish it.';
+      toast('Japanese TOS translated');
+    }catch(e){if(status)status.textContent=e.message||'Translation failed.';toast(e.message||'Translation failed.')}finally{btn.disabled=false}
+  });
+
   document.getElementById('saveProfile')?.addEventListener('click',async()=>{
     const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
     const selectedThemeVal = document.querySelector('.theme-option.selected')?.dataset.themeVal || 'moonlight';
+    const tosText=document.getElementById('pfTos').value.trim();
+    const tosChanged=tosText!==String(state.currentMember?.tos||'').trim();
+    let tosJa=state.currentMember?.tos_ja||'';
+    if(tosChanged)tosJa='';
+    const tosStatus=document.getElementById('pfTosJaStatus');
+    if(tosStatus)tosStatus.textContent='Translating Terms of Service to Japanese…';
+    try{
+      if(tosText && (tosChanged || !String(state.currentMember?.tos_ja||'').trim())){
+        const tr=await fetch('/api/translate',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'translate_tos',text:tosText})});
+        const td=await tr.json();
+        if(!tr.ok)throw new Error(td?.error||'Japanese translation failed.');
+        tosJa=td.translation||'';
+      }else if(!tosText){tosJa='';}
+    }catch(e){
+      tosJa=''; if(tosStatus)tosStatus.textContent='Japanese translation failed — your English TOS will still be saved without a cached Japanese version.';
+      console.warn(e);
+    }
     const payload={
       display_name:document.getElementById('pfName').value.trim(),
       username,
       role:document.getElementById('pfRole').value.trim(),
       bio:document.getElementById('pfBio').value.trim(),
-      tos:document.getElementById('pfTos').value.trim(),
+      tos:tosText,
+      tos_ja:tosJa,
       theme:selectedThemeVal,
       available:document.getElementById('pfAvail').value==='1',
       updated_at:new Date().toISOString()
@@ -1257,6 +1327,24 @@ function bindDashboard(ps,ss){
   });
 
   document.getElementById('signOut')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();closeDash();toast('Signed out');await refreshUser();render()});
+  document.getElementById('pfRedeemInvite')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('pfRedeemInvite'),input=document.getElementById('pfInviteCode'),msg=document.getElementById('pfInviteMsg');
+    const code=(input.value||'').trim().toUpperCase();
+    if(!code){msg.textContent='Enter an invitation code.';return}
+    if(!/^[A-Z0-9]{8,32}$/.test(code)){msg.textContent='That code doesn\'t look right.';return}
+    btn.disabled=true;msg.textContent='Checking…';
+    try{
+      const email=String(state.currentUser?.email||'').trim().toLowerCase();
+      if(!email)throw new Error('Your account does not have an email address available for this invitation.');
+      const r=await reserveInvitation(code,email);
+      await redeemInvitation(code,r?.nonce);
+      await refreshUser();
+      msg.textContent='Invitation redeemed. Welcome to Lunarist as a Member.';
+      toast('Welcome to Lunarist — your Member invitation is active.');
+      setTimeout(()=>openDashboard(),700);
+    }catch(e){msg.textContent=e.message||'Unable to redeem this invitation.'}
+    finally{btn.disabled=false}
+  });
   document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());
   document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));
   document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());
@@ -1559,42 +1647,24 @@ async function loadAdvancedAnalytics(allProjects,allServices){
 }
 
 async function loadAdminInvitations(sec){
-  const list=sec.querySelector('#memberInviteList');
-  const create=sec.querySelector('#createMemberInvite');
-  const result=sec.querySelector('#inviteCreateResult');
+  const list=document.getElementById('memberInviteList');
+  const create=document.getElementById('createMemberInvite');
+  const result=document.getElementById('inviteCreateResult');
   if(!list||!create)return;
   const renderRows=(rows)=>{
-    if(!rows.length){list.innerHTML='<div class="meta">No invitations created yet.</div>';return}
+    if(!rows.length){list.innerHTML='<div class="meta">No invitations yet.</div>';return}
     list.innerHTML=rows.map(inv=>{
-      const used=!!inv.used_at, expired=!!inv.expires_at && new Date(inv.expires_at)<=new Date();
+      const used=!!inv.used_at;
+      const expired=!!inv.expires_at && new Date(inv.expires_at)<=new Date() && !used;
       const status=used?'Used':expired?'Expired':'Available';
+      const statusClass=used?'tag':expired?'tag':'tag';
       const link=location.origin+'/?invite='+encodeURIComponent(inv.code);
-      return `<div class="listitem" style="align-items:center;gap:12px">
-        <div class="grow"><b style="font-family:IBM Plex Mono,monospace;letter-spacing:.08em">${esc(inv.code)}</b><div class="meta">${esc(status)} · Created ${esc(new Date(inv.created_at).toLocaleString())}${inv.expires_at?' · Expires '+esc(new Date(inv.expires_at).toLocaleString()):''}${inv.used_at?' · Used '+esc(new Date(inv.used_at).toLocaleString()):''}</div></div>
-        <div class="row" style="gap:6px;flex-wrap:wrap">
-          <button class="btn" data-copy-invite="${esc(link)}">Copy link</button>
-          ${!used&&!expired?`<button class="btn" data-revoke-invite="${esc(inv.id)}">Revoke</button>`:''}
-        </div>
-      </div>`;
+      return `<div class="listitem" style="align-items:flex-start;gap:12px"><div class="grow"><b style="font-family:IBM Plex Mono,monospace;letter-spacing:.08em">${esc(inv.code)}</b><div class="meta">${status} · created ${new Date(inv.created_at).toLocaleString()} · ${inv.expires_at?'expires '+new Date(inv.expires_at).toLocaleString():'no expiry'}</div>${used?`<div class="meta">Redeemed ${new Date(inv.used_at).toLocaleString()}</div>`:''}</div><div class="heroactions" style="margin:0;flex-wrap:wrap"><button class="btn" data-copy-invite="${esc(link)}" ${used||expired?'disabled':''}>Copy link</button>${!used&&!expired?`<button class="btn" data-revoke-invite="${esc(inv.id)}">Revoke</button>`:''}</div></div>`;
     }).join('');
     list.querySelectorAll('[data-copy-invite]').forEach(btn=>btn.onclick=async()=>{try{await navigator.clipboard.writeText(btn.dataset.copyInvite);toast('Invitation link copied')}catch{toast(btn.dataset.copyInvite)}});
-    list.querySelectorAll('[data-revoke-invite]').forEach(btn=>btn.onclick=async()=>{
-      if(!confirm('Revoke this invitation? It will no longer be usable.'))return;
-      try{const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'revoke',id:btn.dataset.revokeInvite})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to revoke');toast('Invitation revoked');await loadAdminInvitations(sec)}catch(e){toast(e.message||'Unable to revoke invitation')}
-    });
+    list.querySelectorAll('[data-revoke-invite]').forEach(btn=>btn.onclick=async()=>{if(!confirm('Revoke this invitation? It will no longer be usable.'))return;const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'revoke',id:btn.dataset.revokeInvite})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to revoke');toast('Invitation revoked');loadAdminInvitations(sec)});
   };
-  create.onclick=async()=>{
-    create.disabled=true;
-    try{
-      const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'create',expires_days:30})});
-      const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to create invitation');
-      const link=location.origin+'/?invite='+encodeURIComponent(d.code);
-      result.innerHTML=`<div class="panel" style="margin:0;background:rgba(201,182,255,.06)"><div class="eyebrow">New one-time invitation</div><div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><input id="newInviteCode" value="${esc(d.code)}" readonly style="max-width:180px;font-family:IBM Plex Mono,monospace;letter-spacing:.08em"><button class="btn" id="copyNewInvite">Copy code</button><button class="btn primary" id="copyNewInviteLink">Copy invitation link</button></div><div class="meta" style="margin-top:8px">${esc(link)}</div></div>`;
-      document.getElementById('copyNewInvite').onclick=()=>navigator.clipboard.writeText(d.code).then(()=>toast('Code copied'));
-      document.getElementById('copyNewInviteLink').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('Invitation link copied'));
-      await loadAdminInvitations(sec);
-    }catch(e){toast(e.message||'Unable to create invitation')}finally{create.disabled=false}
-  };
+  create.onclick=async()=>{create.disabled=true;try{const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'create',expires_days:30})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to create invitation');const link=location.origin+'/?invite='+encodeURIComponent(d.code);result.innerHTML=`<div class="panel" style="margin:0;background:rgba(201,182,255,.06)"><div class="eyebrow">New one-time invitation</div><div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><input id="newInviteCode" value="${esc(d.code)}" readonly style="max-width:180px;font-family:IBM Plex Mono,monospace;letter-spacing:.08em"><button class="btn" id="copyNewInvite">Copy code</button><button class="btn primary" id="copyNewInviteLink">Copy invitation link</button></div><div class="meta" style="margin-top:8px">${esc(link)}</div></div>`;document.getElementById('copyNewInvite').onclick=()=>navigator.clipboard.writeText(d.code).then(()=>toast('Code copied'));document.getElementById('copyNewInviteLink').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('Invitation link copied'));await loadAdminInvitations(sec)}catch(e){toast(e.message||'Unable to create invitation')}finally{create.disabled=false}};
   try{const r=await fetch('/api/invitations?action=list',{headers:await apiAuthHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load invitations');renderRows(Array.isArray(d)?d:[])}catch(e){list.innerHTML='<div class="meta">'+esc(e.message||'Unable to load invitations.')+'</div>'}
 }
 
@@ -1912,15 +1982,7 @@ async function renderAdminStudioPage(activeTab='members'){
     try {
       const res = await fetch('/api/lunarist', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(await (async () => {
-            try {
-              const { data: { session } } = await supabaseClient.auth.getSession();
-              return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
-            } catch (_) { return {}; }
-          })())
-        },
+        headers: await apiAuthHeaders(),
         body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })
       });
       const result = await res.json();
@@ -2049,7 +2111,7 @@ async function apiAuthHeaders(){
   try{const {data}=await supabaseClient.auth.getSession(); if(data?.session?.access_token)headers.Authorization=`Bearer ${data.session.access_token}`;}catch{}
   return headers;
 }
-async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async(event,session)=>{await refreshUser();if(session&&['SIGNED_IN','INITIAL_SESSION'].includes(event))await redeemPendingInvitation();updateAccountButton()});await refreshUser();await redeemPendingInvitation()}
+async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async(event,session)=>{await refreshUser();updateAccountButton();if(session&&pendingInvitationReservation())try{await redeemPendingInvitation()}catch{}});await refreshUser()}
 async function loadData(){
   state.loadError=null;
   try{
@@ -2066,6 +2128,7 @@ async function loadData(){
       role:x.role||'',
       bio:x.bio||'',
       tos:x.tos||'',
+      tos_ja:x.tos_ja||'',
       theme:x.theme||'moonlight',
       avatar:x.avatar_url||'https://i.pravatar.cc/160?u='+x.id,
       skills:x.skills||[],
@@ -2077,12 +2140,12 @@ async function loadData(){
      try {
        const {data: publicTosRows, error: publicTosError} = await supabaseClient
          .from('profiles')
-         .select('id,tos')
+         .select('id,tos,tos_ja')
          .not('tos','is',null);
        if (!publicTosError && Array.isArray(publicTosRows)) {
-         const tosById = new Map(publicTosRows.map(x=>[x.id, x.tos||'']));
+         const tosById = new Map(publicTosRows.map(x=>[x.id,{en:x.tos||'',ja:x.tos_ja||''}]));
          data.members.forEach(m=>{
-           if (tosById.has(m.id)) m.tos = tosById.get(m.id);
+           if (tosById.has(m.id)) { const t=tosById.get(m.id); m.tos=t.en; m.tos_ja=t.ja; }
          });
        }
      } catch(e) {}
@@ -2217,7 +2280,7 @@ const UI_TRANSLATIONS={
     'Hire the collective':'Hire the collective','Book Lunarist members directly for commissions and packages.':'Book Lunarist members directly for commissions and packages.',
     'Edit profile':'Edit profile','Create and manage work':'Create and manage work','Offer commissions & packages':'Offer commissions & packages','Direct Messaging':'Direct Messaging','Active Collaborations':'Active Collaborations',
     'Client Dashboard':'Client Dashboard','My commissions & reviews':'My commissions & reviews','Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.':'Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.',
-    'Automatic price calculation':'Automatic price calculation','Base service':'Base service','Full Amount':'Full Amount','50% Deposit':'50% Deposit','Add-ons & Custom Options':'Add-ons & Custom Options',
+    'Automatic price calculation':'Automatic price calculation','Base service':'Base service','Full Amount':'Full Amount','50% Deposit':'50% Deposit','Add-ons & Custom Options':'Add-ons & Custom Options','Inquire':'Inquire','Your Name / Handle *':'Your Name / Handle *','Company / Agency Name (Optional)':'Company / Agency Name (Optional)','Your Email Address *':'Your Email Address *','Social Media e.g. @Handle *':'Social Media e.g. @Handle *','Target Deadline / Preferred Delivery Date (Optional)':'Target Deadline / Preferred Delivery Date (Optional)','Project Brief & Description (Optional)':'Project Brief & Description (Optional)','Upload Brief / Asset Attachment (Optional)':'Upload Brief / Asset Attachment (Optional)','I have read and agree to the':'I have read and agree to the','Terms of Service (TOS)':'Terms of Service (TOS)','Send Inquiry':'Send Inquiry','Powered by PayPal':'Powered by PayPal','This service has no optional add-ons.':'This service has no optional add-ons.','Portfolio examples':'Portfolio examples','Chat with Artist':'Chat with Artist','View profile':'View profile','Select an add-on to update the total automatically.':'Select an add-on to update the total automatically.','Save Slot':'Save Slot','Pay Upfront':'Pay Upfront','(Required)':'(Required)',"artist's terms":"artist's terms",
     'Client reviews':'Client reviews','Reviews from clients':'Reviews from clients','Loading reviews…':'Loading reviews…','Loading your commissions…':'Loading your commissions…',
     'Attach files up to 10MB · Drop a file into the chat':'Attach files up to 10MB · Drop a file into the chat','Started conversation':'Started conversation',
     'Available for commissions':'Available for commissions','Currently booked':'Currently booked','No published projects yet.':'No published projects yet.','No services listed yet.':'No services listed yet.',
@@ -2238,7 +2301,7 @@ const UI_TRANSLATIONS={
     'Hire the collective':'クリエイティブチームに依頼','Book Lunarist members directly for commissions and packages.':'Lunaristメンバーへ直接コミッションやパッケージを依頼できます。',
     'Edit profile':'プロフィールを編集','Create and manage work':'作品を作成・管理','Offer commissions & packages':'コミッションとパッケージを提供','Direct Messaging':'ダイレクトメッセージ','Active Collaborations':'進行中のコラボレーション',
     'Client Dashboard':'クライアントダッシュボード','My commissions & reviews':'マイ・コミッションとレビュー','Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.':'すべてのコミッションを確認し、納品を承認して、完了後にレビューを投稿できます。',
-    'Automatic price calculation':'自動価格計算','Base service':'基本サービス','Full Amount':'全額','50% Deposit':'50%デポジット','Add-ons & Custom Options':'追加オプション',
+    'Automatic price calculation':'自動価格計算','Base service':'基本サービス','Full Amount':'全額','50% Deposit':'50%デポジット','Add-ons & Custom Options':'追加オプション','Inquire':'お問い合わせ','Your Name / Handle *':'お名前 / ハンドル *','Company / Agency Name (Optional)':'会社名 / エージェンシー名（任意）','Your Email Address *':'メールアドレス *','Social Media e.g. @Handle *':'SNS（@ハンドルなど） *','Target Deadline / Preferred Delivery Date (Optional)':'希望納期 / 希望納品日（任意）','Project Brief & Description (Optional)':'プロジェクト概要・説明（任意）','Upload Brief / Asset Attachment (Optional)':'概要・素材ファイル（任意）','I have read and agree to the':'以下に同意します：','Terms of Service (TOS)':'利用規約（TOS）','Send Inquiry':'お問い合わせを送信','Powered by PayPal':'PayPalで処理','This service has no optional add-ons.':'このサービスには追加オプションがありません。','Portfolio examples':'ポートフォリオ例','Chat with Artist':'アーティストにチャット','View profile':'プロフィールを見る','Select an add-on to update the total automatically.':'追加オプションを選択すると合計金額が自動更新されます。','Save Slot':'枠を確保','Pay Upfront':'前払い','(Required)':'（必須）',"artist's terms":"アーティストの規約",
     'Client reviews':'クライアントレビュー','Reviews from clients':'クライアントからのレビュー','Loading reviews…':'レビューを読み込み中…','Loading your commissions…':'コミッションを読み込み中…',
     'Attach files up to 10MB · Drop a file into the chat':'最大10MBのファイルを添付 · チャットへドラッグ＆ドロップ','Started conversation':'会話を開始しました',
     'Available for commissions':'コミッション受付中','Currently booked':'現在予約済み','No published projects yet.':'公開された作品はまだありません。','No services listed yet.':'サービスはまだ登録されていません。',
@@ -2315,7 +2378,7 @@ async function capturePaypalReturnIfPresent(){
     history.replaceState({},'',clean);
   }
 }
-(async()=>{setInvitationFromUrl();await loadData();updateAccountButton();const inviteCode=getInvitationFromLocation();if(inviteCode&&!state.currentUser)openAuth('signup');await capturePaypalReturnIfPresent()})();
+(async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
 </body>
 </html>
