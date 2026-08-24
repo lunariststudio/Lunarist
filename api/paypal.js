@@ -15,7 +15,7 @@ function addonAmount(base,ao){
 
 async function loadService(c,service_id){
   if(!UUID_RE.test(service_id||''))throw Object.assign(Error('Invalid service.'),{status:400});
-  const sr=await db(c,`services?select=id,title,price_from,add_ons&id=eq.${service_id}`);
+  const sr=await db(c,`services?select=id,title,price_from,add_ons,artist_id,owner_id&id=eq.${service_id}`);
   const services=await sr.json(), service=services?.[0];
   if(!service)throw Object.assign(Error('Service not found.'),{status:404});
   return service;
@@ -38,8 +38,13 @@ function resolveAddons(service,addon_titles){
   return {base,addonTotal,total:base+addonTotal,selected};
 }
 
-function buildInquiryRow({service_id,customer,selected,status,paypal_order_id,payment_type,charge_amount,total_amount}){
+function buildInquiryRow({service,service_id,customer,selected,status,paypal_order_id,payment_type,charge_amount,total_amount,client_id}){
+  const artist_id=service?.artist_id||service?.owner_id||null;
   return {
+    client_id:client_id||null,
+    artist_id,
+    client_name:str(customer.name,100),
+    project_title:str(service?.title,160),
     service_id,
     name:str(customer.name,100),
     email:str(customer.email,160),
@@ -58,7 +63,7 @@ function buildInquiryRow({service_id,customer,selected,status,paypal_order_id,pa
   };
 }
 
-async function createOrder(c,body){
+async function createOrder(c,body,client_id=null){
   const {service_id,addon_titles=[],customer={},payment_type}=body||{};
   const service=await loadService(c,service_id);
   const {base,total,selected}=resolveAddons(service,addon_titles);
@@ -89,18 +94,18 @@ async function createOrder(c,body){
   const od=await order.json();
   if(!order.ok)throw Object.assign(Error(od?.message||'PayPal order creation failed'),{status:502});
 
-  const inquiry=buildInquiryRow({service_id,customer,selected,status:'new',paypal_order_id:od.id,payment_type:isDeposit?'deposit':'full',charge_amount:chargeAmount,total_amount:total});
+  const inquiry=buildInquiryRow({service,service_id,customer,selected,status:'new',paypal_order_id:od.id,payment_type:isDeposit?'deposit':'full',charge_amount:chargeAmount,total_amount:total,client_id});
   const cr=await db(c,'commissions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(inquiry)});
   if(!cr.ok){console.error('commission insert failed',await cr.text())}
   return od;
 }
 
-async function createInquiryOnly(c,body){
+async function createInquiryOnly(c,body,client_id=null){
   const {service_id,addon_titles=[],customer={}}=body||{};
   const service=await loadService(c,service_id);
   const {total,selected}=resolveAddons(service,addon_titles);
   if(!customer?.name||!customer?.email)throw Object.assign(Error('Name and email are required.'),{status:400});
-  const inquiry=buildInquiryRow({service_id,customer,selected,status:'new',paypal_order_id:null,payment_type:'full',charge_amount:0,total_amount:total});
+  const inquiry=buildInquiryRow({service,service_id,customer,selected,status:'new',paypal_order_id:null,payment_type:'full',charge_amount:0,total_amount:total,client_id});
   const cr=await db(c,'commissions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(inquiry)});
   if(!cr.ok)throw Object.assign(Error('Unable to save your inquiry.'),{status:502});
   return {ok:true};
@@ -119,6 +124,15 @@ async function capture(c,orderId){
   return {status:d.status,order:d};
 }
 
+async function authUserId(c,req){
+  const auth=String(req.headers.authorization||'');
+  if(!auth.startsWith('Bearer '))return null;
+  const r=await fetch(`${c.url}/auth/v1/user`,{headers:{apikey:c.key,Authorization:auth}});
+  if(!r.ok)return null;
+  const u=await r.json();
+  return UUID_RE.test(u?.id||'')?u.id:null;
+}
+
 export default async function handler(req,res){
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
   const c=cfg();if(!c.url||!c.key)return res.status(503).json({error:'Payment environment is not configured.'});
@@ -128,9 +142,10 @@ export default async function handler(req,res){
       if(!c.client||!c.secret)return res.status(503).json({error:'Payment environment is not configured.'});
       return res.status(200).json(await capture(c,b.order_id));
     }
-    if(b.action==='inquiry_only')return res.status(200).json(await createInquiryOnly(c,b));
+    const client_id=await authUserId(c,req);
+    if(b.action==='inquiry_only')return res.status(200).json(await createInquiryOnly(c,b,client_id));
     if(!c.client||!c.secret)return res.status(503).json({error:'Payment environment is not configured.'});
-    return res.status(200).json(await createOrder(c,b));
+    return res.status(200).json(await createOrder(c,b,client_id));
   }catch(e){
     console.error(e);
     return res.status(e.status||500).json({error:e.message||'PayPal request failed',...(e.data?{details:e.data}:{})})
