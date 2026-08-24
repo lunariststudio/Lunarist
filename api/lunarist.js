@@ -1,5 +1,5 @@
 function config(){return{url:(process.env.SUPABASE_URL||"").replace(/\/$/,""),key:process.env.SUPABASE_SERVICE_ROLE_KEY||""}}
-const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at',order:'created_at.desc'},services:{select:'id,owner_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,published,featured,views,created_at,service_projects(project_id)',order:'created_at.desc'}};
+const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at',order:'created_at.desc'},services:{select:'id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,published,featured,views,add_ons,created_at,service_projects(project_id)',order:'created_at.desc'}};
 const EVENT_TYPES=['view','like','save','share','open_artist','search'];
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -55,8 +55,6 @@ async function toggleMember(req,res,url,key){
 export default async function handler(req,res){const {url,key}=config();if(!url||!key)return res.status(503).json({error:'Supabase server credentials are not configured.'});const q=req.url.includes('?')?req.url.slice(req.url.indexOf('?')+1):'';const params=new URLSearchParams(q);const resource=params.get('resource');try{
 if(req.method==='POST'&&(req.body||{}).action==='toggle-member')return await toggleMember(req,res,url,key);
 if(req.method==='GET'){
-  // Public profile/project/service data must always reflect the latest Supabase profile edits.
-  // Prevent Vercel/browser caching from showing stale profile cards after a profile save.
   res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma','no-cache');
   res.setHeader('Expires','0');
