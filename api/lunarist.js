@@ -55,6 +55,11 @@ async function toggleMember(req,res,url,key){
 export default async function handler(req,res){const {url,key}=config();if(!url||!key)return res.status(503).json({error:'Supabase server credentials are not configured.'});const q=req.url.includes('?')?req.url.slice(req.url.indexOf('?')+1):'';const params=new URLSearchParams(q);const resource=params.get('resource');try{
 if(req.method==='POST'&&(req.body||{}).action==='toggle-member')return await toggleMember(req,res,url,key);
 if(req.method==='GET'){
+  // Public profile/project/service data must always reflect the latest Supabase profile edits.
+  // Prevent Vercel/browser caching from showing stale profile cards after a profile save.
+  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma','no-cache');
+  res.setHeader('Expires','0');
   if(resource==='recommendations'){
     const sessionId=params.get('session_id')||'';
     if(!sessionId)return res.status(400).json({error:'session_id is required'});

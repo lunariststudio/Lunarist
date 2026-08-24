@@ -2117,9 +2117,9 @@ async function loadData(){
   try{
     if(!supabaseClient)await loadConfig();
     const [pr,pp,sv]=await Promise.all([
-      fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
-      fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
-      fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})
+      fetch(`/api/lunarist?resource=profiles&_=${Date.now()}`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
+      fetch(`/api/lunarist?resource=projects&_=${Date.now()}`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
+      fetch(`/api/lunarist?resource=services&_=${Date.now()}`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})
     ]);
     data.members=(Array.isArray(pr)?pr:[]).map(x=>({
       id:x.id,
@@ -2136,6 +2136,27 @@ async function loadData(){
       account_type:x.account_type||'member',
       is_admin:!!x.is_admin
     }));
+
+    // The logged-in profile is the source of truth for the current user's public card.
+    // This prevents the Artists page from showing an older cached/API version after
+    // Profile Settings are saved (name, username, role, avatar, skills, availability).
+    if(state.currentMember?.id){
+      const me=data.members.find(m=>m.id===state.currentMember.id);
+      if(me){
+        me.username=state.currentMember.username||me.username;
+        me.name=state.currentMember.name||me.name;
+        me.role=state.currentMember.role||'';
+        me.bio=state.currentMember.bio||'';
+        me.tos=state.currentMember.tos||'';
+        me.tos_ja=state.currentMember.tos_ja||'';
+        me.theme=state.currentMember.theme||me.theme;
+        me.avatar=state.currentMember.avatar||me.avatar;
+        me.skills=Array.isArray(state.currentMember.skills)?state.currentMember.skills:[];
+        me.available=state.currentMember.available!==false;
+        me.account_type=state.currentMember.account_type||me.account_type;
+        me.is_admin=!!state.currentMember.is_admin;
+      }
+    }
 
      try {
        const {data: publicTosRows, error: publicTosError} = await supabaseClient
