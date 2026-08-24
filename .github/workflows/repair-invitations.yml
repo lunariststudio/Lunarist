@@ -15,6 +15,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Always start from the last known-good Lunarist application commit.
+      # The previous manual HTML edit accidentally replaced the application body;
+      # this restores the full app before applying the invitation patch below.
+      - name: Restore known-good application HTML
+        run: git checkout f3b8e195b64f472ca8b541a0ee7054e6d4ca8939 -- index.html
+
       - name: Patch invitation registration and Admin Studio
         run: |
           python3 <<'PY'
@@ -22,13 +28,11 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
-          # 1) Add invitation code field to signup modal.
           marker = '<div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div>'
           invite_field = marker + '<div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once.</div></div>'
           if 'id="authInviteWrap"' not in s and marker in s:
               s = s.replace(marker, invite_field, 1)
 
-          # 2) Replace the old auth helpers with invitation-aware versions.
           old_open = "function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';document.getElementById('authUsernameWrap').style.display=m?'flex':'none';document.getElementById('authDisplayWrap').style.display=m?'flex':'none';document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';document.getElementById('authModeHint').textContent=m?'':'Use Google or email/password';document.getElementById('authMessage').textContent='';document.getElementById('authModal').classList.add('open')}"
           new_open = """function invitationCodeFromUrl(){const q=new URLSearchParams(location.search);let c=q.get('invite')||q.get('invitation')||'';if(!c){const m=location.pathname.match(/^\\/(?:invite|invitation)\\/([A-Za-z0-9_-]+)\\/?$/);if(m)c=m[1]}return String(c||'').trim().toUpperCase()}
 function pendingInvitation(){return localStorage.getItem('lunarist_pending_invite')||invitationCodeFromUrl()}
@@ -40,11 +44,9 @@ function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';con
           if old_submit_start in s:
               start=s.index(old_submit_start)
               end=s.index("}catch(e){", start)
-              prefix=s[start:end]
               replacement="""async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim(),invite=String(document.getElementById('authInvite')?.value||pendingInvitation()).trim().toUpperCase();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}if(state.authMode==='signup'&&!invite){document.getElementById('authMessage').textContent='A valid invitation link or code is required to create a Member account.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const nonce=(crypto.randomUUID().replace(/-/g,'')+Math.random().toString(36).slice(2,10));const rr=await fetch('/api/invitations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reserve',code:invite,email,nonce})});const rd=await rr.json();if(!rr.ok)throw new Error(rd.error||'Unable to reserve invitation.');localStorage.setItem('lunarist_pending_invite',invite);localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:invite,email,nonce,at:Date.now()}));const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){try{await redeemPendingInvitation()}catch{}closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}"""
               s=s[:start]+replacement+s[end:]
 
-          # 3) Add Admin Studio invitation tab and panel.
           nav_marker='<button class="filter ${activeTab===\'members\'?\'active\':\'\'}" data-studio-tab="members">Members (${Number(memberCount||0)})</button>'
           nav_insert=nav_marker+'<button class="filter ${activeTab===\'invitations\'?\'active\':\'\'}" data-studio-tab="invitations">Invitations</button>'
           if 'data-studio-tab="invitations"' not in s and nav_marker in s:
@@ -55,33 +57,32 @@ function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';con
           if 'data-studio-panel="invitations"' not in s and panel_marker in s:
               s=s.replace(panel_marker,invite_panel,1)
 
-          # 4) Add invitation management helpers before renderAdminStudioPage.
-          anchor='async function renderAdminStudioPage(activeTab=\'members\'){'
+          anchor="async function renderAdminStudioPage(activeTab='members'){"
           helpers=r'''async function loadAdminInvitations(sec){
   const list=sec.querySelector('#memberInviteList'),create=sec.querySelector('#createMemberInvite'),result=sec.querySelector('#inviteCreateResult');
   if(!list)return;
-  const escInvite=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const renderRows=rows=>{list.innerHTML=(rows||[]).map(inv=>{const used=!!inv.used_at,expired=inv.expires_at&&new Date(inv.expires_at)<new Date();const link=location.origin+'/?invite='+encodeURIComponent(inv.code);return `<div class="listitem"><div class="grow"><b style="font-family:IBM Plex Mono,monospace;letter-spacing:.08em">${escInvite(inv.code)}</b><div class="meta">${used?'Used':expired?'Expired':'Available'} · Created ${new Date(inv.created_at).toLocaleString()}${inv.expires_at?' · Expires '+new Date(inv.expires_at).toLocaleString():''}</div></div><div class="row"><button class="btn" data-copy-invite="${escInvite(link)}">Copy link</button>${!used&&!expired?`<button class="btn" data-revoke-invite="${escInvite(inv.id)}">Revoke</button>`:''}</div></div>`}).join('')||'<div class="meta">No invitations found.</div>';list.querySelectorAll('[data-copy-invite]').forEach(b=>b.onclick=()=>navigator.clipboard.writeText(b.dataset.copyInvite).then(()=>toast('Invitation link copied')));list.querySelectorAll('[data-revoke-invite]').forEach(b=>b.onclick=async()=>{if(!confirm('Revoke this invitation? It will no longer be usable.'))return;const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'revoke',id:b.dataset.revokeInvite})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to revoke');toast('Invitation revoked');loadAdminInvitations(sec)});};
-  try{const r=await fetch('/api/invitations?action=list',{headers:await apiAuthHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load invitations');renderRows(Array.isArray(d)?d:[])}catch(e){list.innerHTML='<div class="meta">'+escInvite(e.message||'Unable to load invitations.')+'</div>'}
-  if(create)create.onclick=async()=>{create.disabled=true;try{const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'create',expires_days:30})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to create invitation');const link=location.origin+'/?invite='+encodeURIComponent(d.code);result.innerHTML=`<div class="panel" style="margin:0;background:rgba(201,182,255,.06)"><div class="eyebrow">New one-time invitation</div><div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><input value="${escInvite(d.code)}" readonly style="max-width:180px;font-family:IBM Plex Mono,monospace;letter-spacing:.08em"><button class="btn" id="copyNewInvite">Copy code</button><button class="btn primary" id="copyNewInviteLink">Copy invitation link</button></div><div class="meta" style="margin-top:8px">${escInvite(link)}</div></div>`;document.getElementById('copyNewInvite').onclick=()=>navigator.clipboard.writeText(d.code).then(()=>toast('Code copied'));document.getElementById('copyNewInviteLink').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('Invitation link copied'));await loadAdminInvitations(sec)}catch(e){toast(e.message||'Unable to create invitation')}finally{create.disabled=false}};
+  const renderRows=rows=>{if(!rows?.length){list.innerHTML='<div class="meta">No invitations found.</div>';return}list.innerHTML=rows.map(inv=>{const used=!!inv.used_at,expired=!!inv.expires_at&&new Date(inv.expires_at)<=new Date()&&!used,link=location.origin+'/?invite='+encodeURIComponent(inv.code);return `<div class="listitem"><div class="grow"><b style="font-family:IBM Plex Mono,monospace;letter-spacing:.08em">${esc(inv.code)}</b><div class="meta">${used?'Used':expired?'Expired':'Available'} · created ${new Date(inv.created_at).toLocaleString()} · ${inv.expires_at?'expires '+new Date(inv.expires_at).toLocaleString():'no expiry'}</div></div><div class="row"><button class="btn" data-copy-invite="${esc(link)}" ${used||expired?'disabled':''}>Copy link</button>${!used&&!expired?`<button class="btn" data-revoke-invite="${esc(inv.id)}">Revoke</button>`:''}</div></div>`}).join('');list.querySelectorAll('[data-copy-invite]').forEach(b=>b.onclick=()=>navigator.clipboard.writeText(b.dataset.copyInvite).then(()=>toast('Invitation link copied')));list.querySelectorAll('[data-revoke-invite]').forEach(b=>b.onclick=async()=>{if(!confirm('Revoke this invitation?'))return;const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'revoke',id:b.dataset.revokeInvite})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to revoke');toast('Invitation revoked');loadAdminInvitations(sec)})};
+  try{const r=await fetch('/api/invitations?action=list',{headers:await apiAuthHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load invitations');renderRows(Array.isArray(d)?d:[])}catch(e){list.innerHTML='<div class="meta">'+esc(e.message||'Unable to load invitations.')+'</div>'}
+  if(create)create.onclick=async()=>{create.disabled=true;try{const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'create',expires_days:30})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to create invitation');const link=location.origin+'/?invite='+encodeURIComponent(d.code);result.innerHTML=`<div class="panel" style="margin:0"><div class="eyebrow">New one-time invitation</div><div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><input value="${esc(d.code)}" readonly style="max-width:180px;font-family:IBM Plex Mono,monospace;letter-spacing:.08em"><button class="btn" id="copyNewInvite">Copy code</button><button class="btn primary" id="copyNewInviteLink">Copy invitation link</button></div><div class="meta" style="margin-top:8px">${esc(link)}</div></div>`;document.getElementById('copyNewInvite').onclick=()=>navigator.clipboard.writeText(d.code).then(()=>toast('Code copied'));document.getElementById('copyNewInviteLink').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('Invitation link copied'));await loadAdminInvitations(sec)}catch(e){toast(e.message||'Unable to create invitation')}finally{create.disabled=false}};
 }
 
 '''
           if 'async function loadAdminInvitations(sec)' not in s and anchor in s:
               s=s.replace(anchor,helpers+anchor,1)
 
-          # 5) Load invitation panel when selected.
           click_marker="if(btn.dataset.studioTab==='analytics')initAnalyticsCharts();"
           if "btn.dataset.studioTab==='invitations'" not in s and click_marker in s:
               s=s.replace(click_marker,click_marker+"if(btn.dataset.studioTab==='invitations')loadAdminInvitations(sec);",1)
 
-          # 6) Detect invitation links on first load and open signup.
-          boot_marker="async function init(){"
-          if 'invitationCodeFromUrl()' in s and boot_marker in s and 'lunarist_pending_invite' not in s[s.index(boot_marker):s.index(boot_marker)+3000]:
-              s=s.replace(boot_marker,boot_marker+"\n  const __invite=invitationCodeFromUrl(); if(__invite){localStorage.setItem('lunarist_pending_invite',__invite); setTimeout(()=>openAuth('signup'),250);}\n",1)
-
           p.write_text(s,encoding='utf-8')
           PY
+
+      - name: Verify repaired HTML
+        run: |
+          test -s index.html
+          grep -q 'data-studio-tab="invitations"' index.html
+          grep -q 'id="authInviteWrap"' index.html
+          grep -q 'reserve_member_invitation\|action:\x27reserve\x27' index.html
 
       - name: Commit repaired application
         run: |
