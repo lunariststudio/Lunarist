@@ -103,7 +103,6 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="/redeem-invitation-profile.js" defer></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -932,6 +931,16 @@ async function openDashboard(initialTab='overview'){
   renderMessagesTab();
 
   document.getElementById('dash-profile').innerHTML=`
+    ${(m.account_type!=='member'&&!m.is_admin)?`<div class="panel" style="margin-bottom:16px">
+      <div class="eyebrow">Redeem Invitation</div>
+      <h3 style="margin:4px 0">Become a Lunarist Member</h3>
+      <p class="meta">Enter a one-time invitation code from a Studio admin to unlock publishing.</p>
+      <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+        <input id="pfInviteCode" maxlength="64" autocomplete="one-time-code" placeholder="INVITATION CODE" style="text-transform:uppercase;letter-spacing:.08em;max-width:260px">
+        <button class="btn primary" id="pfRedeemInvite" type="button">Redeem Code</button>
+      </div>
+      <p class="meta" id="pfInviteMsg" style="min-height:18px;margin-top:8px"></p>
+    </div>`:''}
     <div class="panel">
       <div class="eyebrow">Edit profile</div>
       <div class="row" style="margin:12px 0 18px">
@@ -1318,6 +1327,24 @@ function bindDashboard(ps,ss){
   });
 
   document.getElementById('signOut')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();closeDash();toast('Signed out');await refreshUser();render()});
+  document.getElementById('pfRedeemInvite')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('pfRedeemInvite'),input=document.getElementById('pfInviteCode'),msg=document.getElementById('pfInviteMsg');
+    const code=(input.value||'').trim().toUpperCase();
+    if(!code){msg.textContent='Enter an invitation code.';return}
+    if(!/^[A-Z0-9]{8,32}$/.test(code)){msg.textContent='That code doesn\'t look right.';return}
+    btn.disabled=true;msg.textContent='Checking…';
+    try{
+      const email=String(state.currentUser?.email||'').trim().toLowerCase();
+      if(!email)throw new Error('Your account does not have an email address available for this invitation.');
+      const r=await reserveInvitation(code,email);
+      await redeemInvitation(code,r?.nonce);
+      await refreshUser();
+      msg.textContent='Invitation redeemed. Welcome to Lunarist as a Member.';
+      toast('Welcome to Lunarist — your Member invitation is active.');
+      setTimeout(()=>openDashboard(),700);
+    }catch(e){msg.textContent=e.message||'Unable to redeem this invitation.'}
+    finally{btn.disabled=false}
+  });
   document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());
   document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));
   document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());
@@ -1955,7 +1982,7 @@ async function renderAdminStudioPage(activeTab='members'){
     try {
       const res = await fetch('/api/lunarist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await apiAuthHeaders(),
         body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })
       });
       const result = await res.json();
