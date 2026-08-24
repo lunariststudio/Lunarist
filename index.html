@@ -113,7 +113,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
 <div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="commissions" data-i18n="myCommissions">My Commissions</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-commissions"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
-<div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
+<div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation</label><input id="authInvite" autocomplete="off" placeholder="Invitation code"><div class="meta" id="authInviteHint">A one-time Lunarist Member invitation is required.</div></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <style>
 .lunarist-direct-badge{background:linear-gradient(135deg,rgba(255,112,196,.22),rgba(201,182,255,.2));border:1px solid rgba(255,150,218,.55);color:#ffd5f1;box-shadow:0 6px 20px rgba(255,112,196,.12);font-weight:800;letter-spacing:.02em}
 .thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
@@ -700,10 +700,107 @@ async function openProject(id){
 
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML='';updateSeoMeta('','','')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
-function openAuth(mode='signin'){state.authMode=mode;const m=mode==='signup';document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';document.getElementById('authUsernameWrap').style.display=m?'flex':'none';document.getElementById('authDisplayWrap').style.display=m?'flex':'none';document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';document.getElementById('authModeHint').textContent=m?'':'Use Google or email/password';document.getElementById('authMessage').textContent='';document.getElementById('authModal').classList.add('open')}
+function getInvitationFromLocation(){
+  const params=new URLSearchParams(window.location.search);
+  let code=(params.get('invite')||params.get('invitation')||'').trim();
+  if(!code){
+    const m=window.location.pathname.match(/\/(?:invite|invitation)\/([A-Za-z0-9_-]+)/i);
+    if(m) code=m[1];
+  }
+  return code.toUpperCase();
+}
+function pendingInvitation(){
+  try{const raw=localStorage.getItem('lunarist_pending_invitation');return raw?JSON.parse(raw):null}catch{return null}
+}
+function savePendingInvitation(v){localStorage.setItem('lunarist_pending_invitation',JSON.stringify(v))}
+function clearPendingInvitation(){localStorage.removeItem('lunarist_pending_invitation')}
+function setInvitationFromUrl(){
+  const code=getInvitationFromLocation();
+  if(code){localStorage.setItem('lunarist_invitation_code',code);return code}
+  return (localStorage.getItem('lunarist_invitation_code')||'').trim().toUpperCase();
+}
+function openAuth(mode='signin'){
+  state.authMode=mode;
+  const m=mode==='signup';
+  const inviteCode=setInvitationFromUrl();
+  document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';
+  document.getElementById('authSubtitle').textContent=m?'Join the creative network and publish your work.':'Save work, publish projects and manage your creative profile.';
+  document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';
+  document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';
+  document.getElementById('authUsernameWrap').style.display=m?'flex':'none';
+  document.getElementById('authDisplayWrap').style.display=m?'flex':'none';
+  document.getElementById('authInviteWrap').style.display=m?'flex':'none';
+  document.getElementById('authInvite').value=inviteCode||'';
+  document.getElementById('authInvite').readOnly=!!inviteCode;
+  document.getElementById('authInviteHint').textContent=inviteCode?'Invitation detected. This code can be used once.':'A one-time Lunarist Member invitation is required.';
+  document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';
+  document.getElementById('authModeHint').textContent=m?'Member registration requires an invitation.':'Use Google or email/password';
+  document.getElementById('authMessage').textContent='';
+  document.getElementById('authModal').classList.add('open');
+}
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
-async function authSubmit(){const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}document.getElementById('authSubmit').disabled=true;try{if(state.authMode==='signup'){const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});if(error)throw error;document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';if(d.session){closeAuth();await refreshUser();openDashboard()}}else{const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()}}catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}}
-async function signInWithGoogle(){document.getElementById('googleAuth').disabled=true;try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});if(error)throw error}catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}}
+async function reserveInvitation(code,email){
+  const normalizedCode=(code||'').trim().toUpperCase();
+  const normalizedEmail=(email||'').trim().toLowerCase();
+  if(!normalizedCode) throw new Error('A Lunarist Member invitation is required.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) throw new Error('Enter a valid email address for the invitation.');
+  const nonce=crypto.randomUUID()+'-'+crypto.randomUUID();
+  const {data,error}=await supabaseClient.rpc('reserve_member_invitation',{p_code:normalizedCode,p_email:normalizedEmail,p_nonce:nonce});
+  if(error) throw error;
+  if(!data?.success) throw new Error('This invitation could not be reserved.');
+  savePendingInvitation({code:normalizedCode,email:normalizedEmail,nonce,created_at:new Date().toISOString()});
+  return data;
+}
+async function redeemPendingInvitation(){
+  const pending=pendingInvitation();
+  if(!pending?.code||!pending?.nonce||!state.currentUser) return;
+  const currentEmail=(state.currentUser.email||'').trim().toLowerCase();
+  if(pending.email && currentEmail && pending.email!==currentEmail){
+    document.getElementById('authMessage').textContent='This invitation is reserved for a different email address.';
+    return;
+  }
+  try{
+    const {data,error}=await supabaseClient.rpc('redeem_member_invitation',{p_code:pending.code,p_nonce:pending.nonce});
+    if(error) throw error;
+    if(data?.success){clearPendingInvitation();localStorage.removeItem('lunarist_invitation_code');await refreshUser();}
+  }catch(e){
+    const msg=e?.message||'';
+    if(/already_redeemed/i.test(msg)){clearPendingInvitation();localStorage.removeItem('lunarist_invitation_code');return}
+    console.warn('Invitation redemption pending:',msg);
+  }
+}
+async function authSubmit(){
+  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim();
+  if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}
+  document.getElementById('authSubmit').disabled=true;
+  try{
+    if(state.authMode==='signup'){
+      const code=document.getElementById('authInvite').value.trim().toUpperCase();
+      await reserveInvitation(code,email);
+      const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username}}});
+      if(error){throw error}
+      document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';
+      if(d.session){await redeemPendingInvitation();closeAuth();await refreshUser();openDashboard()}
+    }else{
+      const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      closeAuth();await refreshUser();openDashboard();
+    }
+  }catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}
+  finally{document.getElementById('authSubmit').disabled=false}
+}
+async function signInWithGoogle(){
+  document.getElementById('googleAuth').disabled=true;
+  try{
+    if(state.authMode==='signup'){
+      const email=document.getElementById('authEmail').value.trim();
+      const code=document.getElementById('authInvite').value.trim().toUpperCase();
+      await reserveInvitation(code,email);
+    }
+    const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/'}});
+    if(error)throw error;
+  }catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';document.getElementById('googleAuth').disabled=false}
+}
 async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
 
 async function refreshUser(){
@@ -1461,6 +1558,46 @@ async function loadAdvancedAnalytics(allProjects,allServices){
   };
 }
 
+async function loadAdminInvitations(sec){
+  const list=sec.querySelector('#memberInviteList');
+  const create=sec.querySelector('#createMemberInvite');
+  const result=sec.querySelector('#inviteCreateResult');
+  if(!list||!create)return;
+  const renderRows=(rows)=>{
+    if(!rows.length){list.innerHTML='<div class="meta">No invitations created yet.</div>';return}
+    list.innerHTML=rows.map(inv=>{
+      const used=!!inv.used_at, expired=!!inv.expires_at && new Date(inv.expires_at)<=new Date();
+      const status=used?'Used':expired?'Expired':'Available';
+      const link=location.origin+'/?invite='+encodeURIComponent(inv.code);
+      return `<div class="listitem" style="align-items:center;gap:12px">
+        <div class="grow"><b style="font-family:IBM Plex Mono,monospace;letter-spacing:.08em">${esc(inv.code)}</b><div class="meta">${esc(status)} · Created ${esc(new Date(inv.created_at).toLocaleString())}${inv.expires_at?' · Expires '+esc(new Date(inv.expires_at).toLocaleString()):''}${inv.used_at?' · Used '+esc(new Date(inv.used_at).toLocaleString()):''}</div></div>
+        <div class="row" style="gap:6px;flex-wrap:wrap">
+          <button class="btn" data-copy-invite="${esc(link)}">Copy link</button>
+          ${!used&&!expired?`<button class="btn" data-revoke-invite="${esc(inv.id)}">Revoke</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-copy-invite]').forEach(btn=>btn.onclick=async()=>{try{await navigator.clipboard.writeText(btn.dataset.copyInvite);toast('Invitation link copied')}catch{toast(btn.dataset.copyInvite)}});
+    list.querySelectorAll('[data-revoke-invite]').forEach(btn=>btn.onclick=async()=>{
+      if(!confirm('Revoke this invitation? It will no longer be usable.'))return;
+      try{const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'revoke',id:btn.dataset.revokeInvite})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to revoke');toast('Invitation revoked');await loadAdminInvitations(sec)}catch(e){toast(e.message||'Unable to revoke invitation')}
+    });
+  };
+  create.onclick=async()=>{
+    create.disabled=true;
+    try{
+      const r=await fetch('/api/invitations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'create',expires_days:30})});
+      const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to create invitation');
+      const link=location.origin+'/?invite='+encodeURIComponent(d.code);
+      result.innerHTML=`<div class="panel" style="margin:0;background:rgba(201,182,255,.06)"><div class="eyebrow">New one-time invitation</div><div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><input id="newInviteCode" value="${esc(d.code)}" readonly style="max-width:180px;font-family:IBM Plex Mono,monospace;letter-spacing:.08em"><button class="btn" id="copyNewInvite">Copy code</button><button class="btn primary" id="copyNewInviteLink">Copy invitation link</button></div><div class="meta" style="margin-top:8px">${esc(link)}</div></div>`;
+      document.getElementById('copyNewInvite').onclick=()=>navigator.clipboard.writeText(d.code).then(()=>toast('Code copied'));
+      document.getElementById('copyNewInviteLink').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('Invitation link copied'));
+      await loadAdminInvitations(sec);
+    }catch(e){toast(e.message||'Unable to create invitation')}finally{create.disabled=false}
+  };
+  try{const r=await fetch('/api/invitations?action=list',{headers:await apiAuthHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load invitations');renderRows(Array.isArray(d)?d:[])}catch(e){list.innerHTML='<div class="meta">'+esc(e.message||'Unable to load invitations.')+'</div>'}
+}
+
 async function renderAdminStudioPage(activeTab='members'){
   if(!state.currentUser||!state.currentMember?.is_admin){
     document.getElementById('adminPageView').innerHTML='<div class="panel"><h3>Access Restricted</h3><p style="color:var(--muted)">You must be an administrator to view this page.</p></div>';
@@ -1570,6 +1707,7 @@ async function renderAdminStudioPage(activeTab='members'){
       <button class="filter ${activeTab==='projects'?'active':''}" data-studio-tab="projects">Projects (${allProjects.length})</button>
       <button class="filter ${activeTab==='services'?'active':''}" data-studio-tab="services">Services (${allServices.length})</button>
       <button class="filter ${activeTab==='members'?'active':''}" data-studio-tab="members">Members (${Number(memberCount||0)})</button>
+      <button class="filter ${activeTab==='invitations'?'active':''}" data-studio-tab="invitations">Invitations</button>
       <button class="filter ${activeTab==='analytics'?'active':''}" data-studio-tab="analytics">Analytics</button>
       <button class="filter ${activeTab==='settings'?'active':''}" data-studio-tab="settings">Settings</button>
     </div>
@@ -1604,6 +1742,17 @@ async function renderAdminStudioPage(activeTab='members'){
       <div class="panel">
         <div class="eyebrow">Members Management</div>
         <div style="margin-top:12px">${memberRows}</div>
+      </div>
+    </div>
+
+    <div data-studio-panel="invitations" style="${activeTab==='invitations'?'':'display:none'}">
+      <div class="panel">
+        <div class="row" style="align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div class="grow"><div class="eyebrow">Member Invitations</div><h3 style="margin:4px 0">One-time member access</h3><p class="meta">Create an invitation link or code. Each invitation can be redeemed once and then becomes invalid.</p></div>
+          <button class="btn primary" id="createMemberInvite">+ Create invitation</button>
+        </div>
+        <div id="inviteCreateResult" style="margin-top:14px"></div>
+        <div id="memberInviteList" style="margin-top:16px"><div class="meta">Loading invitations…</div></div>
       </div>
     </div>
 
@@ -1688,12 +1837,14 @@ async function renderAdminStudioPage(activeTab='members'){
     }
   }
   if(activeTab==='analytics')initAnalyticsCharts();
+  if(activeTab==='invitations')loadAdminInvitations(sec);
 
   sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{
     sec.querySelectorAll('[data-studio-tab]').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
     sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===btn.dataset.studioTab?'block':'none');
     if(btn.dataset.studioTab==='analytics')initAnalyticsCharts();
+    if(btn.dataset.studioTab==='invitations')loadAdminInvitations(sec);
   });
 
   sec.querySelectorAll('[data-admin-profile]').forEach(btn=>btn.onclick=()=>{ const target=member(btn.dataset.adminProfile); if(target) goRoute('member:'+target.id); });
@@ -1890,7 +2041,7 @@ async function apiAuthHeaders(){
   try{const {data}=await supabaseClient.auth.getSession(); if(data?.session?.access_token)headers.Authorization=`Bearer ${data.session.access_token}`;}catch{}
   return headers;
 }
-async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async()=>{await refreshUser();updateAccountButton()});await refreshUser()}
+async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async(event,session)=>{await refreshUser();if(session&&['SIGNED_IN','INITIAL_SESSION'].includes(event))await redeemPendingInvitation();updateAccountButton()});await refreshUser();await redeemPendingInvitation()}
 async function loadData(){
   state.loadError=null;
   try{
@@ -2156,7 +2307,7 @@ async function capturePaypalReturnIfPresent(){
     history.replaceState({},'',clean);
   }
 }
-(async()=>{await loadData();updateAccountButton();await capturePaypalReturnIfPresent()})();
+(async()=>{setInvitationFromUrl();await loadData();updateAccountButton();const inviteCode=getInvitationFromLocation();if(inviteCode&&!state.currentUser)openAuth('signup');await capturePaypalReturnIfPresent()})();
 </script>
 </body>
 </html>
