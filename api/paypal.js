@@ -5,8 +5,9 @@ function str(v,max){return typeof v==='string'?v.slice(0,max):''}
 async function token(c){const r=await fetch('https://api-m.paypal.com/v1/oauth2/token',{method:'POST',body:'grant_type=client_credentials',headers:{Authorization:`Basic ${Buffer.from(`${c.client}:${c.secret}`).toString('base64')}`,'Content-Type':'application/x-www-form-urlencoded'}});const d=await r.json();if(!r.ok||!d.access_token)throw Error('PayPal authentication failed');return d.access_token}
 async function db(c,path,opts={}){return fetch(`${c.url}/rest/v1/${path}`,{...opts,headers:{apikey:c.key,Authorization:`Bearer ${c.key}`,'Content-Type':'application/json',...(opts.headers||{})}})}
 
-// Add-ons can be fixed, percentage, or duration-based. Duration add-ons charge
-// once per unit after the included threshold, and are recalculated server-side.
+// Add-ons can be a flat dollar amount ({type:'fixed'}) or a percentage of the
+// base price ({type:'percent'}). Percentage is resolved server-side against
+// the service's own price_from so a tampered client total can't be trusted.
 function addonAmount(base,ao,durationSeconds=0){
   const n=money(ao?.price);
   if(ao?.type==='percent') return base*n/100;

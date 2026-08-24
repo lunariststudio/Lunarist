@@ -220,12 +220,34 @@ function serviceCard(s){const m=member(s.member);return `<article class="card" d
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
 function money(v){const n=Number(String(v??'').replace(/[^0-9.]/g,''));return Number.isFinite(n)&&n>0?n:0}
-function addonAmount(base,ao){
+function addonAmount(base,ao,durationSeconds=0){
   const n=Number(ao?.price||0);
-  return ao?.type==='percent' ? (base*n/100) : n;
+  if(ao?.type==='percent') return base*n/100;
+  if(ao?.type==='duration'){
+    const threshold=Math.max(0,Number(ao.threshold_seconds ?? ao.thresholdSeconds ?? 180));
+    const unit=Math.max(1,Number(ao.unit_seconds ?? ao.unitSeconds ?? 30));
+    const extra=Math.max(0,Number(durationSeconds||0)-threshold);
+    return extra>0 ? Math.ceil(extra/unit)*n : 0;
+  }
+  return n;
 }
 function addonLabel(ao){
-  return ao?.type==='percent' ? ('+'+Number(ao.price||0)+'%') : ('+$'+Number(ao.price||0).toFixed(2));
+  if(ao?.type==='percent') return ('+'+Number(ao.price||0)+'%');
+  if(ao?.type==='duration'){
+    const threshold=Math.max(0,Number(ao.threshold_seconds ?? ao.thresholdSeconds ?? 180));
+    const unit=Math.max(1,Number(ao.unit_seconds ?? ao.unitSeconds ?? 30));
+    const mins=Math.floor(threshold/60), secs=threshold%60;
+    const thresholdLabel=mins+':'+String(secs).padStart(2,'0');
+    return `+$${Number(ao.price||0).toFixed(2)}/${Math.round(unit)}s over ${thresholdLabel}`;
+  }
+  return ('+$'+Number(ao.price||0).toFixed(2));
+}
+function addonDurationLabel(ao){
+  if(ao?.type!=='duration') return '';
+  const threshold=Math.max(0,Number(ao.threshold_seconds ?? ao.thresholdSeconds ?? 180));
+  const unit=Math.max(1,Number(ao.unit_seconds ?? ao.unitSeconds ?? 30));
+  const mins=Math.floor(threshold/60), secs=threshold%60;
+  return `Video over ${mins}:${String(secs).padStart(2,'0')} +$${Number(ao.price||0).toFixed(2)}/${Math.round(unit)} sec`;
 }
 function addonIcon(title){
   const t=String(title||'').toLowerCase();
@@ -371,12 +393,13 @@ function openService(id){
         <div class="field"><label>Social Media e.g. @Handle *</label><input id="inqSocial" placeholder="@yourhandle"></div>
         <div class="field full"><label>Target Deadline / Preferred Delivery Date (Optional)</label><input id="inqDeadline" type="date"></div>
         <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
+        ${addOns.some(ao=>ao.type==='duration')?`<div class="field full"><label>Video Duration (mm:ss) *</label><input id="inqVideoDuration" inputmode="numeric" placeholder="03:00"><div class="meta">Used automatically for duration-based add-ons. Leave 00:00 if the duration is not known yet.</div></div>`:''}
       </div>
 
       <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
         <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">Add-ons &amp; Custom Options</div>
         ${addOns.length?`<div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
-          ${addOns.map((ao,idx)=>`<div class="addon-box"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} ${esc(ao.title)} <span style="margin-left:auto;color:var(--gold);font-weight:800">${addonLabel(ao)}</span></label></div>`).join('')}
+          ${addOns.map((ao,idx)=>`<div class="addon-box"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} <span>${esc(ao.title)}</span> <span style="margin-left:auto;color:var(--gold);font-weight:800;text-align:right">${addonLabel(ao)}</span></label>${ao.type==='duration'?`<div class="meta" style="margin:4px 0 0 28px">${esc(addonDurationLabel(ao))}</div>`:''}</div>`).join('')}
         </div>`:`<div class="meta">This service has no optional add-ons.</div>`}
       </div>
 
@@ -444,19 +467,31 @@ function openService(id){
   let paymentType='deposit';
   let pendingAttachmentUrl=null;
 
+  function parseDurationSeconds(value){
+    const raw=String(value||'').trim();
+    if(!raw) return 0;
+    if(/^\d+(?:\.\d+)?$/.test(raw)) return Math.max(0,Math.round(Number(raw)*60));
+    const m=raw.match(/^(\d+):(\d{1,2})$/);
+    return m ? (Number(m[1])*60+Number(m[2])) : 0;
+  }
   function computeTotals(){
     const checked=Array.from(document.querySelectorAll('.modalAddonCheck:checked'));
     const selected=checked.map(cb=>addOns[Number(cb.dataset.idx)]).filter(Boolean);
-    const addonTotal=selected.reduce((n,ao)=>n+addonAmount(basePrice,ao),0);
+    const durationSeconds=parseDurationSeconds(document.getElementById('inqVideoDuration')?.value);
+    const addonTotal=selected.reduce((n,ao)=>n+addonAmount(basePrice,ao,durationSeconds),0);
     const total=basePrice+addonTotal;
-    return {total,deposit:total/2,selected,addonTotal};
+    return {total,deposit:total/2,selected,addonTotal,durationSeconds};
   }
   function refreshPriceBreakdown(){
     const box=document.getElementById('svcPriceBreakdown');
     if(!box)return;
-    const {total,selected,addonTotal}=computeTotals();
+    const {total,selected}=computeTotals();
+    const durationSeconds=parseDurationSeconds(document.getElementById('inqVideoDuration')?.value);
     const lines=[`<div style="display:flex;justify-content:space-between;gap:12px"><span>Base service</span><b>$${basePrice.toFixed(2)}</b></div>`];
-    selected.forEach(ao=>lines.push(`<div style="display:flex;justify-content:space-between;gap:12px;color:var(--muted)"><span>↳ ${esc(ao.title)}</span><b>+$${addonAmount(basePrice,ao).toFixed(2)}</b></div>`));
+    selected.forEach(ao=>{
+      const amount=addonAmount(basePrice,ao,durationSeconds);
+      lines.push(`<div style="display:flex;justify-content:space-between;gap:12px;color:var(--muted)"><span>↳ ${esc(ao.title)}</span><b>+$${amount.toFixed(2)}</b></div>`);
+    });
     if(!selected.length)lines.push('<div class="meta">Select an add-on to update the total automatically.</div>');
     document.getElementById('svcPriceLines').innerHTML=lines.join('');
     document.getElementById('svcCalculatedTotal').textContent='$'+total.toFixed(2)+' USD';
@@ -480,6 +515,7 @@ function openService(id){
     document.getElementById('inquirySubtext').textContent=state.language==='ja'?`「${s.title}」へのお問い合わせ · このアーティストは個別見積もりに対応しています。概要を送信すると、後ほどご連絡します。`:`Inquiry for ${s.title} · This artist provides a custom quote — send your brief and they'll follow up.`;
   }
   document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=refreshPaymentUI);
+  document.getElementById('inqVideoDuration')?.addEventListener('input',refreshPaymentUI);
 
   document.getElementById('inqAttachment')?.addEventListener('change',async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
@@ -511,7 +547,8 @@ function openService(id){
       target_deadline:document.getElementById('inqDeadline').value||null,
       message:document.getElementById('inqBrief').value.trim(),
       attachment_url:pendingAttachmentUrl,
-      addon_titles:Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>addOns[Number(cb.dataset.idx)].title)
+      addon_titles:Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>addOns[Number(cb.dataset.idx)].title),
+      video_duration_seconds:parseDurationSeconds(document.getElementById('inqVideoDuration')?.value)
     };
   }
 
@@ -525,6 +562,7 @@ function openService(id){
       const r=await fetch('/api/paypal',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
         service_id:s.id,
         addon_titles:info.addon_titles,
+        video_duration_seconds:info.video_duration_seconds,
         payment_type:paymentType,
         customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
       })});
@@ -550,6 +588,7 @@ function openService(id){
         action:'inquiry_only',
         service_id:s.id,
         addon_titles:info.addon_titles,
+        video_duration_seconds:info.video_duration_seconds,
         customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
       })});
       const rr=await r.json();
@@ -1417,13 +1456,17 @@ function showServiceForm(existing=null){
     <div class="meta">Offer extra options (e.g. Commercial License, Rush Order, Extra Revision).</div>
     <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
       ${existingAddons.map((ao,i)=>`
-        <div class="row addonRow" style="gap:8px">
-          <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2">
-          <select class="aoType" style="flex:1">
+        <div class="row addonRow" style="gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label>
+          <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2;min-width:180px">
+          <select class="aoType" style="flex:1;min-width:130px">
             <option value="fixed" ${(!ao.type||ao.type==='fixed')?'selected':''}>Fixed ($)</option>
             <option value="percent" ${ao.type==='percent'?'selected':''}>Percentage (%)</option>
+            <option value="duration" ${ao.type==='duration'?'selected':''}>Video duration</option>
           </select>
-          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price||''}" style="flex:1">
+          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':ao.type==='duration'?'$/unit':'Price ($)'}" value="${ao.price||''}" style="flex:1;min-width:110px">
+          <input class="aoThreshold" type="number" min="0" placeholder="Included sec" value="${ao.threshold_seconds??180}" style="flex:1;min-width:110px;display:${ao.type==='duration'?'block':'none'}">
+          <input class="aoUnit" type="number" min="1" placeholder="Charge every sec" value="${ao.unit_seconds??30}" style="flex:1;min-width:110px;display:${ao.type==='duration'?'block':'none'}">
           <button type="button" class="btn removeAddonBtn">×</button>
         </div>
       `).join('')}
@@ -1440,14 +1483,22 @@ function showServiceForm(existing=null){
   catSelect.onchange=()=>{if(catSelect.value==='__NEW__'){catNewInput.style.display='block';catNewInput.focus()}else{catNewInput.style.display='none'}};
   
   const addonContainer = document.getElementById('addonContainer');
-  const addAddonRow = (title='', price='', type='fixed') => {
+  const addAddonRow = (title='', price='', type='fixed', threshold=180, unit=30) => {
     const row = document.createElement('div');
     row.className = 'row addonRow';
     row.style.gap = '8px';
-    row.innerHTML = `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
-    row.querySelector('.removeAddonBtn').onclick = () => row.remove();
-    row.querySelector('.aoType').onchange = (e) => { row.querySelector('.aoPrice').placeholder = e.target.value==='percent'?'Percent (%)':'Price ($)'; refreshServiceEditorPrice(); };
-    row.querySelector('.aoPrice').addEventListener('input',refreshServiceEditorPrice);
+    row.style.flexWrap = 'wrap';
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2;min-width:180px"><select class="aoType" style="flex:1;min-width:130px"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option><option value="duration" ${type==='duration'?'selected':''}>Video duration</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':type==='duration'?'$/unit':'Price ($)'}" value="${price}" style="flex:1;min-width:110px"><input class="aoThreshold" type="number" min="0" placeholder="Included sec" value="${threshold}" style="flex:1;min-width:110px;display:${type==='duration'?'block':'none'}"><input class="aoUnit" type="number" min="1" placeholder="Charge every sec" value="${unit}" style="flex:1;min-width:110px;display:${type==='duration'?'block':'none'}"><button type="button" class="btn removeAddonBtn">×</button>`;
+    const syncType=()=>{
+      const t=row.querySelector('.aoType').value;
+      row.querySelector('.aoPrice').placeholder=t==='percent'?'Percent (%)':t==='duration'?'$/unit':'Price ($)';
+      row.querySelector('.aoThreshold').style.display=t==='duration'?'block':'none';
+      row.querySelector('.aoUnit').style.display=t==='duration'?'block':'none';
+      refreshServiceEditorPrice();
+    };
+    row.querySelector('.removeAddonBtn').onclick = () => { row.remove(); refreshServiceEditorPrice(); };
+    row.querySelector('.aoType').onchange = syncType;
+    row.querySelectorAll('input').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
     addonContainer.appendChild(row);
     refreshServiceEditorPrice();
   };
@@ -1459,17 +1510,25 @@ function showServiceForm(existing=null){
     rows.forEach(row=>{
       const p=Number(row.querySelector('.aoPrice')?.value||0);
       const type=row.querySelector('.aoType')?.value||'fixed';
-      if(Number.isFinite(p)&&p>0) total += type==='percent' ? (base*p/100) : p;
+      if(!Number.isFinite(p)||p<=0)return;
+      if(type==='percent') total += base*p/100;
+      else if(type==='fixed') total += p;
     });
     const el=document.getElementById('svAutoPricePreview');
     if(el)el.textContent='Automatic total: $'+total.toFixed(2)+' (base + all add-ons)';
   }
 
   document.getElementById('svPrice')?.addEventListener('input',refreshServiceEditorPrice);
-  document.querySelectorAll('.addonRow input,.addonRow select').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
+  document.querySelectorAll('.addonRow input').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
   document.querySelectorAll('.addonRow').forEach(row=>{
     const typeSel=row.querySelector('.aoType');
-    if(typeSel)typeSel.onchange=(e)=>{row.querySelector('.aoPrice').placeholder=e.target.value==='percent'?'Percent (%)':'Price ($)';};
+    if(typeSel)typeSel.onchange=()=>{
+      const t=typeSel.value;
+      row.querySelector('.aoPrice').placeholder=t==='percent'?'Percent (%)':t==='duration'?'$/unit':'Price ($)';
+      row.querySelector('.aoThreshold').style.display=t==='duration'?'block':'none';
+      row.querySelector('.aoUnit').style.display=t==='duration'?'block':'none';
+      refreshServiceEditorPrice();
+    };
   });
   document.querySelectorAll('.removeAddonBtn').forEach(b => b.onclick = (e) => { e.target.closest('.addonRow').remove(); refreshServiceEditorPrice(); });
   document.getElementById('addAddonRowBtn').onclick = () => addAddonRow();
@@ -1486,9 +1545,12 @@ function showServiceForm(existing=null){
     const add_ons = addonRows.map(r=>{
       const t = r.querySelector('.aoTitle').value.trim();
       const p = parseFloat(r.querySelector('.aoPrice').value);
-      const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
+      const rawType = r.querySelector('.aoType')?.value || 'fixed';
+      const ty = rawType === 'percent' ? 'percent' : rawType === 'duration' ? 'duration' : 'fixed';
       const enabled = r.querySelector('.aoEnabled')?.checked !== false;
-      return (enabled && t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
+      const threshold = Math.max(0,Number(r.querySelector('.aoThreshold')?.value||180));
+      const unit = Math.max(1,Number(r.querySelector('.aoUnit')?.value||30));
+      return (enabled && t && !isNaN(p)) ? { title: t, price: p, type: ty, ...(ty==='duration'?{threshold_seconds:threshold,unit_seconds:unit}: {}) } : null;
     }).filter(Boolean);
 
     const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;
@@ -2401,6 +2463,5 @@ async function capturePaypalReturnIfPresent(){
 }
 (async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
-<script src="/profile-sync.js"></script>
 </body>
 </html>

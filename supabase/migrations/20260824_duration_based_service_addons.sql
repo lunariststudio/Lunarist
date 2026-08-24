@@ -1,5 +1,5 @@
 -- Duration-based service add-ons are stored in the existing services.add_ons JSONB column.
--- Normalize the existing MV Simple example so it is calculated automatically.
+-- This normalizes the existing MV Simple example so the frontend/backend calculate it automatically.
 update public.services
 set add_ons = (
   select coalesce(jsonb_agg(
