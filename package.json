@@ -2,10 +2,10 @@
   "name": "lunarist-studio",
   "version": "1.0.0",
   "private": true,
-  "description": "Lunarist Studio creative network — Vercel + Supabase",
+  "description": "Lunarist Studio creative network \u2014 Vercel + Supabase",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo \"Static Vercel build: no compilation required\"",
+    "build": "node scripts/duration-addons-patch.js",
     "start": "vercel dev"
   },
   "engines": {
