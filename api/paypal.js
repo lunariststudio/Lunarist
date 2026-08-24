@@ -5,12 +5,18 @@ function str(v,max){return typeof v==='string'?v.slice(0,max):''}
 async function token(c){const r=await fetch('https://api-m.paypal.com/v1/oauth2/token',{method:'POST',body:'grant_type=client_credentials',headers:{Authorization:`Basic ${Buffer.from(`${c.client}:${c.secret}`).toString('base64')}`,'Content-Type':'application/x-www-form-urlencoded'}});const d=await r.json();if(!r.ok||!d.access_token)throw Error('PayPal authentication failed');return d.access_token}
 async function db(c,path,opts={}){return fetch(`${c.url}/rest/v1/${path}`,{...opts,headers:{apikey:c.key,Authorization:`Bearer ${c.key}`,'Content-Type':'application/json',...(opts.headers||{})}})}
 
-// Add-ons can be a flat dollar amount ({type:'fixed'}) or a percentage of the
-// base price ({type:'percent'}). Percentage is resolved server-side against
-// the service's own price_from so a tampered client total can't be trusted.
-function addonAmount(base,ao){
+// Add-ons can be fixed, percentage, or duration-based. Duration add-ons charge
+// once per unit after the included threshold, and are recalculated server-side.
+function addonAmount(base,ao,durationSeconds=0){
   const n=money(ao?.price);
-  return ao?.type==='percent' ? (base*n/100) : n;
+  if(ao?.type==='percent') return base*n/100;
+  if(ao?.type==='duration'){
+    const threshold=Math.max(0,Number(ao.threshold_seconds??ao.thresholdSeconds??180));
+    const unit=Math.max(1,Number(ao.unit_seconds??ao.unitSeconds??30));
+    const extra=Math.max(0,Number(durationSeconds||0)-threshold);
+    return extra>0 ? Math.ceil(extra/unit)*n : 0;
+  }
+  return n;
 }
 
 async function loadService(c,service_id){
@@ -21,7 +27,7 @@ async function loadService(c,service_id){
   return service;
 }
 
-function resolveAddons(service,addon_titles){
+function resolveAddons(service,addon_titles,durationSeconds=0){
   const chosen=Array.isArray(addon_titles)?addon_titles.slice(0,10):[];
   const addons=Array.isArray(service.add_ons)?service.add_ons:[];
   const base=money(service.price_from);
@@ -30,7 +36,7 @@ function resolveAddons(service,addon_titles){
   for(const title of chosen){
     const ao=addons.find(x=>String(x?.title||'')===String(title));
     if(ao){
-      const amount=addonAmount(base,ao);
+      const amount=addonAmount(base,ao,durationSeconds);
       addonTotal+=amount;
       selected.push({title:String(ao.title).slice(0,120),amount});
     }
@@ -64,9 +70,10 @@ function buildInquiryRow({service,service_id,customer,selected,status,paypal_ord
 }
 
 async function createOrder(c,body,client_id=null){
-  const {service_id,addon_titles=[],customer={},payment_type}=body||{};
+  const {service_id,addon_titles=[],customer={},payment_type,video_duration_seconds=0}=body||{};
   const service=await loadService(c,service_id);
-  const {base,total,selected}=resolveAddons(service,addon_titles);
+  const durationSeconds=Math.max(0,Number(video_duration_seconds)||0);
+  const {base,total,selected}=resolveAddons(service,addon_titles,durationSeconds);
   if(!base)throw Object.assign(Error('This service has no configured PayPal price.'),{status:400});
   const isDeposit=payment_type==='deposit';
   const chargeAmount=isDeposit?(total/2):total;
@@ -101,9 +108,10 @@ async function createOrder(c,body,client_id=null){
 }
 
 async function createInquiryOnly(c,body,client_id=null){
-  const {service_id,addon_titles=[],customer={}}=body||{};
+  const {service_id,addon_titles=[],customer={},video_duration_seconds=0}=body||{};
   const service=await loadService(c,service_id);
-  const {total,selected}=resolveAddons(service,addon_titles);
+  const durationSeconds=Math.max(0,Number(video_duration_seconds)||0);
+  const {total,selected}=resolveAddons(service,addon_titles,durationSeconds);
   if(!customer?.name||!customer?.email)throw Object.assign(Error('Name and email are required.'),{status:400});
   const inquiry=buildInquiryRow({service,service_id,customer,selected,status:'new',paypal_order_id:null,payment_type:'full',charge_amount:0,total_amount:total,client_id});
   const cr=await db(c,'commissions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(inquiry)});
