@@ -337,8 +337,10 @@ async function loadUserConversations() {
 
 let lunaristUsdJpyRate=null;
 let lunaristAddonTranslations={};
+let lunaristServiceDescriptionTranslations={};
 async function getUsdJpyRate(){if(lunaristUsdJpyRate)return lunaristUsdJpyRate;try{const r=await fetch('/api/exchange?from=USD&to=JPY',{cache:'no-store'});const d=await r.json();if(!r.ok||!Number(d.rate))throw new Error(d.error||'Exchange rate unavailable');lunaristUsdJpyRate=Number(d.rate);return lunaristUsdJpyRate}catch(e){console.warn('USD/JPY rate unavailable',e);return 0}}
 async function translateAddonText(text){const key=String(text||'').trim();if(!key)return '';if(lunaristAddonTranslations[key])return lunaristAddonTranslations[key];try{const r=await fetch('/api/translate-addon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:key})});const d=await r.json();if(r.ok&&d.translation){lunaristAddonTranslations[key]=d.translation;return d.translation}}catch(e){console.warn('Addon translation failed',e)}return key}
+async function translateServiceDescription(text){const key=String(text||'').trim();if(!key)return '';if(lunaristServiceDescriptionTranslations[key])return lunaristServiceDescriptionTranslations[key];try{const r=await fetch('/api/translate-addon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:key})});const d=await r.json();if(r.ok&&d.translation){lunaristServiceDescriptionTranslations[key]=d.translation;return d.translation}}catch(e){console.warn('Service description translation failed',e)}return key}
 
 function openService(id){
   state.openServiceId=id;
@@ -356,7 +358,7 @@ function openService(id){
     <div class="eyebrow">${esc(s.category)}</div>
     <h2>${esc(s.title)}</h2>
     <div class="artist">${avatar(m)}<button class="btn" data-modal-member="${m?.id||''}">${esc(m?.name||'Unknown artist')} · View profile</button></div>
-    <p>${formatDescription(s.description)}</p>
+    <p id="serviceDescriptionText">${formatDescription(s.description)}</p>
     <div class="stats">
       ${s.price_from?`<span class="stat">From ${esc(s.price_from)}</span>`:''}
       ${s.delivery_time?`<span class="stat">${esc(s.delivery_time)}</span>`:''}
@@ -485,7 +487,12 @@ function openService(id){
 
   document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=()=>{const idx=Number(cb.dataset.idx);const ctl=document.querySelector(`[data-duration-control=\"${idx}\"]`);if(ctl)ctl.style.display=cb.checked?'block':'none';if(!cb.checked){const input=document.querySelector(`[data-duration-idx=\"${idx}\"]`);if(input)input.value='';}refreshPaymentUI();});
   document.querySelectorAll('.duration-addon-input').forEach(input=>input.addEventListener('input',()=>{input.value=input.value.replace(/[^0-9:]/g,'').slice(0,7);refreshPaymentUI();}));
-  if(state.language==='ja'){getUsdJpyRate().then(()=>refreshPaymentUI());translateVisibleAddons();}
+  if(state.language==='ja'){
+    getUsdJpyRate().then(()=>refreshPaymentUI());
+    translateVisibleAddons();
+    const descEl=document.getElementById('serviceDescriptionText');
+    if(descEl && s.description){translateServiceDescription(s.description).then(t=>{if(state.language==='ja'&&descEl)descEl.innerHTML=formatDescription(t);});}
+  }
 
   document.getElementById('inqAttachment')?.addEventListener('change',async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
