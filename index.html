@@ -6,14 +6,6 @@
 <meta name="theme-color" content="#08070d">
 <meta name="description" content="Lunarist Studio — a living creative network where artists share work and clients discover talent.">
 
-<!-- Lunarist browser / device icons -->
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-
-
 <!-- Dynamic SEO & OpenGraph Meta Tags -->
 <meta property="og:type" content="website">
 <meta property="og:title" id="ogTitle" content="Lunarist Studio — Unleash Your Dream">
@@ -220,35 +212,20 @@ function serviceCard(s){const m=member(s.member);return `<article class="card" d
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
 function money(v){const n=Number(String(v??'').replace(/[^0-9.]/g,''));return Number.isFinite(n)&&n>0?n:0}
-function addonAmount(base,ao,durationSeconds=0){
+function addonIsDuration(ao){return ao?.type==='duration'||ao?.duration===true||Number(ao?.included_seconds||ao?.includedSeconds||0)>0||Number(ao?.unit_seconds||ao?.unitSeconds||0)>0}
+function addonDurationConfig(ao){return {included:Number(ao?.included_seconds??ao?.includedSeconds??0)||0,unit:Number(ao?.unit_seconds??ao?.unitSeconds??30)||30,price:Number(ao?.price||0)||0}}
+function addonDurationAmount(ao,durationSeconds){const c=addonDurationConfig(ao);const d=Math.max(0,Number(durationSeconds)||0);if(!d||d<=c.included)return 0;return Math.ceil((d-c.included)/c.unit)*c.price}
+function addonAmount(base,ao,extra){
   const n=Number(ao?.price||0);
-  if(ao?.type==='percent') return base*n/100;
-  if(ao?.type==='duration'){
-    const threshold=Math.max(0,Number(ao.threshold_seconds ?? ao.thresholdSeconds ?? 180));
-    const unit=Math.max(1,Number(ao.unit_seconds ?? ao.unitSeconds ?? 30));
-    const extra=Math.max(0,Number(durationSeconds||0)-threshold);
-    return extra>0 ? Math.ceil(extra/unit)*n : 0;
-  }
-  return n;
+  if(addonIsDuration(ao)) return addonDurationAmount(ao,extra?.durationSeconds||0);
+  return ao?.type==='percent' ? (base*n/100) : n;
 }
 function addonLabel(ao){
-  if(ao?.type==='percent') return ('+'+Number(ao.price||0)+'%');
-  if(ao?.type==='duration'){
-    const threshold=Math.max(0,Number(ao.threshold_seconds ?? ao.thresholdSeconds ?? 180));
-    const unit=Math.max(1,Number(ao.unit_seconds ?? ao.unitSeconds ?? 30));
-    const mins=Math.floor(threshold/60), secs=threshold%60;
-    const thresholdLabel=mins+':'+String(secs).padStart(2,'0');
-    return `+$${Number(ao.price||0).toFixed(2)}/${Math.round(unit)}s over ${thresholdLabel}`;
-  }
-  return ('+$'+Number(ao.price||0).toFixed(2));
+  if(addonIsDuration(ao)){const c=addonDurationConfig(ao);return '+$'+c.price.toFixed(2)+' / '+Math.round(c.unit/60*10)/10+' min';}
+  return ao?.type==='percent' ? ('+'+Number(ao.price||0)+'%') : ('+$'+Number(ao.price||0).toFixed(2));
 }
-function addonDurationLabel(ao){
-  if(ao?.type!=='duration') return '';
-  const threshold=Math.max(0,Number(ao.threshold_seconds ?? ao.thresholdSeconds ?? 180));
-  const unit=Math.max(1,Number(ao.unit_seconds ?? ao.unitSeconds ?? 30));
-  const mins=Math.floor(threshold/60), secs=threshold%60;
-  return `Video over ${mins}:${String(secs).padStart(2,'0')} +$${Number(ao.price||0).toFixed(2)}/${Math.round(unit)} sec`;
-}
+function parseDurationInput(v){const m=String(v||'').trim().match(/^(\d{1,4}):(\d{2})$/);if(!m)return null;const sec=Number(m[1])*60+Number(m[2]);return Number.isFinite(sec)&&Number(m[2])<60?sec:null}
+function formatDurationSeconds(sec){sec=Math.max(0,Math.round(Number(sec)||0));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
 function addonIcon(title){
   const t=String(title||'').toLowerCase();
   if(t.includes('commercial'))return '💼';
@@ -358,7 +335,13 @@ async function loadUserConversations() {
   if(!error) state.conversations = convs || [];
 }
 
+let lunaristUsdJpyRate=null;
+let lunaristAddonTranslations={};
+async function getUsdJpyRate(){if(lunaristUsdJpyRate)return lunaristUsdJpyRate;try{const r=await fetch('/api/exchange?from=USD&to=JPY',{cache:'no-store'});const d=await r.json();if(!r.ok||!Number(d.rate))throw new Error(d.error||'Exchange rate unavailable');lunaristUsdJpyRate=Number(d.rate);return lunaristUsdJpyRate}catch(e){console.warn('USD/JPY rate unavailable',e);return 0}}
+async function translateAddonText(text){const key=String(text||'').trim();if(!key)return '';if(lunaristAddonTranslations[key])return lunaristAddonTranslations[key];try{const r=await fetch('/api/translate-addon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:key})});const d=await r.json();if(r.ok&&d.translation){lunaristAddonTranslations[key]=d.translation;return d.translation}}catch(e){console.warn('Addon translation failed',e)}return key}
+
 function openService(id){
+  state.openServiceId=id;
   const s=data.services.find(x=>x.id===id);if(!s)return;
   const m=member(s.member);
   const examples=(s.projectIds||[]).map(pid=>data.projects.find(p=>p.id===pid)).filter(Boolean);
@@ -393,13 +376,12 @@ function openService(id){
         <div class="field"><label>Social Media e.g. @Handle *</label><input id="inqSocial" placeholder="@yourhandle"></div>
         <div class="field full"><label>Target Deadline / Preferred Delivery Date (Optional)</label><input id="inqDeadline" type="date"></div>
         <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
-        ${addOns.some(ao=>ao.type==='duration')?`<div class="field full"><label>Video Duration (mm:ss) *</label><input id="inqVideoDuration" inputmode="numeric" placeholder="03:00"><div class="meta">Used automatically for duration-based add-ons. Leave 00:00 if the duration is not known yet.</div></div>`:''}
       </div>
 
       <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
         <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">Add-ons &amp; Custom Options</div>
         ${addOns.length?`<div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
-          ${addOns.map((ao,idx)=>`<div class="addon-box"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} <span>${esc(ao.title)}</span> <span style="margin-left:auto;color:var(--gold);font-weight:800;text-align:right">${addonLabel(ao)}</span></label>${ao.type==='duration'?`<div class="meta" style="margin:4px 0 0 28px">${esc(addonDurationLabel(ao))}</div>`:''}</div>`).join('')}
+          ${addOns.map((ao,idx)=>`<div class="addon-box" data-addon-wrap="${idx}"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;width:100%"><input type="checkbox" class="modalAddonCheck" data-idx="${idx}"> ${addonIcon(ao.title)} <span class="addon-title-text" data-addon-title="${idx}">${esc(ao.title)}</span> <span style="margin-left:auto;color:var(--gold);font-weight:800">${addonLabel(ao)}</span></label>${addonIsDuration(ao)?`<div class="duration-addon-control" data-duration-control="${idx}" style="display:none;margin:8px 0 2px 30px"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:5px">Video Duration (mm:ss)</label><input class="duration-addon-input" data-duration-idx="${idx}" inputmode="numeric" placeholder="03:00" value="" style="width:150px;border:1px solid var(--line);background:#0a0910;color:var(--text);padding:9px 10px;border-radius:10px"><div class="meta duration-addon-help" data-duration-help="${idx}">Enter the total video duration.</div></div>`:''}</div>`).join('')}
         </div>`:`<div class="meta">This service has no optional add-ons.</div>`}
       </div>
 
@@ -467,55 +449,43 @@ function openService(id){
   let paymentType='deposit';
   let pendingAttachmentUrl=null;
 
-  function parseDurationSeconds(value){
-    const raw=String(value||'').trim();
-    if(!raw) return 0;
-    if(/^\d+(?:\.\d+)?$/.test(raw)) return Math.max(0,Math.round(Number(raw)*60));
-    const m=raw.match(/^(\d+):(\d{1,2})$/);
-    return m ? (Number(m[1])*60+Number(m[2])) : 0;
+  function getSelectedAddonOptions(){
+    return Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>{const ao=addOns[Number(cb.dataset.idx)];return {ao,durationSeconds:addonIsDuration(ao)?parseDurationInput(document.querySelector(`[data-duration-idx=\"${cb.dataset.idx}\"]`)?.value):null}}).filter(x=>x.ao);
   }
   function computeTotals(){
-    const checked=Array.from(document.querySelectorAll('.modalAddonCheck:checked'));
-    const selected=checked.map(cb=>addOns[Number(cb.dataset.idx)]).filter(Boolean);
-    const durationSeconds=parseDurationSeconds(document.getElementById('inqVideoDuration')?.value);
-    const addonTotal=selected.reduce((n,ao)=>n+addonAmount(basePrice,ao,durationSeconds),0);
+    const selectedOptions=getSelectedAddonOptions();
+    const invalidDuration=selectedOptions.find(x=>addonIsDuration(x.ao)&&(x.durationSeconds===null));
+    const selected=selectedOptions.map(x=>x.ao);
+    const addonTotal=selectedOptions.reduce((n,x)=>n+addonAmount(basePrice,x.ao,{durationSeconds:x.durationSeconds}),0);
     const total=basePrice+addonTotal;
-    return {total,deposit:total/2,selected,addonTotal,durationSeconds};
+    return {total,deposit:total/2,selected,selectedOptions,addonTotal,invalidDuration};
   }
   function refreshPriceBreakdown(){
-    const box=document.getElementById('svcPriceBreakdown');
-    if(!box)return;
-    const {total,selected}=computeTotals();
-    const durationSeconds=parseDurationSeconds(document.getElementById('inqVideoDuration')?.value);
-    const lines=[`<div style="display:flex;justify-content:space-between;gap:12px"><span>Base service</span><b>$${basePrice.toFixed(2)}</b></div>`];
-    selected.forEach(ao=>{
-      const amount=addonAmount(basePrice,ao,durationSeconds);
-      lines.push(`<div style="display:flex;justify-content:space-between;gap:12px;color:var(--muted)"><span>↳ ${esc(ao.title)}</span><b>+$${amount.toFixed(2)}</b></div>`);
-    });
-    if(!selected.length)lines.push('<div class="meta">Select an add-on to update the total automatically.</div>');
+    const box=document.getElementById('svcPriceBreakdown'); if(!box)return;
+    const {total,selectedOptions}=computeTotals();
+    const lines=[`<div style=\"display:flex;justify-content:space-between;gap:12px\"><span>Base service</span><b>${formatMoneyForLanguage(basePrice)}</b></div>`];
+    selectedOptions.forEach(x=>{const amount=addonAmount(basePrice,x.ao,{durationSeconds:x.durationSeconds});const dur=addonIsDuration(x.ao)&&x.durationSeconds!==null?` · ${formatDurationSeconds(x.durationSeconds)}`:'';lines.push(`<div style=\"display:flex;justify-content:space-between;gap:12px;color:var(--muted)\"><span>↳ ${esc(x.ao.title)}${dur}</span><b>+${formatMoneyForLanguage(amount)}</b></div>`)});
+    if(!selectedOptions.length)lines.push('<div class=\"meta\">Select an add-on to update the total automatically.</div>');
     document.getElementById('svcPriceLines').innerHTML=lines.join('');
-    document.getElementById('svcCalculatedTotal').textContent='$'+total.toFixed(2)+' USD';
+    document.getElementById('svcCalculatedTotal').textContent=formatMoneyForLanguage(total);
   }
+  function formatMoneyForLanguage(usd){const n=Number(usd)||0;if(state.language==='ja'&&lunaristUsdJpyRate)return '¥'+Math.round(n*lunaristUsdJpyRate).toLocaleString('ja-JP')+' JPY';return '$'+n.toFixed(2)+' USD'}
   function refreshPaymentUI(){
     if(!canCheckout)return;
-    const {total,deposit}=computeTotals();
-    refreshPriceBreakdown();
-    document.getElementById('depositAmountLabel').textContent='50% Deposit ($'+deposit.toFixed(2)+')';
-    document.getElementById('fullAmountLabel').textContent='Full Amount ($'+total.toFixed(2)+')';
-    document.getElementById('inquirySubtext').textContent=state.language==='ja'?`「${s.title}」へのお問い合わせ · $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD（${paymentType==='deposit'?'50%枠確保デポジット':'全額'}）を支払うとウェイトリストに自動登録されます。`:`Inquiry for ${s.title} · Pay $${(paymentType==='deposit'?deposit:total).toFixed(2)} USD (${paymentType==='deposit'?'50% Slot Deposit':'Full Amount'}) to auto-register on the waitlist.`;
+    const {total,deposit,invalidDuration}=computeTotals(); refreshPriceBreakdown();
+    const currencyLabel=state.language==='ja'&&lunaristUsdJpyRate?'JPY':'USD';
+    document.getElementById('depositAmountLabel').textContent='50% Deposit ('+formatMoneyForLanguage(deposit)+')';
+    document.getElementById('fullAmountLabel').textContent='Full Amount ('+formatMoneyForLanguage(total)+')';
+    document.getElementById('inquirySubtext').textContent=state.language==='ja'?`「${s.title}」へのお問い合わせ · ${formatMoneyForLanguage(paymentType==='deposit'?deposit:total)}（${paymentType==='deposit'?'50%枠確保デポジット':'全額'}）を支払うとウェイトリストに自動登録されます。`:`Inquiry for ${s.title} · Pay ${formatMoneyForLanguage(paymentType==='deposit'?deposit:total)} (${paymentType==='deposit'?'50% Slot Deposit':'Full Amount'}) to auto-register on the waitlist.`;
     const depEl=document.getElementById('depositOption'),fullEl=document.getElementById('fullOption');
-    depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)';
-    fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
+    depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)'; fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
+    if(invalidDuration){document.getElementById('inquiryMsg').textContent=state.language==='ja'?'動画時間を入力してください。':'Enter a valid video duration (mm:ss).'}else{document.getElementById('inquiryMsg').textContent='';}
   }
-  if(canCheckout){
-    refreshPaymentUI();
-    document.getElementById('depositOption').onclick=()=>{paymentType='deposit';refreshPaymentUI()};
-    document.getElementById('fullOption').onclick=()=>{paymentType='full';refreshPaymentUI()};
-  }else{
-    document.getElementById('inquirySubtext').textContent=state.language==='ja'?`「${s.title}」へのお問い合わせ · このアーティストは個別見積もりに対応しています。概要を送信すると、後ほどご連絡します。`:`Inquiry for ${s.title} · This artist provides a custom quote — send your brief and they'll follow up.`;
-  }
-  document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=refreshPaymentUI);
-  document.getElementById('inqVideoDuration')?.addEventListener('input',refreshPaymentUI);
+  async function translateVisibleAddons(){if(state.language!=='ja')return;for(const [idx,ao] of addOns.entries()){const el=document.querySelector(`[data-addon-title=\"${idx}\"]`);if(!el)continue;const t=await translateAddonText(ao.title);el.textContent=t;const help=document.querySelector(`[data-duration-help=\"${idx}\"]`);if(help)help.textContent='動画の合計時間を入力してください。';}}
+
+  document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=()=>{const idx=Number(cb.dataset.idx);const ctl=document.querySelector(`[data-duration-control=\"${idx}\"]`);if(ctl)ctl.style.display=cb.checked?'block':'none';if(!cb.checked){const input=document.querySelector(`[data-duration-idx=\"${idx}\"]`);if(input)input.value='';}refreshPaymentUI();});
+  document.querySelectorAll('.duration-addon-input').forEach(input=>input.addEventListener('input',()=>{input.value=input.value.replace(/[^0-9:]/g,'').slice(0,7);refreshPaymentUI();}));
+  if(state.language==='ja'){getUsdJpyRate().then(()=>refreshPaymentUI());translateVisibleAddons();}
 
   document.getElementById('inqAttachment')?.addEventListener('change',async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
@@ -540,6 +510,8 @@ function openService(id){
     const msgEl=document.getElementById('inquiryMsg');
     if(!name||!email||!social){msgEl.textContent='Please fill in your name, email and social handle.';return null}
     if(!agree){msgEl.textContent='Please agree to the Terms of Service to continue.';return null}
+    const totals=computeTotals();
+    if(totals.invalidDuration){msgEl.textContent=state.language==='ja'?'動画時間を正しい mm:ss 形式で入力してください。':'Please enter a valid video duration in mm:ss format.';return null}
     msgEl.textContent='';
     return {
       name,email,social,
@@ -548,7 +520,7 @@ function openService(id){
       message:document.getElementById('inqBrief').value.trim(),
       attachment_url:pendingAttachmentUrl,
       addon_titles:Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>addOns[Number(cb.dataset.idx)].title),
-      video_duration_seconds:parseDurationSeconds(document.getElementById('inqVideoDuration')?.value)
+      addon_options:getSelectedAddonOptions().map(x=>({title:x.ao.title,duration_seconds:x.durationSeconds}))
     };
   }
 
@@ -559,10 +531,11 @@ function openService(id){
     document.getElementById('inquiryMsg').style.color='var(--muted)';
     document.getElementById('inquiryMsg').textContent='Redirecting to PayPal…';
     try{
-      const r=await fetch('/api/paypal',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
+      const r=await fetch('/api/paypal-checkout',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
         service_id:s.id,
         addon_titles:info.addon_titles,
-        video_duration_seconds:info.video_duration_seconds,
+        addon_options:info.addon_options,
+        currency:state.language==='ja'?'JPY':'USD',
         payment_type:paymentType,
         customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
       })});
@@ -584,11 +557,12 @@ function openService(id){
     const info=collectInquiry();if(!info)return;
     const btn=document.getElementById('sendInquiryBtn');btn.disabled=true;
     try{
-      const r=await fetch('/api/paypal',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
+      const r=await fetch('/api/paypal-checkout',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
         action:'inquiry_only',
         service_id:s.id,
         addon_titles:info.addon_titles,
-        video_duration_seconds:info.video_duration_seconds,
+        addon_options:info.addon_options,
+        currency:state.language==='ja'?'JPY':'USD',
         customer:{name:info.name,email:info.email,company:info.company,social:info.social,target_deadline:info.target_deadline,message:info.message,attachment_url:info.attachment_url}
       })});
       const rr=await r.json();
@@ -613,7 +587,7 @@ function openService(id){
     }
   });
 
-  applyLanguage(state.language||'en');
+  state._renderingService=true; applyLanguage(state.language||'en'); state._renderingService=false;
   const agreeName=document.getElementById('inqTosAgreementName');
   if(agreeName) agreeName.textContent=state.language==='ja'?(m?.tos?'利用規約':'アーティストの規約'):(m?.tos?'Terms of Service':"artist's terms");
 
@@ -816,19 +790,9 @@ async function redeemInvitation(code,nonce){
 }
 async function redeemPendingInvitation(){
   if(!state.currentUser)return;
-  const code=state.inviteCode||localStorage.getItem('lunarist_pending_invite'); if(!code)return;
-  try{
-    let r=pendingInvitationReservation();
-    const currentEmail=String(state.currentUser.email||'').trim().toLowerCase();
-    if(!currentEmail)throw new Error('Your account does not have an email address available for this invitation.');
-    if(!r || r.code!==String(code).trim().toUpperCase() || String(r.email||'').toLowerCase()!==currentEmail){
-      r=await reserveInvitation(code,currentEmail);
-    }
-    await redeemInvitation(code,r?.nonce);await refreshUser();toast('Welcome to Lunarist — your Member invitation is active.');
-    if(document.getElementById('authModal')?.classList.contains('open'))closeAuth();
-    if(state.currentMember?.account_type==='member')openDashboard();
-  }catch(e){
-    if(!/already used|invalid|expired|different email|reservation/i.test(e.message||''))toast(e.message||'Invitation could not be redeemed.');
+  const r=pendingInvitationReservation(); const code=state.inviteCode||localStorage.getItem('lunarist_pending_invite'); if(!code)return;
+  try{await redeemInvitation(code,r?.nonce);await refreshUser();toast('Welcome to Lunarist — your Member invitation is active.')}catch(e){
+    if(!/already used|invalid|expired|only be used when creating/i.test(e.message||''))toast(e.message||'Invitation could not be redeemed.');
     localStorage.removeItem('lunarist_pending_invite');localStorage.removeItem('lunarist_invite_reservation');state.inviteCode='';
   }
 }
@@ -970,16 +934,6 @@ async function openDashboard(initialTab='overview'){
   renderMessagesTab();
 
   document.getElementById('dash-profile').innerHTML=`
-    ${(m.account_type!=='member'&&!m.is_admin)?`<div class="panel" style="margin-bottom:16px">
-      <div class="eyebrow">Redeem Invitation</div>
-      <h3 style="margin:4px 0">Become a Lunarist Member</h3>
-      <p class="meta">Enter a one-time invitation code from a Studio admin to unlock publishing.</p>
-      <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
-        <input id="pfInviteCode" maxlength="64" autocomplete="one-time-code" placeholder="INVITATION CODE" style="text-transform:uppercase;letter-spacing:.08em;max-width:260px">
-        <button class="btn primary" id="pfRedeemInvite" type="button">Redeem Code</button>
-      </div>
-      <p class="meta" id="pfInviteMsg" style="min-height:18px;margin-top:8px"></p>
-    </div>`:''}
     <div class="panel">
       <div class="eyebrow">Edit profile</div>
       <div class="row" style="margin:12px 0 18px">
@@ -1366,24 +1320,6 @@ function bindDashboard(ps,ss){
   });
 
   document.getElementById('signOut')?.addEventListener('click',async()=>{await supabaseClient.auth.signOut();closeDash();toast('Signed out');await refreshUser();render()});
-  document.getElementById('pfRedeemInvite')?.addEventListener('click',async()=>{
-    const btn=document.getElementById('pfRedeemInvite'),input=document.getElementById('pfInviteCode'),msg=document.getElementById('pfInviteMsg');
-    const code=(input.value||'').trim().toUpperCase();
-    if(!code){msg.textContent='Enter an invitation code.';return}
-    if(!/^[A-Z0-9]{8,32}$/.test(code)){msg.textContent='That code doesn\'t look right.';return}
-    btn.disabled=true;msg.textContent='Checking…';
-    try{
-      const email=String(state.currentUser?.email||'').trim().toLowerCase();
-      if(!email)throw new Error('Your account does not have an email address available for this invitation.');
-      const r=await reserveInvitation(code,email);
-      await redeemInvitation(code,r?.nonce);
-      await refreshUser();
-      msg.textContent='Invitation redeemed. Welcome to Lunarist as a Member.';
-      toast('Welcome to Lunarist — your Member invitation is active.');
-      setTimeout(()=>openDashboard(),700);
-    }catch(e){msg.textContent=e.message||'Unable to redeem this invitation.'}
-    finally{btn.disabled=false}
-  });
   document.getElementById('addProject')?.addEventListener('click',()=>showProjectForm());
   document.querySelectorAll('[data-edit-project]').forEach(b=>b.onclick=()=>showProjectForm(ps.find(p=>p.id===b.dataset.editProject)));
   document.getElementById('addService')?.addEventListener('click',()=>showServiceForm());
@@ -1456,17 +1392,13 @@ function showServiceForm(existing=null){
     <div class="meta">Offer extra options (e.g. Commercial License, Rush Order, Extra Revision).</div>
     <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
       ${existingAddons.map((ao,i)=>`
-        <div class="row addonRow" style="gap:8px;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label>
-          <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2;min-width:180px">
-          <select class="aoType" style="flex:1;min-width:130px">
+        <div class="row addonRow" style="gap:8px">
+          <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2">
+          <select class="aoType" style="flex:1">
             <option value="fixed" ${(!ao.type||ao.type==='fixed')?'selected':''}>Fixed ($)</option>
             <option value="percent" ${ao.type==='percent'?'selected':''}>Percentage (%)</option>
-            <option value="duration" ${ao.type==='duration'?'selected':''}>Video duration</option>
           </select>
-          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':ao.type==='duration'?'$/unit':'Price ($)'}" value="${ao.price||''}" style="flex:1;min-width:110px">
-          <input class="aoThreshold" type="number" min="0" placeholder="Included sec" value="${ao.threshold_seconds??180}" style="flex:1;min-width:110px;display:${ao.type==='duration'?'block':'none'}">
-          <input class="aoUnit" type="number" min="1" placeholder="Charge every sec" value="${ao.unit_seconds??30}" style="flex:1;min-width:110px;display:${ao.type==='duration'?'block':'none'}">
+          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price||''}" style="flex:1">
           <button type="button" class="btn removeAddonBtn">×</button>
         </div>
       `).join('')}
@@ -1483,22 +1415,14 @@ function showServiceForm(existing=null){
   catSelect.onchange=()=>{if(catSelect.value==='__NEW__'){catNewInput.style.display='block';catNewInput.focus()}else{catNewInput.style.display='none'}};
   
   const addonContainer = document.getElementById('addonContainer');
-  const addAddonRow = (title='', price='', type='fixed', threshold=180, unit=30) => {
+  const addAddonRow = (title='', price='', type='fixed') => {
     const row = document.createElement('div');
     row.className = 'row addonRow';
     row.style.gap = '8px';
-    row.style.flexWrap = 'wrap';
-    row.innerHTML = `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2;min-width:180px"><select class="aoType" style="flex:1;min-width:130px"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option><option value="duration" ${type==='duration'?'selected':''}>Video duration</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':type==='duration'?'$/unit':'Price ($)'}" value="${price}" style="flex:1;min-width:110px"><input class="aoThreshold" type="number" min="0" placeholder="Included sec" value="${threshold}" style="flex:1;min-width:110px;display:${type==='duration'?'block':'none'}"><input class="aoUnit" type="number" min="1" placeholder="Charge every sec" value="${unit}" style="flex:1;min-width:110px;display:${type==='duration'?'block':'none'}"><button type="button" class="btn removeAddonBtn">×</button>`;
-    const syncType=()=>{
-      const t=row.querySelector('.aoType').value;
-      row.querySelector('.aoPrice').placeholder=t==='percent'?'Percent (%)':t==='duration'?'$/unit':'Price ($)';
-      row.querySelector('.aoThreshold').style.display=t==='duration'?'block':'none';
-      row.querySelector('.aoUnit').style.display=t==='duration'?'block':'none';
-      refreshServiceEditorPrice();
-    };
-    row.querySelector('.removeAddonBtn').onclick = () => { row.remove(); refreshServiceEditorPrice(); };
-    row.querySelector('.aoType').onchange = syncType;
-    row.querySelectorAll('input').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
+    row.innerHTML = `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
+    row.querySelector('.removeAddonBtn').onclick = () => row.remove();
+    row.querySelector('.aoType').onchange = (e) => { row.querySelector('.aoPrice').placeholder = e.target.value==='percent'?'Percent (%)':'Price ($)'; refreshServiceEditorPrice(); };
+    row.querySelector('.aoPrice').addEventListener('input',refreshServiceEditorPrice);
     addonContainer.appendChild(row);
     refreshServiceEditorPrice();
   };
@@ -1510,25 +1434,17 @@ function showServiceForm(existing=null){
     rows.forEach(row=>{
       const p=Number(row.querySelector('.aoPrice')?.value||0);
       const type=row.querySelector('.aoType')?.value||'fixed';
-      if(!Number.isFinite(p)||p<=0)return;
-      if(type==='percent') total += base*p/100;
-      else if(type==='fixed') total += p;
+      if(Number.isFinite(p)&&p>0) total += type==='percent' ? (base*p/100) : p;
     });
     const el=document.getElementById('svAutoPricePreview');
     if(el)el.textContent='Automatic total: $'+total.toFixed(2)+' (base + all add-ons)';
   }
 
   document.getElementById('svPrice')?.addEventListener('input',refreshServiceEditorPrice);
-  document.querySelectorAll('.addonRow input').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
+  document.querySelectorAll('.addonRow input,.addonRow select').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
   document.querySelectorAll('.addonRow').forEach(row=>{
     const typeSel=row.querySelector('.aoType');
-    if(typeSel)typeSel.onchange=()=>{
-      const t=typeSel.value;
-      row.querySelector('.aoPrice').placeholder=t==='percent'?'Percent (%)':t==='duration'?'$/unit':'Price ($)';
-      row.querySelector('.aoThreshold').style.display=t==='duration'?'block':'none';
-      row.querySelector('.aoUnit').style.display=t==='duration'?'block':'none';
-      refreshServiceEditorPrice();
-    };
+    if(typeSel)typeSel.onchange=(e)=>{row.querySelector('.aoPrice').placeholder=e.target.value==='percent'?'Percent (%)':'Price ($)';};
   });
   document.querySelectorAll('.removeAddonBtn').forEach(b => b.onclick = (e) => { e.target.closest('.addonRow').remove(); refreshServiceEditorPrice(); });
   document.getElementById('addAddonRowBtn').onclick = () => addAddonRow();
@@ -1545,12 +1461,9 @@ function showServiceForm(existing=null){
     const add_ons = addonRows.map(r=>{
       const t = r.querySelector('.aoTitle').value.trim();
       const p = parseFloat(r.querySelector('.aoPrice').value);
-      const rawType = r.querySelector('.aoType')?.value || 'fixed';
-      const ty = rawType === 'percent' ? 'percent' : rawType === 'duration' ? 'duration' : 'fixed';
+      const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
       const enabled = r.querySelector('.aoEnabled')?.checked !== false;
-      const threshold = Math.max(0,Number(r.querySelector('.aoThreshold')?.value||180));
-      const unit = Math.max(1,Number(r.querySelector('.aoUnit')?.value||30));
-      return (enabled && t && !isNaN(p)) ? { title: t, price: p, type: ty, ...(ty==='duration'?{threshold_seconds:threshold,unit_seconds:unit}: {}) } : null;
+      return (enabled && t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
     }).filter(Boolean);
 
     const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;
@@ -2044,7 +1957,7 @@ async function renderAdminStudioPage(activeTab='members'){
     try {
       const res = await fetch('/api/lunarist', {
         method: 'POST',
-        headers: await apiAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })
       });
       const result = await res.json();
@@ -2179,9 +2092,9 @@ async function loadData(){
   try{
     if(!supabaseClient)await loadConfig();
     const [pr,pp,sv]=await Promise.all([
-      fetch(`/api/lunarist?resource=profiles&_=${Date.now()}`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
-      fetch(`/api/lunarist?resource=projects&_=${Date.now()}`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
-      fetch(`/api/lunarist?resource=services&_=${Date.now()}`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})
+      fetch('/api/lunarist?resource=profiles').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
+      fetch('/api/lunarist?resource=projects').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}),
+      fetch('/api/lunarist?resource=services').then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()})
     ]);
     data.members=(Array.isArray(pr)?pr:[]).map(x=>({
       id:x.id,
@@ -2198,27 +2111,6 @@ async function loadData(){
       account_type:x.account_type||'member',
       is_admin:!!x.is_admin
     }));
-
-    // The logged-in profile is the source of truth for the current user's public card.
-    // This prevents the Artists page from showing an older cached/API version after
-    // Profile Settings are saved (name, username, role, avatar, skills, availability).
-    if(state.currentMember?.id){
-      const me=data.members.find(m=>m.id===state.currentMember.id);
-      if(me){
-        me.username=state.currentMember.username||me.username;
-        me.name=state.currentMember.name||me.name;
-        me.role=state.currentMember.role||'';
-        me.bio=state.currentMember.bio||'';
-        me.tos=state.currentMember.tos||'';
-        me.tos_ja=state.currentMember.tos_ja||'';
-        me.theme=state.currentMember.theme||me.theme;
-        me.avatar=state.currentMember.avatar||me.avatar;
-        me.skills=Array.isArray(state.currentMember.skills)?state.currentMember.skills:[];
-        me.available=state.currentMember.available!==false;
-        me.account_type=state.currentMember.account_type||me.account_type;
-        me.is_admin=!!state.currentMember.is_admin;
-      }
-    }
 
      try {
        const {data: publicTosRows, error: publicTosError} = await supabaseClient
@@ -2437,6 +2329,7 @@ function applyLanguage(lang){
   document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.classList.toggle('active',el.dataset.lang===safe));
   document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in-view'));
   translateInterface(safe);
+  if(!state._renderingService && document.getElementById('projectModal')?.classList.contains('open') && state.openServiceId){openService(state.openServiceId);}
 }
 function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>{applyLanguage(el.dataset.lang);render();});}
 function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
@@ -2463,6 +2356,5 @@ async function capturePaypalReturnIfPresent(){
 }
 (async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
-<script src="/profile-sync.js"></script>
 </body>
 </html>
