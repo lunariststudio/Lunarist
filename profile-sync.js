@@ -148,33 +148,21 @@
       return true;
     }
 
+    // Saved is a standalone page now. Remove the legacy Member Space tab/section
+    // so there is only one canonical Saved destination.
+    function removeSavedFromMemberSpace(){
+      document.querySelector('.dashnav [data-dash="saved"]')?.remove();
+      document.getElementById('dash-saved')?.remove();
+    }
+
     function injectSavedTab(){
-      const nav=document.querySelector('.dashnav');
-      if(!nav || nav.querySelector('[data-dash="saved"]')) return;
-      const b=document.createElement('button');
-      b.className='filter'; b.dataset.dash='saved'; b.textContent='🔖 Saved';
-      nav.appendChild(b);
-      const section=document.createElement('section');
-      section.className='dashsection'; section.id='dash-saved';
-      section.innerHTML='<div class="panel"><div class="eyebrow">Wishlist</div><h3 style="margin:4px 0">Saved Projects</h3><div class="meta">Loading your saved projects…</div></div>';
-      const drawer=document.querySelector('.drawerpanel');
-      if(drawer)drawer.appendChild(section);
-      b.onclick=()=>{
-        nav.querySelectorAll('[data-dash]').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-        drawer.querySelectorAll('.dashsection').forEach(x=>x.classList.remove('active'));section.classList.add('active');
-        renderSavedProjects();
-      };
+      removeSavedFromMemberSpace();
     }
 
     async function renderSavedProjects(){
-      injectSavedTab();
-      const section=document.getElementById('dash-saved'); if(!section||!state.currentUser)return;
-      const {data:rows,error}=await supabaseClient.from('saved_projects').select('project_id,created_at').eq('user_id',state.currentUser.id).order('created_at',{ascending:false});
-      if(error){section.innerHTML='<div class="panel"><div class="eyebrow">Wishlist</div><h3>Saved Projects</h3><p class="meta">Unable to load saved projects.</p></div>';return;}
-      const projects=(rows||[]).map(r=>(data.projects||[]).find(p=>p.id===r.project_id)).filter(Boolean);
-      savedIds.clear();(rows||[]).forEach(r=>savedIds.add(r.project_id));savedLoadedFor=state.currentUser.id;
-      section.innerHTML=`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">Wishlist</div><h3 style="margin:4px 0">Saved Projects</h3><p class="meta">Your personal collection of projects you want to revisit.</p></div><span class="stat">${projects.length} saved</span></div><div class="grid" style="margin-top:16px">${projects.length?projects.map(p=>card(p)).join(''):emptyState('Nothing saved yet.','Open a project and press 🔖 Save to add it to your wishlist.')}</div></div>`;
-      section.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));
+      // Kept for backwards compatibility with older injected markup. The
+      // canonical Saved UI is /saved and is rendered by saved.html.
+      removeSavedFromMemberSpace();
     }
 
     async function wireSaveButton(id){
@@ -199,10 +187,17 @@
     function injectTopSaved(){
       if(!state.currentUser)return;
       const links=document.getElementById('navlinks'); if(!links||document.getElementById('navSavedBtn'))return;
-      const b=document.createElement('button');b.id='navSavedBtn';b.className='navbtn';b.textContent='🔖 Saved';
+      const b=document.createElement('button');
+      b.id='navSavedBtn';
+      b.className='navbtn';
+      b.textContent='🔖 Saved';
+      b.setAttribute('data-standalone-route','/saved');
       const commission=document.getElementById('navCommissionsBtn');
       if(commission)links.insertBefore(b,commission);else links.appendChild(b);
-      b.onclick=async()=>{links.classList.remove('open');await openDashboard();injectSavedTab();document.querySelector('[data-dash="saved"]')?.click()};
+      b.onclick=()=>{
+        links.classList.remove('open');
+        window.location.assign('/saved');
+      };
     }
 
     async function syncYoutubeLikes(){
@@ -222,11 +217,11 @@
       if(typeof render==='function')render();
     }
 
-    const observer=new MutationObserver(()=>{injectSavedTab();injectTopSaved()});
+    const observer=new MutationObserver(()=>{removeSavedFromMemberSpace();injectTopSaved()});
     observer.observe(document.body,{childList:true,subtree:true});
-    const timer=setInterval(()=>{injectSavedTab();injectTopSaved();syncYoutubeLikes()},15000);
+    const timer=setInterval(()=>{removeSavedFromMemberSpace();injectTopSaved();syncYoutubeLikes()},15000);
     window.addEventListener('beforeunload',()=>clearInterval(timer));
-    setTimeout(()=>{injectSavedTab();injectTopSaved();syncYoutubeLikes()},1000);
+    setTimeout(()=>{removeSavedFromMemberSpace();injectTopSaved();syncYoutubeLikes()},1000);
     return true;
   };
   let tries=0;const wait=setInterval(()=>{if(boot()||++tries>80)clearInterval(wait)},250);
