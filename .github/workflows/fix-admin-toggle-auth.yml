@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   patch:
-    if: !contains(github.event.head_commit.message, 'fix: send admin session token')
+    if: ${{ !contains(github.event.head_commit.message, 'fix: send admin session token') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
