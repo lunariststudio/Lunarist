@@ -5,7 +5,7 @@
   "description": "Lunarist Studio creative network — Vercel + Supabase",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo \"Static Vercel build: no compilation required\"",
+    "build": "node scripts/duration-addons-patch.js",
     "start": "vercel dev"
   },
   "engines": {
