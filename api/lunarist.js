@@ -16,6 +16,22 @@ function sanitizeCommission(c){
 }
 
 function sanitizeEvent(event){if(!event||typeof event!=='object')return null;const session_id=typeof event.session_id==='string'?event.session_id.slice(0,128):null;if(!session_id)return null;const event_type=typeof event.event_type==='string'?event.event_type:null;if(!EVENT_TYPES.includes(event_type))return null;let project_id=null;if(event.project_id!=null){if(typeof event.project_id!=='string'||!UUID_RE.test(event.project_id))return null;project_id=event.project_id}const category=typeof event.category==='string'?event.category.slice(0,64):null;const tags=event.metadata&&Array.isArray(event.metadata.tags)?event.metadata.tags.filter(t=>typeof t==='string').slice(0,20).map(t=>t.slice(0,64)):[];return{session_id,project_id,event_type,category,metadata:{tags}}}
+
+async function getAdminUser(req,url,key){
+  const auth=String(req.headers.authorization||'');
+  if(!auth.toLowerCase().startsWith('bearer '))return null;
+  const token=auth.slice(7).trim();
+  if(!token)return null;
+  const r=await fetch(`${url}/auth/v1/user`,{headers:{apikey:key,Authorization:`Bearer ${token}`}});
+  if(!r.ok)return null;
+  const user=await r.json();
+  if(!user?.id)return null;
+  const p=await fetch(`${url}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=id,is_admin,account_type`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
+  if(!p.ok)return null;
+  const rows=await p.json();
+  return rows[0]?.is_admin?user:null;
+}
+
 export default async function handler(req,res){const {url,key}=config();if(!url||!key)return res.status(503).json({error:'Supabase server credentials are not configured.'});const q=req.url.includes('?')?req.url.slice(req.url.indexOf('?')+1):'';const params=new URLSearchParams(q);const resource=params.get('resource');try{if(req.method==='GET'){
   if(resource==='recommendations'){
     const sessionId=params.get('session_id')||'';
@@ -30,6 +46,17 @@ export default async function handler(req,res){const {url,key}=config();if(!url|
   const r=await fetch(`${url}/rest/v1/${resource}?${out}`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
   const text=await r.text();res.status(r.status).setHeader('Content-Type','application/json');return res.send(text)
 }if(req.method==='POST'){
+  if((req.body||{}).action==='toggle-member'){
+    const admin=await getAdminUser(req,url,key);
+    if(!admin)return res.status(403).json({error:'Administrator access required'});
+    const targetId=typeof req.body.targetId==='string'?req.body.targetId.trim():'';
+    const nextType=req.body.nextType==='member'?'member':req.body.nextType==='user'?'user':null;
+    if(!UUID_RE.test(targetId)||!nextType)return res.status(400).json({error:'Invalid member update'});
+    if(targetId===admin.id)return res.status(400).json({error:'You cannot change your own member status here'});
+    const r=await fetch(`${url}/rest/v1/profiles?id=eq.${encodeURIComponent(targetId)}&is_admin=eq.false`,{method:'PATCH',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({account_type:nextType,updated_at:new Date().toISOString()})});
+    const text=await r.text();if(!r.ok)return res.status(r.status).send(text||JSON.stringify({error:'Failed to update member status'}));
+    return res.status(200).json({success:true,profile:Array.isArray(JSON.parse(text||'[]'))?JSON.parse(text||'[]')[0]||null:null});
+  }
   if((req.body||{}).commission){
     const c=sanitizeCommission(req.body.commission);
     if(!c)return res.status(400).json({error:'Invalid commission inquiry'});
