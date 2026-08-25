@@ -1397,19 +1397,34 @@ function showServiceForm(existing=null){
   f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} service</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="svTitle" value="${esc(existing?.title||'')}" placeholder="Motion design package"></div><div class="field"><label>Category</label><select id="svCategorySelect"></select><input id="svCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="svTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="svDesc">${esc(existing?.description||'')}</textarea></div><div class="field"><label>Starting price</label><input id="svPrice" value="${esc(existing?.price_from||'')}" placeholder="$300"><div id="svAutoPricePreview" class="meta" style="margin-top:8px;color:var(--gold);font-weight:800">Automatic total: $0.00</div></div><div class="field"><label>Delivery time</label><input id="svDelivery" value="${esc(existing?.delivery_time||'')}" placeholder="5–7 days"></div><div class="field full"><label>Thumbnail URL</label><input id="svThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="svThumbFile" type="file" accept="image/*"></div><div class="field"><label>Status</label><select id="svStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div>
   <div class="field full">
     <label>Service Add-ons</label>
-    <div class="meta">Offer extra options (e.g. Commercial License, Rush Order, Extra Revision).</div>
-    <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
-      ${existingAddons.map((ao,i)=>`
-        <div class="row addonRow" style="gap:8px">
-          <input class="aoTitle" placeholder="Add-on title" value="${esc(ao.title||'')}" style="flex:2">
-          <select class="aoType" style="flex:1">
-            <option value="fixed" ${(!ao.type||ao.type==='fixed')?'selected':''}>Fixed ($)</option>
-            <option value="percent" ${ao.type==='percent'?'selected':''}>Percentage (%)</option>
-          </select>
-          <input class="aoPrice" type="number" placeholder="${ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price||''}" style="flex:1">
-          <button type="button" class="btn removeAddonBtn">×</button>
-        </div>
-      `).join('')}
+    <div class="meta">Offer extra options such as Commercial License, Rush Order, Extra Revision, or duration-based video pricing.</div>
+    <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:10px">
+      ${existingAddons.map((ao,i)=>{
+        const isDur=addonIsDuration(ao);
+        const included=Number(ao.included_seconds??ao.includedSeconds??180)||180;
+        const unit=Number(ao.unit_seconds??ao.unitSeconds??30)||30;
+        return `
+        <div class="addonRow" style="padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.015)">
+          <div class="row" style="gap:8px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label>
+            <input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(ao.title||'')}" style="flex:2;min-width:140px">
+            <select class="aoType" style="flex:1;min-width:125px">
+              <option value="fixed" ${(!isDur&&(!ao.type||ao.type==='fixed'))?'selected':''}>Fixed ($)</option>
+              <option value="percent" ${(!isDur&&ao.type==='percent')?'selected':''}>Percentage (%)</option>
+              <option value="duration" ${isDur?'selected':''}>Video duration</option>
+            </select>
+            <input class="aoPrice" type="number" placeholder="${isDur?'Charge per interval':ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price??''}" style="flex:1;min-width:100px">
+            <button type="button" class="btn removeAddonBtn">×</button>
+          </div>
+          <div class="aoDurationSettings" style="${isDur?'display:flex':'display:none'};gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+            <span class="meta">Included duration</span>
+            <input class="aoIncluded" type="number" min="0" step="30" value="${included}" style="width:110px" title="Included seconds">
+            <span class="meta">seconds, then</span>
+            <input class="aoUnit" type="number" min="1" step="1" value="${unit}" style="width:100px" title="Charge interval in seconds">
+            <span class="meta">seconds per charge interval</span>
+          </div>
+        </div>`;
+      }).join('')}
     </div>
     <button type="button" class="btn" id="addAddonRowBtn" style="margin-top:8px;align-self:flex-start">+ Add extra option</button>
   </div>
@@ -1423,16 +1438,29 @@ function showServiceForm(existing=null){
   catSelect.onchange=()=>{if(catSelect.value==='__NEW__'){catNewInput.style.display='block';catNewInput.focus()}else{catNewInput.style.display='none'}};
   
   const addonContainer = document.getElementById('addonContainer');
-  const addAddonRow = (title='', price='', type='fixed') => {
+  function setupAddonRow(row){
+    const typeSel=row.querySelector('.aoType');
+    const price=row.querySelector('.aoPrice');
+    const settings=row.querySelector('.aoDurationSettings');
+    const update=()=>{
+      const type=typeSel?.value||'fixed';
+      if(settings) settings.style.display=type==='duration'?'flex':'none';
+      if(price) price.placeholder=type==='duration'?'Charge per interval':type==='percent'?'Percent (%)':'Price ($)';
+      refreshServiceEditorPrice();
+    };
+    row.querySelector('.removeAddonBtn')?.addEventListener('click',()=>{row.remove();refreshServiceEditorPrice();});
+    typeSel?.addEventListener('change',update);
+    row.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
+    update();
+  }
+
+  const addAddonRow = (title='', price='', type='fixed', included=180, unit=30) => {
     const row = document.createElement('div');
-    row.className = 'row addonRow';
-    row.style.gap = '8px';
-    row.innerHTML = `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2"><select class="aoType" style="flex:1"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option></select><input class="aoPrice" type="number" placeholder="${type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1"><button type="button" class="btn removeAddonBtn">×</button>`;
-    row.querySelector('.removeAddonBtn').onclick = () => row.remove();
-    row.querySelector('.aoType').onchange = (e) => { row.querySelector('.aoPrice').placeholder = e.target.value==='percent'?'Percent (%)':'Price ($)'; refreshServiceEditorPrice(); };
-    row.querySelector('.aoPrice').addEventListener('input',refreshServiceEditorPrice);
+    row.className = 'addonRow';
+    row.style.cssText = 'padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.015)';
+    row.innerHTML = `<div class="row" style="gap:8px;align-items:center"><label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2;min-width:140px"><select class="aoType" style="flex:1;min-width:125px"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option><option value="duration" ${type==='duration'?'selected':''}>Video duration</option></select><input class="aoPrice" type="number" placeholder="${type==='duration'?'Charge per interval':type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1;min-width:100px"><button type="button" class="btn removeAddonBtn">×</button></div><div class="aoDurationSettings" style="${type==='duration'?'display:flex':'display:none'};gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><span class="meta">Included duration</span><input class="aoIncluded" type="number" min="0" step="30" value="${included}" style="width:110px"><span class="meta">seconds, then</span><input class="aoUnit" type="number" min="1" step="1" value="${unit}" style="width:100px"><span class="meta">seconds per charge interval</span></div>`;
     addonContainer.appendChild(row);
-    refreshServiceEditorPrice();
+    setupAddonRow(row);
   };
 
   function refreshServiceEditorPrice(){
@@ -1440,21 +1468,17 @@ function showServiceForm(existing=null){
     const rows=Array.from(document.querySelectorAll('.addonRow'));
     let total=base;
     rows.forEach(row=>{
+      if(row.querySelector('.aoEnabled')?.checked===false)return;
       const p=Number(row.querySelector('.aoPrice')?.value||0);
       const type=row.querySelector('.aoType')?.value||'fixed';
-      if(Number.isFinite(p)&&p>0) total += type==='percent' ? (base*p/100) : p;
+      if(Number.isFinite(p)&&p>0 && type!=='duration') total += type==='percent' ? (base*p/100) : p;
     });
     const el=document.getElementById('svAutoPricePreview');
-    if(el)el.textContent='Automatic total: $'+total.toFixed(2)+' (base + all add-ons)';
+    if(el)el.textContent='Automatic total: $'+total.toFixed(2)+(rows.some(r=>r.querySelector('.aoType')?.value==='duration'&&r.querySelector('.aoEnabled')?.checked!==false)?' + duration add-on calculated at inquiry':'')+' (base + add-ons)';
   }
 
   document.getElementById('svPrice')?.addEventListener('input',refreshServiceEditorPrice);
-  document.querySelectorAll('.addonRow input,.addonRow select').forEach(el=>el.addEventListener('input',refreshServiceEditorPrice));
-  document.querySelectorAll('.addonRow').forEach(row=>{
-    const typeSel=row.querySelector('.aoType');
-    if(typeSel)typeSel.onchange=(e)=>{row.querySelector('.aoPrice').placeholder=e.target.value==='percent'?'Percent (%)':'Price ($)';};
-  });
-  document.querySelectorAll('.removeAddonBtn').forEach(b => b.onclick = (e) => { e.target.closest('.addonRow').remove(); refreshServiceEditorPrice(); });
+  document.querySelectorAll('.addonRow').forEach(setupAddonRow);
   document.getElementById('addAddonRowBtn').onclick = () => addAddonRow();
   refreshServiceEditorPrice();
 
@@ -1467,11 +1491,18 @@ function showServiceForm(existing=null){
     
     const addonRows = Array.from(document.querySelectorAll('.addonRow'));
     const add_ons = addonRows.map(r=>{
-      const t = r.querySelector('.aoTitle').value.trim();
-      const p = parseFloat(r.querySelector('.aoPrice').value);
-      const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
+      const t = r.querySelector('.aoTitle')?.value.trim();
+      const p = parseFloat(r.querySelector('.aoPrice')?.value);
+      const ty = r.querySelector('.aoType')?.value || 'fixed';
       const enabled = r.querySelector('.aoEnabled')?.checked !== false;
-      const duration=/video\s+over\s+3\s+minutes/i.test(t)||/3\s*minutes.*30\s*sec/i.test(t)||/30\s*sec.*3\s*minutes/i.test(t); return (enabled && t && !isNaN(p)) ? (duration ? { title:t, price:p||10, type:'duration', duration:true, included_seconds:180, unit_seconds:30 } : { title: t, price: p, type: ty }) : null;
+      const durationByTitle=/video\s+over\s+3\s+minutes/i.test(t||'')||/3\s*minutes.*30\s*sec/i.test(t||'')||/30\s*sec.*3\s*minutes/i.test(t||'');
+      if(!enabled || !t || isNaN(p)) return null;
+      if(ty==='duration' || durationByTitle){
+        const included=Math.max(0,Number(r.querySelector('.aoIncluded')?.value||180));
+        const unit=Math.max(1,Number(r.querySelector('.aoUnit')?.value||30));
+        return {title:t,price:p||10,type:'duration',duration:true,included_seconds:included,unit_seconds:unit};
+      }
+      return {title:t,price:p,type:ty};
     }).filter(Boolean);
 
     const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;
@@ -2364,6 +2395,5 @@ async function capturePaypalReturnIfPresent(){
 }
 (async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
-<script src="/profile-sync.js"></script>
 </body>
 </html>
