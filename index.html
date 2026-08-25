@@ -112,6 +112,12 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
 .lunarist-direct-label{display:inline-flex;align-items:center;gap:6px;margin-top:8px;color:#ffc9ea;font-size:11px;font-weight:800;letter-spacing:.02em}
 
+/* Portfolio examples picker polish */
+.portfolio-check-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);cursor:pointer;transition:border-color .2s,background .2s}
+.portfolio-check-item:hover{border-color:var(--moon);background:rgba(255,255,255,.045)}
+.portfolio-check-item input{flex:0 0 auto;width:16px;height:16px;accent-color:var(--moon);cursor:pointer}
+.portfolio-check-thumb{flex:0 0 auto;width:64px;aspect-ratio:16/10;object-fit:cover;border-radius:8px;background:#000}
+.portfolio-check-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;text-transform:none;letter-spacing:normal;color:var(--text)}
 /* Service add-ons editor polish */
 .service-addons-field{gap:12px!important;padding:16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));}
 .service-addons-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
@@ -2423,6 +2429,5 @@ async function capturePaypalReturnIfPresent(){
 }
 (async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
-<script src="/profile-sync.js"></script>
 </body>
 </html>
