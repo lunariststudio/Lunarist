@@ -118,30 +118,29 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .service-addons-heading>div:first-child>label{display:block;font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-weight:800;margin-bottom:2px}
 .addon-count-badge{flex:0 0 auto;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.035);color:var(--muted);font-size:11px;font-weight:700}
 #addonContainer{gap:10px!important}
-.addon-row-shell{padding:12px!important;border:1px solid var(--line)!important;border-radius:15px!important;background:rgba(8,7,13,.42)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .2s,background .2s,box-shadow .2s}
+.addon-row-shell{position:relative;padding:12px!important;border:1px solid var(--line)!important;border-radius:15px!important;background:rgba(8,7,13,.42)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .2s,background .2s,box-shadow .2s}
 .addon-row-shell:focus-within{border-color:rgba(201,182,255,.48)!important;background:rgba(201,182,255,.035)!important;box-shadow:0 0 0 3px rgba(201,182,255,.06),inset 0 1px 0 rgba(255,255,255,.04)}
-.addon-main-row{display:grid;grid-template-columns:110px minmax(220px,2fr) minmax(155px,1.1fr) minmax(120px,.8fr) 42px;gap:10px;align-items:end;width:100%;box-sizing:border-box}
-.addon-main-row>*{min-width:0}.addon-main-row>div{overflow:hidden}.addon-title-wrap,.addon-type-wrap,.addon-price-wrap{grid-row:1}
+.addon-main-row{display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box;padding-right:52px}
+.addon-main-row>*{min-width:0}
 .addon-title,.addon-type,.addon-price{width:100%;box-sizing:border-box}
-@media(max-width:1100px) and (min-width:761px){.addon-main-row{grid-template-columns:100px minmax(200px,2fr) minmax(150px,1.15fr) minmax(110px,.8fr) 42px;gap:8px;width:100%}.addon-toggle{padding:0 8px}.addon-mini-label{font-size:8px;white-space:nowrap}.addon-duration-settings{grid-template-columns:minmax(200px,1.4fr) minmax(115px,.7fr) minmax(115px,.7fr)}}
-.addon-toggle{height:42px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.addon-toggle{align-self:flex-start;height:42px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
 .addon-toggle:has(input:checked){color:var(--green);border-color:rgba(142,224,186,.3);background:rgba(142,224,186,.06)}
 .addon-toggle input{accent-color:var(--green);width:15px;height:15px;margin:0}
 .addon-title-wrap,.addon-type-wrap,.addon-price-wrap{display:flex;flex-direction:column;gap:5px;min-width:0}
 .addon-mini-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:800}
 .addon-title,.addon-type,.addon-price{height:42px!important;margin:0!important}
 .addon-type{appearance:auto}
-.addon-remove{width:42px;height:42px;padding:0!important;display:grid;place-items:center;border-radius:11px!important;color:var(--muted)!important;font-size:18px!important}
+.addon-remove{position:absolute;right:10px;top:10px;width:42px;height:42px;padding:0!important;display:grid;place-items:center;border-radius:11px!important;color:var(--muted)!important;font-size:18px!important}
 .addon-remove:hover{color:var(--danger)!important;border-color:rgba(255,125,142,.4)!important;background:rgba(255,125,142,.07)!important}
-.addon-duration-settings{grid-template-columns:minmax(220px,1.5fr) minmax(130px,.6fr) minmax(130px,.6fr);gap:10px;margin-top:10px!important;padding:12px;border:1px dashed rgba(201,182,255,.24);border-radius:12px;background:rgba(201,182,255,.035)}
-.addon-duration-intro{display:flex;align-items:center;gap:9px;min-width:0}
+.addon-duration-settings{grid-template-columns:1fr 1fr;gap:10px;margin-top:10px!important;padding:12px;border:1px dashed rgba(201,182,255,.24);border-radius:12px;background:rgba(201,182,255,.035)}
+.addon-duration-intro{grid-column:1/-1;display:flex;align-items:center;gap:9px;min-width:0}
 .addon-duration-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:rgba(201,182,255,.1);color:var(--moon);font-size:16px;flex:0 0 auto}
 .addon-duration-intro b,.addon-duration-intro span{display:block}.addon-duration-intro b{font-size:12px}.addon-duration-intro span{font-size:10px;color:var(--muted);margin-top:2px}
 .addon-setting{display:flex;flex-direction:column;gap:5px}.addon-setting>span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
 .addon-setting-input{position:relative}.addon-setting-input input{padding-right:40px!important}.addon-setting-input em{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-size:10px;color:var(--muted);pointer-events:none}
 .addon-add-btn{margin-top:2px!important;border-style:dashed!important;background:rgba(255,255,255,.025)!important;color:var(--moon)!important}
 .addon-add-btn:hover{background:rgba(201,182,255,.07)!important}
-@media(max-width:760px){.addon-main-row{display:flex;flex-direction:column;gap:8px}.addon-toggle{width:max-content}.addon-remove{position:absolute;right:10px;top:10px}.addon-row-shell{position:relative;padding-top:12px!important}.addon-duration-settings{grid-template-columns:1fr 1fr}.addon-duration-intro{grid-column:1/-1}.service-addons-heading{align-items:flex-start}.addon-count-badge{font-size:10px}}
+@media(max-width:760px){.addon-count-badge{font-size:10px}}
 </style>
 <script>
 // Global Error Boundary & Graceful Handling
