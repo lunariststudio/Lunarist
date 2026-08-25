@@ -107,101 +107,23 @@
       avatar.outerHTML = `<img class="avatar" id="accountAvatar" src="${esc(state.currentMember.avatar || '')}" alt="" onerror="handleImageError(this)">`;
     }
     if (typeof loadUserNotifications === 'function') loadUserNotifications();
+    if (typeof loadSavedIds === 'function') { try { await loadSavedIds(); } catch (e) {} }
     return state.currentMember;
   }
 
   window.refreshUser = syncProfile;
 })();
 
-// Saved projects + YouTube engagement sync.
+// YouTube view/like count sync — keeps project stats fresh without
+// stealing scroll position or fighting the built-in Saved tab.
 (function(){
   if(typeof window==='undefined') return;
   const boot=()=>{
-    if(typeof supabaseClient==='undefined' || typeof state==='undefined') return false;
-
-    const savedIds=new Set();
-    let savedLoadedFor=null;
-
-    async function loadSavedIds(){
-      if(!state.currentUser){savedIds.clear();savedLoadedFor=null;return;}
-      if(savedLoadedFor===state.currentUser.id) return;
-      const {data,error}=await supabaseClient.from('saved_projects').select('project_id').eq('user_id',state.currentUser.id);
-      if(!error){savedIds.clear();(data||[]).forEach(x=>savedIds.add(x.project_id));savedLoadedFor=state.currentUser.id;}
-    }
-
-    async function isSaved(id){await loadSavedIds();return savedIds.has(id)}
-
-    async function toggleSave(id){
-      if(!state.currentUser){if(typeof openAuth==='function')openAuth('signin');return false;}
-      const currently=await isSaved(id);
-      if(currently){
-        const {error}=await supabaseClient.from('saved_projects').delete().eq('user_id',state.currentUser.id).eq('project_id',id);
-        if(error)throw error;
-        savedIds.delete(id);
-        if(typeof toast==='function')toast('Removed from Saved');
-        return false;
-      }
-      const {error}=await supabaseClient.from('saved_projects').insert({user_id:state.currentUser.id,project_id:id});
-      if(error && error.code!=='23505')throw error;
-      savedIds.add(id);
-      if(typeof toast==='function')toast('Saved to your wishlist');
-      return true;
-    }
-
-    // Saved is a standalone page now. Remove the legacy Member Space tab/section
-    // so there is only one canonical Saved destination.
-    function removeSavedFromMemberSpace(){
-      document.querySelector('.dashnav [data-dash="saved"]')?.remove();
-      document.getElementById('dash-saved')?.remove();
-    }
-
-    function injectSavedTab(){
-      removeSavedFromMemberSpace();
-    }
-
-    async function renderSavedProjects(){
-      // Kept for backwards compatibility with older injected markup. The
-      // canonical Saved UI is /saved and is rendered by saved.html.
-      removeSavedFromMemberSpace();
-    }
-
-    async function wireSaveButton(id){
-      const btn=document.getElementById('saveBtn'); if(!btn)return;
-      const saved=await isSaved(id);
-      btn.textContent=saved?'🔖 Saved':'🔖 Save';
-      btn.style.color=saved?'var(--pink)':'';
-      btn.onclick=async()=>{
-        btn.disabled=true;
-        try{const next=await toggleSave(id);btn.textContent=next?'🔖 Saved':'🔖 Save';btn.style.color=next?'var(--pink)':'';}
-        catch(e){if(typeof toast==='function')toast(e.message||'Unable to save this project.');}
-        finally{btn.disabled=false;}
-      };
-    }
-
-    const originalOpenProject=window.openProject;
-    if(typeof originalOpenProject==='function' && !window.__lunaristSavedOpenPatched){
-      window.__lunaristSavedOpenPatched=true;
-      window.openProject=async function(id){await originalOpenProject(id);await wireSaveButton(id)};
-    }
-
-    function injectTopSaved(){
-      if(!state.currentUser)return;
-      const links=document.getElementById('navlinks'); if(!links||document.getElementById('navSavedBtn'))return;
-      const b=document.createElement('button');
-      b.id='navSavedBtn';
-      b.className='navbtn';
-      b.textContent='🔖 Saved';
-      b.setAttribute('data-standalone-route','/saved');
-      const commission=document.getElementById('navCommissionsBtn');
-      if(commission)links.insertBefore(b,commission);else links.appendChild(b);
-      b.onclick=()=>{
-        links.classList.remove('open');
-        window.location.assign('/saved');
-      };
-    }
+    if(typeof supabaseClient==='undefined' || typeof state==='undefined' || typeof data==='undefined') return false;
 
     async function syncYoutubeLikes(){
       if(!Array.isArray(data.projects)||!data.projects.length)return;
+      let changed=false;
       for(const p of data.projects){
         const url=String(p.media_url||p.video||'');
         const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
@@ -210,18 +132,18 @@
           const r=await fetch('/api/youtube?videoId='+encodeURIComponent(m[1]),{cache:'no-store'});
           if(!r.ok)continue;
           const d=await r.json();
-          if(d.likeCount!==undefined&&d.likeCount!==null){const n=Number(d.likeCount);if(Number.isFinite(n)&&p.likes!==n){p.likes=n;supabaseClient.from('projects').update({likes:n}).eq('id',p.id).then(()=>{})}}
-          if(d.viewCount!==undefined&&d.viewCount!==null){const n=Number(d.viewCount);if(Number.isFinite(n)&&p.views!==n){p.views=n;supabaseClient.from('projects').update({views:n}).eq('id',p.id).then(()=>{})}}
+          if(d.likeCount!==undefined&&d.likeCount!==null){const n=Number(d.likeCount);if(Number.isFinite(n)&&p.likes!==n){p.likes=n;changed=true;supabaseClient.from('projects').update({likes:n}).eq('id',p.id).then(()=>{})}}
+          if(d.viewCount!==undefined&&d.viewCount!==null){const n=Number(d.viewCount);if(Number.isFinite(n)&&p.views!==n){p.views=n;changed=true;supabaseClient.from('projects').update({views:n}).eq('id',p.id).then(()=>{})}}
         }catch(e){}
       }
-      if(typeof render==='function')render();
+      // Only re-render when a number actually changed, and always keep the
+      // user's scroll position — this loop runs every 15s in the background.
+      if(changed && typeof render==='function')render(true);
     }
 
-    const observer=new MutationObserver(()=>{removeSavedFromMemberSpace();injectTopSaved()});
-    observer.observe(document.body,{childList:true,subtree:true});
-    const timer=setInterval(()=>{removeSavedFromMemberSpace();injectTopSaved();syncYoutubeLikes()},15000);
+    const timer=setInterval(syncYoutubeLikes,15000);
     window.addEventListener('beforeunload',()=>clearInterval(timer));
-    setTimeout(()=>{removeSavedFromMemberSpace();injectTopSaved();syncYoutubeLikes()},1000);
+    setTimeout(syncYoutubeLikes,1000);
     return true;
   };
   let tries=0;const wait=setInterval(()=>{if(boot()||++tries>80)clearInterval(wait)},250);
