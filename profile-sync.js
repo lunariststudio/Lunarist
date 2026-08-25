@@ -150,10 +150,39 @@
           if(d.viewCount!==undefined&&d.viewCount!==null){const n=Number(d.viewCount);if(Number.isFinite(n)&&p.views!==n){p.views=n;changed=true;supabaseClient.from('projects').update({views:n}).eq('id',p.id).then(()=>{})}}
         }catch(e){}
       }
-      // Only re-render when a number actually changed, and always keep the
-      // user's scroll position — this loop runs every 15s in the background.
       if(changed && typeof render==='function')render(true);
     }
+
+    // The current index.html already renders the commissioned badge from
+    // the database-backed projects.lunarist_direct field. This observer
+    // prevents later UI redraws from leaving stale badge state behind.
+    function refreshCommissionBadges(){
+      if(!Array.isArray(data.projects))return;
+      const byId=new Map(data.projects.map(p=>[String(p.id),p]));
+      document.querySelectorAll('[data-project]').forEach(cardEl=>{
+        const p=byId.get(String(cardEl.dataset.project));
+        if(!p)return;
+        const overlay=cardEl.querySelector('.thumb .overlay');
+        if(!overlay)return;
+        const existing=overlay.querySelector('.lunarist-direct-badge');
+        if(p.lunarist_direct){
+          if(!existing){
+            const badge=document.createElement('span');
+            badge.className='badge lunarist-direct-badge';
+            badge.title='Commissioned and purchased directly through Lunarist Studio';
+            badge.textContent='✦ Lunarist Studio Commission';
+            overlay.appendChild(badge);
+          }
+        }else if(existing){
+          existing.remove();
+        }
+      });
+    }
+
+    const observer=new MutationObserver(()=>refreshCommissionBadges());
+    observer.observe(document.getElementById('view')||document.body,{childList:true,subtree:true});
+    window.addEventListener('beforeunload',()=>observer.disconnect());
+    setTimeout(refreshCommissionBadges,500);
 
     const timer=setInterval(syncYoutubeLikes,15000);
     window.addEventListener('beforeunload',()=>clearInterval(timer));
