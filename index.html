@@ -120,10 +120,10 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 #addonContainer{gap:10px!important}
 .addon-row-shell{padding:12px!important;border:1px solid var(--line)!important;border-radius:15px!important;background:rgba(8,7,13,.42)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .2s,background .2s,box-shadow .2s}
 .addon-row-shell:focus-within{border-color:rgba(201,182,255,.48)!important;background:rgba(201,182,255,.035)!important;box-shadow:0 0 0 3px rgba(201,182,255,.06),inset 0 1px 0 rgba(255,255,255,.04)}
-.addon-main-row{display:grid;grid-template-columns:108px minmax(0,2.2fr) minmax(150px,1.15fr) minmax(105px,.75fr) 42px;gap:10px;align-items:end}
-.addon-main-row>*{min-width:0}
+.addon-main-row{display:grid;grid-template-columns:110px minmax(220px,2fr) minmax(155px,1.1fr) minmax(120px,.8fr) 42px;gap:10px;align-items:end;width:100%;box-sizing:border-box}
+.addon-main-row>*{min-width:0}.addon-main-row>div{overflow:hidden}.addon-title-wrap,.addon-type-wrap,.addon-price-wrap{grid-row:1}
 .addon-title,.addon-type,.addon-price{width:100%;box-sizing:border-box}
-@media(max-width:1100px) and (min-width:761px){.addon-main-row{grid-template-columns:96px minmax(170px,1.7fr) minmax(135px,1.1fr) minmax(95px,.7fr) 42px;gap:8px}.addon-toggle{padding:0 8px}.addon-mini-label{font-size:8px}.addon-duration-settings{grid-template-columns:minmax(200px,1.4fr) minmax(115px,.7fr) minmax(115px,.7fr)}}
+@media(max-width:1100px) and (min-width:761px){.addon-main-row{grid-template-columns:100px minmax(200px,2fr) minmax(150px,1.15fr) minmax(110px,.8fr) 42px;gap:8px;width:100%}.addon-toggle{padding:0 8px}.addon-mini-label{font-size:8px;white-space:nowrap}.addon-duration-settings{grid-template-columns:minmax(200px,1.4fr) minmax(115px,.7fr) minmax(115px,.7fr)}}
 .addon-toggle{height:42px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
 .addon-toggle:has(input:checked){color:var(--green);border-color:rgba(142,224,186,.3);background:rgba(142,224,186,.06)}
 .addon-toggle input{accent-color:var(--green);width:15px;height:15px;margin:0}
