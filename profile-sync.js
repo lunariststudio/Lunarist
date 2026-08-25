@@ -179,16 +179,3 @@
   }, 1000);
   window.addEventListener('beforeunload', () => { clearInterval(installTimer); clearInterval(avatarTimer); });
 })();
-
-// Dedicated User/Client Space loader.
-(function(){
-  if(typeof window==='undefined') return;
-  if(document.getElementById('lunarist-client-space-script')) return;
-  const s=document.createElement('script');
-  s.id='lunarist-client-space-script';
-  s.src='/client-space.js';
-  s.async=false;
-  s.onload=()=>{try{window.__lunaristClientSpaceLoaded=true}catch(e){}};
-  s.onerror=()=>console.warn('[Lunarist] Client Space script could not be loaded.');
-  document.head.appendChild(s);
-})();
