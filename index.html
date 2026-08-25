@@ -112,12 +112,19 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
 .lunarist-direct-label{display:inline-flex;align-items:center;gap:6px;margin-top:8px;color:#ffc9ea;font-size:11px;font-weight:800;letter-spacing:.02em}
 
+/* Drag-to-reorder polish (My Projects list, Services list, and linked-project examples) */
+.drag-handle{cursor:grab;color:var(--muted);font-size:14px;line-height:1;padding:0 2px;flex:0 0 auto;user-select:none;touch-action:none}
+.drag-handle:active{cursor:grabbing}
+.listitem.draggable,.portfolio-check-item.draggable{transition:opacity .15s,transform .15s}
+.listitem.draggable.dragging,.portfolio-check-item.draggable.dragging{opacity:.45}
+
 /* Portfolio examples picker polish */
-.portfolio-check-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);cursor:pointer;transition:border-color .2s,background .2s}
+.portfolio-check-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);transition:border-color .2s,background .2s}
 .portfolio-check-item:hover{border-color:var(--moon);background:rgba(255,255,255,.045)}
 .portfolio-check-item input{flex:0 0 auto;width:16px;height:16px;accent-color:var(--moon);cursor:pointer}
 .portfolio-check-thumb{flex:0 0 auto;width:64px;aspect-ratio:16/10;object-fit:cover;border-radius:8px;background:#000}
 .portfolio-check-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;text-transform:none;letter-spacing:normal;color:var(--text)}
+.portfolio-check-label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
 /* Service add-ons editor polish */
 .service-addons-field{gap:12px!important;padding:16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));}
 .service-addons-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
@@ -992,14 +999,15 @@ async function openDashboard(initialTab='overview'){
   
   const [{data:ps},{data:ss},{data:clientCommissions,error:commissionError}]=await Promise.all([
     supabaseClient.from('projects').select('*').eq('owner_id',m.id).order('created_at',{ascending:false}),
-    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,status,published,featured,views,add_ons,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('created_at',{ascending:false}),
+    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,status,published,featured,views,add_ons,position,created_at,updated_at,service_projects(project_id,position)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('created_at',{ascending:false}).order('position',{ascending:true,foreignTable:'service_projects'}),
     supabaseClient.from('commissions').select('id,service_id,artist_id,client_id,status,payment_type,deposit_amount,total_amount,amount,currency,target_deadline,created_at,updated_at,project_title,client_name,company,paypal_order_id,paypal_capture_id,service:service_id(id,title,thumbnail_url),artist:artist_id(id,display_name,username,avatar_url),client_reviews(id,rating,review,published,created_at)').eq('client_id',m.id).order('created_at',{ascending:false})
   ]);
   state.myCommissions=clientCommissions||[];
   state.myCommissionError=commissionError?.message||null;
   
   state.myProjects=(ps||[]).sort((a,b)=>(a.position||0)-(b.position||0));
-  const userServices = (ss && ss.length) ? ss : data.services.filter(s => s.member === m.id);
+  const userServices = ((ss && ss.length) ? ss : data.services.filter(s => s.member === m.id)).slice().sort((a,b)=>(a.position||0)-(b.position||0));
+  state.myServices=userServices;
 
   const themeOptions = [
     { key: 'moonlight', name: 'Moonlight', c1: '#c9b6ff', c2: '#ff86c8' },
@@ -1066,7 +1074,7 @@ async function openDashboard(initialTab='overview'){
     </div>
   `;
   
-  document.getElementById('dash-services').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My services</div><h3 style="margin:4px 0">Offer commissions & packages</h3></div><button class="btn primary" id="addService">+ New service</button></div><div id="serviceList" style="margin-top:12px">${userServices.length?userServices.map(s=>`<div class="listitem"><img class="listthumb" src="${esc(s.thumbnail_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(s.title)}</b><div class="meta">${esc(s.category)} · ${esc(s.status||(s.published?'published':'draft'))} · ${(s.service_projects||s.projectIds||[]).length} linked project(s)</div></div><button class="btn" data-edit-service="${s.id}">Edit</button></div>`).join(''):emptyState('No services yet.','List a service artists can hire you for.')}</div><div id="serviceForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can offer services.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create services.')}</div>`;
+  document.getElementById('dash-services').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My services</div><h3 style="margin:4px 0">Offer commissions & packages</h3></div><button class="btn primary" id="addService">+ New service</button></div><div id="serviceList" style="margin-top:12px">${userServices.length?userServices.map((s,idx)=>`<div class="listitem draggable" draggable="true" data-id="${s.id}" data-index="${idx}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(s.thumbnail_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(s.title)}</b><div class="meta">${esc(s.category)} · ${esc(s.status||(s.published?'published':'draft'))} · ${(s.service_projects||s.projectIds||[]).length} linked project(s)</div></div><button class="btn" data-edit-service="${s.id}">Edit</button></div>`).join(''):emptyState('No services yet.','List a service artists can hire you for.')}</div><div id="serviceForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can offer services.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create services.')}</div>`;
   document.getElementById('drawer').classList.add('open');
   bindDashboard(state.myProjects,userServices)
 }
@@ -1410,22 +1418,25 @@ function bindDashboard(ps,ss){
   document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)));
 
   setupProjectDragAndDrop();
+  setupServiceDragAndDrop();
 }
 
-function setupProjectDragAndDrop(){
-  const container=document.getElementById('projectList');
+// Generic drag-to-reorder mechanics shared by My Projects, Services, and the
+// linked-project examples picker inside the service editor. `onDropCallback`
+// (if provided) runs once per drop, after the DOM has already been reordered.
+function makeDraggableList(container,itemSelector,onDropCallback){
   if(!container)return;
 
-  container.querySelectorAll('.listitem.draggable').forEach(item=>{
+  container.querySelectorAll(itemSelector).forEach(item=>{
     item.addEventListener('dragstart',(e)=>{
       item.classList.add('dragging');
       e.dataTransfer.effectAllowed='move';
-      e.dataTransfer.setData('text/plain',item.dataset.id);
+      e.dataTransfer.setData('text/plain',item.dataset.id||'');
     });
 
     item.addEventListener('dragend',async()=>{
       item.classList.remove('dragging');
-      await saveNewProjectOrder();
+      if(typeof onDropCallback==='function')await onDropCallback();
     });
 
     item.addEventListener('dragover',(e)=>{
@@ -1439,8 +1450,12 @@ function setupProjectDragAndDrop(){
       container.insertBefore(draggingItem,next?item.nextSibling:item);
     });
   });
+}
 
-  async function saveNewProjectOrder(){
+function setupProjectDragAndDrop(){
+  const container=document.getElementById('projectList');
+  if(!container)return;
+  makeDraggableList(container,'.listitem.draggable',async()=>{
     const items=Array.from(container.querySelectorAll('.listitem.draggable'));
     const updates=items.map((el,index)=>({
       id:el.dataset.id,
@@ -1460,13 +1475,51 @@ function setupProjectDragAndDrop(){
     }
     toast('Project order saved');
     await loadData();
-  }
+  });
+}
+
+function setupServiceDragAndDrop(){
+  const container=document.getElementById('serviceList');
+  if(!container)return;
+  makeDraggableList(container,'.listitem.draggable',async()=>{
+    const items=Array.from(container.querySelectorAll('.listitem.draggable'));
+    const updates=items.map((el,index)=>({
+      id:el.dataset.id,
+      position:index+1
+    }));
+
+    if(state.myServices&&state.myServices.length){
+      state.myServices.sort((a,b)=>{
+        const idxA=updates.findIndex(u=>u.id===a.id);
+        const idxB=updates.findIndex(u=>u.id===b.id);
+        return idxA-idxB;
+      });
+    }
+
+    for(const update of updates){
+      await supabaseClient.from('services').update({position:update.position}).eq('id',update.id);
+    }
+    toast('Service order saved');
+    await loadData();
+  });
+}
+
+// Reordering the linked-project examples inside the service editor doesn't
+// write to Supabase on every drop — it's part of an unsaved form, so the new
+// order is simply read back from the DOM (via checked checkboxes, in document
+// order) when the artist clicks "Save changes".
+function setupPortfolioExamplesDragAndDrop(){
+  const container=document.getElementById('portfolioExamplesList');
+  makeDraggableList(container,'.portfolio-check-item.draggable');
 }
 
 function showServiceForm(existing=null){
   const f=document.getElementById('serviceForm');if(!f)return;
   const myProjects=state.myProjects||[];
-  const linked=new Set((existing?.service_projects||existing?.projectIds||[]).map(x=>typeof x==='object'?x.project_id:x));
+  const linkedLinks=(existing?.service_projects||existing?.projectIds||[]).map(x=>typeof x==='object'?x:{project_id:x,position:0});
+  const linkedOrder=linkedLinks.slice().sort((a,b)=>(a.position||0)-(b.position||0)).map(x=>x.project_id);
+  const linked=new Set(linkedOrder);
+  const orderedPortfolioProjects=[...linkedOrder.map(id=>myProjects.find(p=>p.id===id)).filter(Boolean),...myProjects.filter(p=>!linked.has(p.id))];
   const isMember=state.currentMember?.account_type==='member'||state.currentMember?.is_admin;
   const existingAddons = Array.isArray(existing?.add_ons) ? existing.add_ons : [];
 
@@ -1501,7 +1554,7 @@ function showServiceForm(existing=null){
     </div>
     <button type="button" class="btn addon-add-btn" id="addAddonRowBtn">+ Add extra option</button>
   </div>
-  <div class="field full"><label>Portfolio examples</label><div class="meta">Link your published projects as samples of this service.</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto">${myProjects.length?myProjects.map(p=>`<label class="portfolio-check-item"><input type="checkbox" class="svProjectLink" value="${p.id}" ${linked.has(p.id)?'checked':''}><img src="${esc(p.thumbnail_url||p.media_url||'')}" class="portfolio-check-thumb" onerror="handleImageError(this)"><span style="font-weight:600">${esc(p.title)}</span></label>`).join(''):'<span class="meta">Create a project first to link it here.</span>'}</div></div></div><div class="heroactions"><button class="btn primary" id="saveService">${existing?'Save changes':'Create service'}</button>${existing?`<button class="btn" id="deleteService">Delete</button>`:''}<button class="btn" id="cancelService">Cancel</button></div><p id="serviceMsg" style="color:var(--muted)"></p></div>`;
+  <div class="field full"><label>Portfolio examples</label><div class="meta">Link your published projects as samples of this service. Drag ⋮⋮ to set the order they appear in.</div><div id="portfolioExamplesList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto">${orderedPortfolioProjects.length?orderedPortfolioProjects.map(p=>`<div class="portfolio-check-item draggable" draggable="true" data-id="${p.id}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><label class="portfolio-check-label"><input type="checkbox" class="svProjectLink" value="${p.id}" ${linked.has(p.id)?'checked':''}><img src="${esc(p.thumbnail_url||p.media_url||'')}" class="portfolio-check-thumb" onerror="handleImageError(this)"><span style="font-weight:600">${esc(p.title)}</span></label></div>`).join(''):'<span class="meta">Create a project first to link it here.</span>'}</div></div></div><div class="heroactions"><button class="btn primary" id="saveService">${existing?'Save changes':'Create service'}</button>${existing?`<button class="btn" id="deleteService">Delete</button>`:''}<button class="btn" id="cancelService">Cancel</button></div><p id="serviceMsg" style="color:var(--muted)"></p></div>`;
   
   const defaultCats=['Motion Design','3D Modeling','Branding','UI/UX Design','Illustration','Video Editing'];
   const existingCats=Array.from(new Set([...defaultCats,...(data.services||[]).map(s=>s.category).filter(Boolean),...(existing?.category?[existing.category]:[])])).sort();
@@ -1555,6 +1608,7 @@ function showServiceForm(existing=null){
   document.querySelectorAll('.addonRow').forEach(setupAddonRow);
   document.getElementById('addAddonRowBtn').onclick = () => addAddonRow();
   refreshServiceEditorPrice();
+  setupPortfolioExamplesDragAndDrop();
 
   document.getElementById('cancelService').onclick=()=>f.innerHTML='';
   document.getElementById('saveService').onclick=async()=>{
@@ -1595,11 +1649,16 @@ function showServiceForm(existing=null){
     if(result.error){document.getElementById('serviceMsg').textContent=result.error.message;return}
     
     const serviceId=result.data.id;
-    const checked=new Set(checkedProjectIds);
-    const toAdd=[...checked].filter(id=>!linked.has(id));
-    const toRemove=[...linked].filter(id=>!checked.has(id));
-    if(toAdd.length){const r=await supabaseClient.from('service_projects').insert(toAdd.map(project_id=>({service_id:serviceId,project_id})));if(r.error){toast(r.error.message)}}
-    if(toRemove.length){const r=await supabaseClient.from('service_projects').delete().eq('service_id',serviceId).in('project_id',toRemove);if(r.error){toast(r.error.message)}}
+    // checkedProjectIds is read from the DOM in document order, so it already reflects
+    // any drag-and-drop reordering of the portfolio examples list above. Replacing the
+    // full link set (rather than only diffing adds/removes) lets us persist that order.
+    const {error:clearLinksError}=await supabaseClient.from('service_projects').delete().eq('service_id',serviceId);
+    if(clearLinksError){toast(clearLinksError.message)}
+    if(checkedProjectIds.length){
+      const linkRows=checkedProjectIds.map((project_id,index)=>({service_id:serviceId,project_id,position:index+1}));
+      const {error:insertLinksError}=await supabaseClient.from('service_projects').insert(linkRows);
+      if(insertLinksError){toast(insertLinksError.message)}
+    }
     
     toast(existing?'Service updated':'Service created');
     await loadData();
@@ -2261,7 +2320,7 @@ async function loadData(){
       media_type:x.media_type
     }));
 
-    data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));
+    data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).slice().sort((a,b)=>(a.position||0)-(b.position||0)).map(sp=>sp.project_id)}));
     
     state.backendReady=true;
     if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}
