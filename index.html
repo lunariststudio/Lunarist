@@ -111,6 +111,34 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .lunarist-direct-badge{background:linear-gradient(135deg,rgba(255,112,196,.22),rgba(201,182,255,.2));border:1px solid rgba(255,150,218,.55);color:#ffd5f1;box-shadow:0 6px 20px rgba(255,112,196,.12);font-weight:800;letter-spacing:.02em}
 .thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
 .lunarist-direct-label{display:inline-flex;align-items:center;gap:6px;margin-top:8px;color:#ffc9ea;font-size:11px;font-weight:800;letter-spacing:.02em}
+
+/* Service add-ons editor polish */
+.service-addons-field{gap:12px!important;padding:16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));}
+.service-addons-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.service-addons-heading>div:first-child>label{display:block;font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;font-weight:800;margin-bottom:2px}
+.addon-count-badge{flex:0 0 auto;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.035);color:var(--muted);font-size:11px;font-weight:700}
+#addonContainer{gap:10px!important}
+.addon-row-shell{padding:12px!important;border:1px solid var(--line)!important;border-radius:15px!important;background:rgba(8,7,13,.42)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);transition:border-color .2s,background .2s,box-shadow .2s}
+.addon-row-shell:focus-within{border-color:rgba(201,182,255,.48)!important;background:rgba(201,182,255,.035)!important;box-shadow:0 0 0 3px rgba(201,182,255,.06),inset 0 1px 0 rgba(255,255,255,.04)}
+.addon-main-row{display:grid;grid-template-columns:auto minmax(180px,2fr) minmax(150px,1.15fr) minmax(110px,.75fr) 38px;gap:9px;align-items:end}
+.addon-toggle{height:42px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.addon-toggle:has(input:checked){color:var(--green);border-color:rgba(142,224,186,.3);background:rgba(142,224,186,.06)}
+.addon-toggle input{accent-color:var(--green);width:15px;height:15px;margin:0}
+.addon-title-wrap,.addon-type-wrap,.addon-price-wrap{display:flex;flex-direction:column;gap:5px;min-width:0}
+.addon-mini-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:800}
+.addon-title,.addon-type,.addon-price{height:42px!important;margin:0!important}
+.addon-type{appearance:auto}
+.addon-remove{width:42px;height:42px;padding:0!important;display:grid;place-items:center;border-radius:11px!important;color:var(--muted)!important;font-size:18px!important}
+.addon-remove:hover{color:var(--danger)!important;border-color:rgba(255,125,142,.4)!important;background:rgba(255,125,142,.07)!important}
+.addon-duration-settings{grid-template-columns:minmax(220px,1.5fr) minmax(130px,.6fr) minmax(130px,.6fr);gap:10px;margin-top:10px!important;padding:12px;border:1px dashed rgba(201,182,255,.24);border-radius:12px;background:rgba(201,182,255,.035)}
+.addon-duration-intro{display:flex;align-items:center;gap:9px;min-width:0}
+.addon-duration-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:rgba(201,182,255,.1);color:var(--moon);font-size:16px;flex:0 0 auto}
+.addon-duration-intro b,.addon-duration-intro span{display:block}.addon-duration-intro b{font-size:12px}.addon-duration-intro span{font-size:10px;color:var(--muted);margin-top:2px}
+.addon-setting{display:flex;flex-direction:column;gap:5px}.addon-setting>span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.addon-setting-input{position:relative}.addon-setting-input input{padding-right:40px!important}.addon-setting-input em{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-size:10px;color:var(--muted);pointer-events:none}
+.addon-add-btn{margin-top:2px!important;border-style:dashed!important;background:rgba(255,255,255,.025)!important;color:var(--moon)!important}
+.addon-add-btn:hover{background:rgba(201,182,255,.07)!important}
+@media(max-width:760px){.addon-main-row{grid-template-columns:1fr 1fr}.addon-toggle{grid-column:1/-1;width:max-content}.addon-title-wrap{grid-column:1/-1}.addon-type-wrap,.addon-price-wrap{grid-column:span 1}.addon-remove{position:absolute;right:10px;top:10px}.addon-row-shell{position:relative;padding-top:12px!important}.addon-duration-settings{grid-template-columns:1fr 1fr}.addon-duration-intro{grid-column:1/-1}.service-addons-heading{align-items:flex-start}.addon-count-badge{font-size:10px}}
 </style>
 <script>
 // Global Error Boundary & Graceful Handling
@@ -1395,38 +1423,35 @@ function showServiceForm(existing=null){
   const existingAddons = Array.isArray(existing?.add_ons) ? existing.add_ons : [];
 
   f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} service</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="svTitle" value="${esc(existing?.title||'')}" placeholder="Motion design package"></div><div class="field"><label>Category</label><select id="svCategorySelect"></select><input id="svCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="svTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="svDesc">${esc(existing?.description||'')}</textarea></div><div class="field"><label>Starting price</label><input id="svPrice" value="${esc(existing?.price_from||'')}" placeholder="$300"><div id="svAutoPricePreview" class="meta" style="margin-top:8px;color:var(--gold);font-weight:800">Automatic total: $0.00</div></div><div class="field"><label>Delivery time</label><input id="svDelivery" value="${esc(existing?.delivery_time||'')}" placeholder="5–7 days"></div><div class="field full"><label>Thumbnail URL</label><input id="svThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="svThumbFile" type="file" accept="image/*"></div><div class="field"><label>Status</label><select id="svStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div>
-  <div class="field full">
-    <label>Service Add-ons</label>
-    <div class="meta">Offer extra options such as Commercial License, Rush Order, Extra Revision, or duration-based video pricing.</div>
+  <div class="field full service-addons-field">
+    <div class="service-addons-heading"><div><label>Service Add-ons</label><div class="meta">Give clients optional upgrades or automatic video-duration pricing.</div></div><span class="addon-count-badge" id="addonCountBadge">0 options</span></div>
     <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:10px">
       ${existingAddons.map((ao,i)=>{
         const isDur=addonIsDuration(ao);
         const included=Number(ao.included_seconds??ao.includedSeconds??180)||180;
         const unit=Number(ao.unit_seconds??ao.unitSeconds??30)||30;
         return `
-        <div class="addonRow" style="padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.015)">
-          <div class="row" style="gap:8px;align-items:center">
-            <label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label>
-            <input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(ao.title||'')}" style="flex:2;min-width:140px">
-            <select class="aoType" style="flex:1;min-width:125px">
+        <div class="addonRow addon-row-shell">
+          <div class="addon-main-row">
+            <label class="addon-toggle"><input type="checkbox" class="aoEnabled" checked><span>Enabled</span></label>
+            <div class="addon-title-wrap"><span class="addon-mini-label">Add-on name</span><input class="aoTitle addon-title" placeholder="e.g. Commercial License" value="${esc(ao.title||'')}"></div>
+            <div class="addon-type-wrap"><span class="addon-mini-label">Pricing type</span><select class="aoType addon-type">
               <option value="fixed" ${(!isDur&&(!ao.type||ao.type==='fixed'))?'selected':''}>Fixed ($)</option>
               <option value="percent" ${(!isDur&&ao.type==='percent')?'selected':''}>Percentage (%)</option>
               <option value="duration" ${isDur?'selected':''}>Video duration</option>
-            </select>
-            <input class="aoPrice" type="number" placeholder="${isDur?'Charge per interval':ao.type==='percent'?'Percent (%)':'Price ($)'}" value="${ao.price??''}" style="flex:1;min-width:100px">
-            <button type="button" class="btn removeAddonBtn">×</button>
+            </select></div>
+            <div class="addon-price-wrap"><span class="addon-mini-label">Price</span><input class="aoPrice addon-price" type="number" placeholder="${isDur?'Per interval':ao.type==='percent'?'Percent':'Price'}" value="${ao.price??''}"></div>
+            <button type="button" class="btn removeAddonBtn addon-remove" aria-label="Remove add-on">×</button>
           </div>
-          <div class="aoDurationSettings" style="${isDur?'display:flex':'display:none'};gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-            <span class="meta">Included duration</span>
-            <input class="aoIncluded" type="number" min="0" step="30" value="${included}" style="width:110px" title="Included seconds">
-            <span class="meta">seconds, then</span>
-            <input class="aoUnit" type="number" min="1" step="1" value="${unit}" style="width:100px" title="Charge interval in seconds">
-            <span class="meta">seconds per charge interval</span>
+          <div class="aoDurationSettings addon-duration-settings" style="${isDur?'display:grid':'display:none'}">
+            <div class="addon-duration-intro"><span class="addon-duration-icon">◷</span><div><b>Video duration pricing</b><span>Charge extra time automatically at checkout.</span></div></div>
+            <label class="addon-setting"><span>Included time</span><div class="addon-setting-input"><input class="aoIncluded" type="number" min="0" step="30" value="${included}" title="Included seconds"><em>sec</em></div></label>
+            <label class="addon-setting"><span>Charge every</span><div class="addon-setting-input"><input class="aoUnit" type="number" min="1" step="1" value="${unit}" title="Charge interval in seconds"><em>sec</em></div></label>
           </div>
         </div>`;
       }).join('')}
     </div>
-    <button type="button" class="btn" id="addAddonRowBtn" style="margin-top:8px;align-self:flex-start">+ Add extra option</button>
+    <button type="button" class="btn addon-add-btn" id="addAddonRowBtn">+ Add extra option</button>
   </div>
   <div class="field full"><label>Portfolio examples</label><div class="meta">Link your published projects as samples of this service.</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto">${myProjects.length?myProjects.map(p=>`<label class="portfolio-check-item"><input type="checkbox" class="svProjectLink" value="${p.id}" ${linked.has(p.id)?'checked':''}><img src="${esc(p.thumbnail_url||p.media_url||'')}" class="portfolio-check-thumb" onerror="handleImageError(this)"><span style="font-weight:600">${esc(p.title)}</span></label>`).join(''):'<span class="meta">Create a project first to link it here.</span>'}</div></div></div><div class="heroactions"><button class="btn primary" id="saveService">${existing?'Save changes':'Create service'}</button>${existing?`<button class="btn" id="deleteService">Delete</button>`:''}<button class="btn" id="cancelService">Cancel</button></div><p id="serviceMsg" style="color:var(--muted)"></p></div>`;
   
@@ -1444,7 +1469,7 @@ function showServiceForm(existing=null){
     const settings=row.querySelector('.aoDurationSettings');
     const update=()=>{
       const type=typeSel?.value||'fixed';
-      if(settings) settings.style.display=type==='duration'?'flex':'none';
+      if(settings) settings.style.display=type==='duration'?'grid':'none';
       if(price) price.placeholder=type==='duration'?'Charge per interval':type==='percent'?'Percent (%)':'Price ($)';
       refreshServiceEditorPrice();
     };
@@ -1456,9 +1481,8 @@ function showServiceForm(existing=null){
 
   const addAddonRow = (title='', price='', type='fixed', included=180, unit=30) => {
     const row = document.createElement('div');
-    row.className = 'addonRow';
-    row.style.cssText = 'padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.015)';
-    row.innerHTML = `<div class="row" style="gap:8px;align-items:center"><label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="aoEnabled" checked> On</label><input class="aoTitle" placeholder="Add-on title (e.g. Commercial License)" value="${esc(title)}" style="flex:2;min-width:140px"><select class="aoType" style="flex:1;min-width:125px"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option><option value="duration" ${type==='duration'?'selected':''}>Video duration</option></select><input class="aoPrice" type="number" placeholder="${type==='duration'?'Charge per interval':type==='percent'?'Percent (%)':'Price ($)'}" value="${price}" style="flex:1;min-width:100px"><button type="button" class="btn removeAddonBtn">×</button></div><div class="aoDurationSettings" style="${type==='duration'?'display:flex':'display:none'};gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><span class="meta">Included duration</span><input class="aoIncluded" type="number" min="0" step="30" value="${included}" style="width:110px"><span class="meta">seconds, then</span><input class="aoUnit" type="number" min="1" step="1" value="${unit}" style="width:100px"><span class="meta">seconds per charge interval</span></div>`;
+    row.className = 'addonRow addon-row-shell';
+    row.innerHTML = `<div class="addon-main-row"><label class="addon-toggle"><input type="checkbox" class="aoEnabled" checked><span>Enabled</span></label><div class="addon-title-wrap"><span class="addon-mini-label">Add-on name</span><input class="aoTitle addon-title" placeholder="e.g. Commercial License" value="${esc(title)}"></div><div class="addon-type-wrap"><span class="addon-mini-label">Pricing type</span><select class="aoType addon-type"><option value="fixed" ${type==='fixed'?'selected':''}>Fixed ($)</option><option value="percent" ${type==='percent'?'selected':''}>Percentage (%)</option><option value="duration" ${type==='duration'?'selected':''}>Video duration</option></select></div><div class="addon-price-wrap"><span class="addon-mini-label">Price</span><input class="aoPrice addon-price" type="number" placeholder="${type==='duration'?'Per interval':type==='percent'?'Percent':'Price'}" value="${price}"></div><button type="button" class="btn removeAddonBtn addon-remove" aria-label="Remove add-on">×</button></div><div class="aoDurationSettings addon-duration-settings" style="${type==='duration'?'display:grid':'display:none'}"><div class="addon-duration-intro"><span class="addon-duration-icon">◷</span><div><b>Video duration pricing</b><span>Charge extra time automatically at checkout.</span></div></div><label class="addon-setting"><span>Included time</span><div class="addon-setting-input"><input class="aoIncluded" type="number" min="0" step="30" value="${included}"><em>sec</em></div></label><label class="addon-setting"><span>Charge every</span><div class="addon-setting-input"><input class="aoUnit" type="number" min="1" step="1" value="${unit}"><em>sec</em></div></label></div>`;
     addonContainer.appendChild(row);
     setupAddonRow(row);
   };
@@ -1475,6 +1499,8 @@ function showServiceForm(existing=null){
     });
     const el=document.getElementById('svAutoPricePreview');
     if(el)el.textContent='Automatic total: $'+total.toFixed(2)+(rows.some(r=>r.querySelector('.aoType')?.value==='duration'&&r.querySelector('.aoEnabled')?.checked!==false)?' + duration add-on calculated at inquiry':'')+' (base + add-ons)';
+    const badge=document.getElementById('addonCountBadge');
+    if(badge){const active=rows.filter(r=>r.querySelector('.aoEnabled')?.checked!==false).length;badge.textContent=rows.length+' option'+(rows.length===1?'':'s')+(active!==rows.length?' · '+active+' active':'');}
   }
 
   document.getElementById('svPrice')?.addEventListener('input',refreshServiceEditorPrice);
