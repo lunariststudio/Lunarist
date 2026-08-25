@@ -212,8 +212,9 @@ function serviceCard(s){const m=member(s.member);return `<article class="card" d
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
 function money(v){const n=Number(String(v??'').replace(/[^0-9.]/g,''));return Number.isFinite(n)&&n>0?n:0}
-function addonIsDuration(ao){return ao?.type==='duration'||ao?.duration===true||Number(ao?.included_seconds||ao?.includedSeconds||0)>0||Number(ao?.unit_seconds||ao?.unitSeconds||0)>0}
-function addonDurationConfig(ao){return {included:Number(ao?.included_seconds??ao?.includedSeconds??0)||0,unit:Number(ao?.unit_seconds??ao?.unitSeconds??30)||30,price:Number(ao?.price||0)||0}}
+function isVideoDurationAddon(ao){const t=String(ao?.title||'').toLowerCase();return /video\s+over\s+3\s+minutes/.test(t)||/3\s*minutes.*30\s*sec/.test(t)||/30\s*sec.*3\s*minutes/.test(t)}
+function addonIsDuration(ao){return ao?.type==='duration'||ao?.duration===true||Number(ao?.included_seconds||ao?.includedSeconds||0)>0||Number(ao?.unit_seconds||ao?.unitSeconds||0)>0||isVideoDurationAddon(ao)}
+function addonDurationConfig(ao){const inferred=isVideoDurationAddon(ao);return {included:Number(ao?.included_seconds??ao?.includedSeconds??(inferred?180:0))||0,unit:Number(ao?.unit_seconds??ao?.unitSeconds??(inferred?30:30))||30,price:Number(ao?.price??(inferred?10:0))||0}}
 function addonDurationAmount(ao,durationSeconds){const c=addonDurationConfig(ao);const d=Math.max(0,Number(durationSeconds)||0);if(!d||d<=c.included)return 0;return Math.ceil((d-c.included)/c.unit)*c.price}
 function addonAmount(base,ao,extra){
   const n=Number(ao?.price||0);
@@ -347,7 +348,7 @@ function openService(id){
   const s=data.services.find(x=>x.id===id);if(!s)return;
   const m=member(s.member);
   const examples=(s.projectIds||[]).map(pid=>data.projects.find(p=>p.id===pid)).filter(Boolean);
-  const addOns = Array.isArray(s.add_ons) ? s.add_ons : [];
+  const addOns = (Array.isArray(s.add_ons) ? s.add_ons : []).map(ao=>isVideoDurationAddon(ao)?{...ao,type:'duration',duration:true,included_seconds:Number(ao.included_seconds??180)||180,unit_seconds:Number(ao.unit_seconds??30)||30,price:Number(ao.price??10)||10}:ao);
   const basePrice = parseFloat(String(s.price_from||'0').replace(/[^0-9.]/g,''))||0;
   const canCheckout = basePrice>0;
 
@@ -1470,7 +1471,7 @@ function showServiceForm(existing=null){
       const p = parseFloat(r.querySelector('.aoPrice').value);
       const ty = r.querySelector('.aoType')?.value === 'percent' ? 'percent' : 'fixed';
       const enabled = r.querySelector('.aoEnabled')?.checked !== false;
-      return (enabled && t && !isNaN(p)) ? { title: t, price: p, type: ty } : null;
+      const duration=/video\s+over\s+3\s+minutes/i.test(t)||/3\s*minutes.*30\s*sec/i.test(t)||/30\s*sec.*3\s*minutes/i.test(t); return (enabled && t && !isNaN(p)) ? (duration ? { title:t, price:p||10, type:'duration', duration:true, included_seconds:180, unit_seconds:30 } : { title: t, price: p, type: ty }) : null;
     }).filter(Boolean);
 
     const thumbFile=document.getElementById('svThumbFile').files?.[0]||null;
