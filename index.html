@@ -141,7 +141,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .addon-setting-input{position:relative}.addon-setting-input input{padding-right:40px!important}.addon-setting-input em{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-size:10px;color:var(--muted);pointer-events:none}
 .addon-add-btn{margin-top:2px!important;border-style:dashed!important;background:rgba(255,255,255,.025)!important;color:var(--moon)!important}
 .addon-add-btn:hover{background:rgba(201,182,255,.07)!important}
-@media(max-width:760px){.addon-main-row{grid-template-columns:1fr 1fr}.addon-toggle{grid-column:1/-1;width:max-content}.addon-title-wrap{grid-column:1/-1}.addon-type-wrap,.addon-price-wrap{grid-column:span 1}.addon-remove{position:absolute;right:10px;top:10px}.addon-row-shell{position:relative;padding-top:12px!important}.addon-duration-settings{grid-template-columns:1fr 1fr}.addon-duration-intro{grid-column:1/-1}.service-addons-heading{align-items:flex-start}.addon-count-badge{font-size:10px}}
+@media(max-width:760px){.addon-main-row{display:flex;flex-direction:column;gap:8px}.addon-toggle{width:max-content}.addon-remove{position:absolute;right:10px;top:10px}.addon-row-shell{position:relative;padding-top:12px!important}.addon-duration-settings{grid-template-columns:1fr 1fr}.addon-duration-intro{grid-column:1/-1}.service-addons-heading{align-items:flex-start}.addon-count-badge{font-size:10px}}
 </style>
 <script>
 // Global Error Boundary & Graceful Handling
@@ -2424,6 +2424,5 @@ async function capturePaypalReturnIfPresent(){
 }
 (async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
-<script src="/profile-sync.js"></script>
 </body>
 </html>
