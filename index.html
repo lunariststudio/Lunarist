@@ -695,7 +695,8 @@ async function loadArtistReviews(artistId){
   wrap.innerHTML=reviews.map(r=>{const c=r.client||{};return `<div class="panel" style="padding:18px"><div class="row"><img class="avatar" style="width:34px;height:34px" src="${esc(c.avatar_url||'https://i.pravatar.cc/160?u='+c.username)}" onerror="handleImageError(this)"><div class="grow"><b>${esc(c.display_name||c.username||'Client')}</b><div class="meta">${new Date(r.created_at).toLocaleDateString()}</div></div><span style="color:var(--gold);font-size:16px">${'★'.repeat(Number(r.rating||0))}${'☆'.repeat(5-Number(r.rating||0))}</span></div><p style="margin:12px 0 0;color:var(--muted)">${esc(r.review)}</p></div>`}).join('');
 }
 
-function render(){
+function render(preserveScroll){
+  const _scrollY=preserveScroll?window.scrollY:0;
   document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));
   if(!state.route.startsWith('member:')){ 
     applyTheme(state.currentMember?.theme || 'moonlight');
@@ -714,7 +715,7 @@ function render(){
   if(state.route==='commissions') renderClientCommissionsTab();
   if(state.route==='admin') renderAdminStudioPage();
   applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
-  window.scrollTo({top:0,behavior:'instant'})
+  window.scrollTo({top:preserveScroll?_scrollY:0,behavior:'instant'})
 }
 
 function bind(){
@@ -729,9 +730,9 @@ function bind(){
     const conv = await createOrGetConversation(m.id);
     if(conv) { openDashboard(); switchDashTab('messages'); selectConversation(conv.id); }
   });
-  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});
-  const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render()};
-  document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render()});
+  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render(true)});
+  const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render(true)};
+  document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render(true)});
   document.getElementById('retryBtn')?.addEventListener('click',()=>loadData());
 
   document.getElementById('notifToggleBtn')?.addEventListener('click', () => {
@@ -2237,7 +2238,7 @@ async function loadData(){
           if (res && res.viewCount !== undefined && res.viewCount !== null) {
             p.views = Number(res.viewCount);
             supabaseClient.from('projects').update({ views: p.views }).eq('id', p.id).then(() => {});
-            render();
+            render(true);
           }
         } catch(e) {}
       }
