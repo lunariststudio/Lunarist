@@ -3,13 +3,11 @@ const path=require('path');
 const file=path.join(process.cwd(),'index.html');
 if(!fs.existsSync(file))throw new Error('index.html not found');
 let html=fs.readFileSync(file,'utf8');
-const tags=[
-  '<script src="/lunarist-enhancements.js?v=1"></script>',
-  '<script src="/social-links.js?v=2"></script>'
-];
+const requiredScripts=['lunarist-enhancements.js','social-links.js'];
 if(!html.includes('</body>'))throw new Error('index.html has no closing body tag');
-for(const tag of tags){
-  if(!html.includes(tag)) html=html.replace('</body>',`${tag}\n</body>`);
+for(const name of requiredScripts){
+  const alreadyPresent=new RegExp(`<script[^>]*src=["']/${name.replace(/\./g,'\\.')}(\\?[^"']*)?["'][^>]*>`).test(html);
+  if(!alreadyPresent) html=html.replace('</body>',`<script src="/${name}"></script>\n</body>`);
 }
 html=html.replace(/\s*<script src="\/client-route-safety\.js\?v=1"><\/script>\s*/g,'\n');
 fs.writeFileSync(file,html);
