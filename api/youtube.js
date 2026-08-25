@@ -19,7 +19,8 @@ export default async function handler(req, res) {
       description: item.snippet?.description || '',
       publishedAt: item.snippet?.publishedAt || '',
       channelTitle: item.snippet?.channelTitle || '',
-      viewCount: item.statistics?.viewCount ?? null
+      viewCount: item.statistics?.viewCount ?? null,
+      likeCount: item.statistics?.likeCount ?? null
     });
   } catch (e) {
     return res.status(500).json({ error: 'Unable to contact YouTube' });
