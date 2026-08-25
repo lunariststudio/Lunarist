@@ -1,4 +1,4 @@
-name: Inject profile sync hotfix
+name: Inject Lunarist client/profile scripts
 
 on:
   push:
@@ -9,28 +9,36 @@ permissions:
 
 jobs:
   inject:
-    if: ${{ !contains(github.event.head_commit.message, '[profile-sync]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[lunarist-inject]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inject profile sync script
+      - name: Inject required frontend enhancement scripts
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          marker = '<script src="/profile-sync.js"></script>'
-          if marker not in s:
-              needle = '</body>'
-              if needle not in s:
-                  raise SystemExit('index.html has no closing body tag')
-              s = s.replace(needle, marker + '\n' + needle, 1)
-              p.write_text(s, encoding='utf-8')
+          markers = [
+              '<script src="/profile-sync.js"></script>',
+              '<script src="/lunarist-enhancements.js?v=2"></script>',
+              '<script src="/client-space.js?v=2"></script>',
+              '<script src="/client-space-ui.js?v=2"></script>',
+          ]
+          for marker in markers:
+              if marker not in s:
+                  needle = '</body>'
+                  if needle not in s:
+                      raise SystemExit('index.html has no closing body tag')
+                  s = s.replace(needle, marker + '\n' + needle, 1)
+          # Remove stale enhancement tag so the current version is used.
+          s = s.replace('<script src="/lunarist-enhancements.js?v=1"></script>','')
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Commit hotfix
         run: |
           git config user.name 'lunariststudio-bot'
           git config user.email '41898282+lunariststudio[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'fix: authenticated profile sync [profile-sync]'
+          git diff --cached --quiet || git commit -m 'chore: inject client space and profile scripts [lunarist-inject]'
           git push
