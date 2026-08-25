@@ -121,15 +121,29 @@
   const boot=()=>{
     if(typeof supabaseClient==='undefined' || typeof state==='undefined' || typeof data==='undefined') return false;
 
+    function findVideoId(p){
+      if(typeof extractYoutubeId==='function'){
+        return extractYoutubeId(p.media_url)||extractYoutubeId(p.video)||extractYoutubeId(p.thumbnail_url);
+      }
+      const re=/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/;
+      for(const raw of [p.media_url,p.video,p.thumbnail_url]){
+        const s=String(raw||'').trim();
+        if(!s)continue;
+        const m=s.match(re);
+        if(m)return m[1];
+        if(/^[A-Za-z0-9_-]{11}$/.test(s))return s;
+      }
+      return null;
+    }
+
     async function syncYoutubeLikes(){
       if(!Array.isArray(data.projects)||!data.projects.length)return;
       let changed=false;
       for(const p of data.projects){
-        const url=String(p.media_url||p.video||'');
-        const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
-        if(!m)continue;
+        const vid=findVideoId(p);
+        if(!vid)continue;
         try{
-          const r=await fetch('/api/youtube?videoId='+encodeURIComponent(m[1]),{cache:'no-store'});
+          const r=await fetch('/api/youtube?videoId='+encodeURIComponent(vid),{cache:'no-store'});
           if(!r.ok)continue;
           const d=await r.json();
           if(d.likeCount!==undefined&&d.likeCount!==null){const n=Number(d.likeCount);if(Number.isFinite(n)&&p.likes!==n){p.likes=n;changed=true;supabaseClient.from('projects').update({likes:n}).eq('id',p.id).then(()=>{})}}
