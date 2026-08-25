@@ -2364,5 +2364,6 @@ async function capturePaypalReturnIfPresent(){
 }
 (async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
 </script>
+<script src="/profile-sync.js"></script>
 </body>
 </html>
