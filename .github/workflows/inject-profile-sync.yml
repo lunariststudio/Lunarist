@@ -24,6 +24,7 @@ jobs:
               '<script src="/lunarist-enhancements.js?v=2"></script>',
               '<script src="/client-space.js?v=2"></script>',
               '<script src="/client-space-ui.js?v=2"></script>',
+              '<script src="/social-links.js?v=1"></script>',
           ]
           for marker in markers:
               if marker not in s:
@@ -31,7 +32,6 @@ jobs:
                   if needle not in s:
                       raise SystemExit('index.html has no closing body tag')
                   s = s.replace(needle, marker + '\n' + needle, 1)
-          # Remove stale enhancement tag so the current version is used.
           s = s.replace('<script src="/lunarist-enhancements.js?v=1"></script>','')
           p.write_text(s, encoding='utf-8')
           PY
@@ -40,5 +40,5 @@ jobs:
           git config user.name 'lunariststudio-bot'
           git config user.email '41898282+lunariststudio[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'chore: inject client space and profile scripts [lunarist-inject]'
+          git diff --cached --quiet || git commit -m 'chore: inject social profile links [lunarist-inject]'
           git push
