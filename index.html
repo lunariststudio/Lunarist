@@ -104,7 +104,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="saved" data-i18n="savedTab">Saved 🔖</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-saved"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once. Google signup uses the email entered above.</div></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <style>
@@ -156,7 +156,7 @@ window.addEventListener('error', (e) => {
 });
 
 let supabaseClient=null;
-const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',inviteCode:'',loadError:null,conversations:[],activeConversation:null,notifications:[],myCommissions:[],myCommissionError:null,myReviews:[]};
+const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',inviteCode:'',loadError:null,conversations:[],activeConversation:null,notifications:[],myCommissions:[],myCommissionError:null,myReviews:[],savedIds:new Set()};
 const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
@@ -768,7 +768,7 @@ async function openProject(id){
       <button class="btn" data-modal-member="${m?.id||''}" style="margin-left:auto;font-size:12px;padding:6px 12px">View Artist profile →</button>
     </div>
     <p>${formatDescription(p.desc)}</p>
-    <div class="stats"><span class="stat">👁 ${formatViews(p.views)} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">🔖 Save</button></div>
+    <div class="stats"><span class="stat">👁 ${formatViews(p.views)} views</span><button class="stat" id="likeBtn">♡ ${Number(p.likes||0)} like</button><button class="stat" id="saveBtn">${state.savedIds.has(p.id)?'✅ Saved':'🔖 Save'}</button></div>
     <div class="tags">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     
     ${linkedServices.length?`
@@ -791,7 +791,7 @@ async function openProject(id){
 
   document.getElementById('projectModal').classList.add('open');
   document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};
-  document.getElementById('saveBtn').onclick=()=>{track(p,'save');toast('Saved to this browser')};
+  document.getElementById('saveBtn').onclick=()=>toggleSaveProject(p.id);
   document.querySelector('[data-modal-member]').onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
   document.querySelectorAll('[data-open-service]').forEach(b=>b.onclick=()=>{closeModal();openService(b.dataset.openService)});
 }
@@ -907,18 +907,56 @@ async function refreshUser(){
     document.getElementById('accountName').textContent=state.currentMember?.name||'Member';
     document.getElementById('accountAvatar').outerHTML=`<img class="avatar" id="accountAvatar" src="${esc(state.currentMember?.avatar||'')}" alt="" onerror="handleImageError(this)">`;
     loadUserNotifications();
+    await loadSavedIds();
   }else{
     const navAdmin = document.getElementById('navAdminBtn');
     if(navAdmin) navAdmin.style.display='none';
     document.getElementById('accountName').textContent='Guest';
     document.getElementById('accountAvatar').outerHTML='<span class="avatar" id="accountAvatar">G</span>';
     state.currentMember=null;
+    state.savedIds=new Set();
     applyTheme('moonlight');
   }
 }
 
+async function loadSavedIds(){
+  if(!state.currentUser){state.savedIds=new Set();return}
+  const {data,error}=await supabaseClient.from('saved_projects').select('project_id').eq('user_id',state.currentUser.id);
+  state.savedIds=new Set(error?[]:(data||[]).map(x=>x.project_id));
+}
+
+async function toggleSaveProject(id){
+  if(!state.currentUser){openAuth('signin');return}
+  const p=data.projects.find(x=>x.id===id);
+  const saved=state.savedIds.has(id);
+  const btn=document.getElementById('saveBtn');
+  if(saved){
+    const {error}=await supabaseClient.from('saved_projects').delete().eq('user_id',state.currentUser.id).eq('project_id',id);
+    if(error){toast(error.message);return}
+    state.savedIds.delete(id);
+    if(btn)btn.textContent='🔖 Save';
+    toast('Removed from Saved');
+  }else{
+    const {error}=await supabaseClient.from('saved_projects').insert({user_id:state.currentUser.id,project_id:id});
+    if(error){toast(error.message);return}
+    state.savedIds.add(id);
+    if(btn)btn.textContent='✅ Saved';
+    if(p)track(p,'save');
+    toast('Saved to your account');
+  }
+  if(document.getElementById('drawer')?.classList.contains('open')) renderSavedTab();
+}
+
+function renderSavedTab(){
+  const container=document.getElementById('dash-saved');
+  if(!container) return;
+  const saved=data.projects.filter(p=>state.savedIds.has(p.id));
+  container.innerHTML=`<div class="panel"><div class="eyebrow">Saved</div><h3 style="margin:4px 0">Your saved projects</h3><p class="meta">Projects you've bookmarked, synced to your Lunarist account.</p><div class="grid" id="savedGrid" style="margin-top:16px${saved.length?';grid-template-columns:repeat(2,minmax(0,1fr))':''}">${saved.length?saved.map(p=>card(p)).join(''):emptyState('Nothing saved yet.','Tap 🔖 Save on any project to bookmark it here.')}</div></div>`;
+  container.querySelectorAll('[data-project]').forEach(el=>el.onclick=()=>{closeDash();openProject(el.dataset.project)});
+}
+
 function switchDashTab(tabName) {
-  const valid = ['overview','messages','projects','profile','services'];
+  const valid = ['overview','messages','saved','projects','profile','services'];
   if(!valid.includes(tabName)) tabName='overview';
   document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
   document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
@@ -977,6 +1015,7 @@ async function openDashboard(initialTab='overview'){
   document.getElementById('dash-projects').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My projects</div><h3 style="margin:4px 0">Create and manage work</h3></div><button class="btn primary" id="addProject">+ New project</button></div><div id="projectList" style="margin-top:12px">${(state.myProjects).length?(state.myProjects).map((p,idx)=>`<div class="listitem draggable" draggable="true" data-id="${p.id}" data-index="${idx}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(p.thumbnail_url||p.media_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(p.title)}</b><div class="meta">${esc(p.category)} · ${esc(p.status|| (p.published?'published':'draft'))} · ${formatViews(p.views)} views</div></div><button class="btn" data-edit-project="${p.id}">Edit</button></div>`).join(''):emptyState('No projects yet.','Publish your first piece of work.')}</div><div id="projectForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can publish work.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create and submit projects.')}</div>`;
   
   renderMessagesTab();
+  renderSavedTab();
 
   document.getElementById('dash-profile').innerHTML=`
     <div class="panel">
@@ -2269,7 +2308,7 @@ function updateAccountButton(){
 const I18N={
   en:{
     home:'Home',discover:'Discover',services:'Services',artists:'Artists',myCommissions:'My Commissions',adminStudio:'Admin Studio',
-    overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',servicesTab:'Services',
+    overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',servicesTab:'Services',savedTab:'Saved 🔖',
     memberSpace:'Member space',yourLunarist:'Your Lunarist',directMessaging:'Direct Messaging',activeCollaborations:'Active Collaborations',
     myServices:'My services',myProjects:'My projects',editProfile:'Edit profile',clientDashboard:'Client Dashboard',
     myCommissionsAndReviews:'My commissions & reviews',trackCommissions:'Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.',
@@ -2295,7 +2334,7 @@ const I18N={
   },
   ja:{
     home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',
-    overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',servicesTab:'サービス',
+    overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',servicesTab:'サービス',savedTab:'保存済み 🔖',
     memberSpace:'メンバースペース',yourLunarist:'あなたのLunarist',directMessaging:'ダイレクトメッセージ',activeCollaborations:'進行中のコラボレーション',
     myServices:'マイサービス',myProjects:'マイプロジェクト',editProfile:'プロフィールを編集',clientDashboard:'クライアントダッシュボード',
     myCommissionsAndReviews:'マイ・コミッションとレビュー',trackCommissions:'すべてのコミッションを確認し、納品を承認して、完了後にレビューを投稿できます。',
