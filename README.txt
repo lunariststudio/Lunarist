@@ -1,14 +1,22 @@
-Lunarist YouTube Live Fix
+Lunarist — Instagram + X automatic project fetch
 
-Replace these files in your Lunarist project:
-  index.html
-  api/youtube.js
+This package is based on the full uploaded Lunarist Studio ZIP.
 
-Fixes:
-- Accepts youtube.com/live/VIDEO_ID URLs including ?si= parameters.
-- Fetches YouTube statistics for live videos.
-- Returns normalized likeCount/likes values.
-- Syncs YouTube viewCount and likeCount into the Lunarist project's views/likes fields.
-- Keeps normal watch/embed/shorts/youtu.be URLs working.
+Frontend:
+- index.html updated to automatically detect YouTube, Instagram and X/Twitter URLs in New Project.
+- Automatically fetches metadata and fills title, description, thumbnail, media URL and media type.
+- Shows fetched X metrics (views, likes, reposts) when provided by the API.
+- Keeps the existing YouTube live URL handling.
 
-After replacing the files, commit and push to main. Vercel should deploy automatically.
+API:
+- api/youtube.js is the exact API file from the uploaded ZIP and already handles:
+  YouTube
+  X / Twitter
+  Instagram
+
+Vercel environment variables:
+- YOUTUBE_API_KEY
+- X_BEARER_TOKEN
+- INSTAGRAM_ACCESS_TOKEN
+
+Push these two files to the matching paths in your repository.
