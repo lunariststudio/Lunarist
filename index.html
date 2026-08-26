@@ -100,6 +100,12 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .social-embed-wrap blockquote{margin:0 auto!important;max-width:100%}
 .social-embed-wrap iframe{max-width:100%;border:0}
 </style>
+
+<style id="lunaristSocialFullscreenFix">
+#modalMedia.social-player-fullscreen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;background:#000!important;border-radius:0!important}
+#modalMedia.social-player-fullscreen iframe,#modalMedia.social-player-fullscreen video,#modalMedia.social-player-fullscreen .social-embed-wrap{width:100%!important;height:100%!important;max-width:none!important}
+.social-fullscreen-btn{position:absolute;right:14px;top:14px;z-index:100000;border:0;border-radius:10px;padding:10px 13px;background:rgba(0,0,0,.72);color:#fff;cursor:pointer;font-size:14px}
+</style>
 </head>
 <body>
 <div class="app" id="app">
@@ -442,6 +448,7 @@ function openService(id){
   updateSeoMeta(s.title, s.description, s.thumbnail_url);
 
   document.getElementById('modalMedia').innerHTML=`<img src="${esc(s.thumbnail_url||'')}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
+    window.LunaristSocialPlayerUI?.mountFullscreenButton();
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(s.category)}</div>
     <h2>${esc(s.title)}</h2>
@@ -1803,6 +1810,13 @@ function showProjectForm(existing=null){
       socialFetchedViews=(d.viewCount??d.views??null);
       socialFetchedLikes=(d.likeCount??d.likes??null);
 
+      // Persist fetched metrics into the actual New Project form fields.
+      // Never overwrite with fake zero when a provider does not expose a metric.
+      const viewsEl=document.getElementById('pjViews') || document.querySelector('[name="views"]');
+      const likesEl=document.getElementById('pjLikes') || document.querySelector('[name="likes"]');
+      if(viewsEl && d.views!=null) viewsEl.value=String(Number(d.views));
+      if(likesEl && d.likes!=null) likesEl.value=String(Number(d.likes));
+
       document.getElementById('pjMedia').value=mediaUrl;
       document.getElementById('pjType').value=d.mediaType||mediaType;
 
@@ -2766,5 +2780,28 @@ window.LunaristSocialStableFix = {
 };
 </script>
 
+
+<script>
+window.LunaristSocialPlayerUI = {
+  mountFullscreenButton(){
+    const box=document.getElementById('modalMedia');
+    if(!box || box.querySelector('.social-fullscreen-btn')) return;
+    const b=document.createElement('button');
+    b.className='social-fullscreen-btn';
+    b.type='button';
+    b.textContent='⛶ Fullscreen';
+    b.onclick=async()=>{
+      try{
+        if(document.fullscreenElement) await document.exitFullscreen();
+        else if(box.requestFullscreen) await box.requestFullscreen();
+        else box.classList.toggle('social-player-fullscreen');
+      }catch(e){ box.classList.toggle('social-player-fullscreen'); }
+      b.textContent=document.fullscreenElement?'✕ Exit fullscreen':'⛶ Fullscreen';
+    };
+    box.style.position='relative';
+    box.appendChild(b);
+  }
+};
+</script>
 </body>
 </html>
