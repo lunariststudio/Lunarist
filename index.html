@@ -1650,7 +1650,7 @@ function showProjectForm(existing=null){
   
   f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} project</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="pjTitle" value="${esc(existing?.title||'')}" placeholder="Project title"></div><div class="field"><label>Category</label><select id="pjCategorySelect"></select><input id="pjCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="pjTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="pjDesc">${esc(existing?.description||'')}</textarea></div><div class="field full"><label>Thumbnail URL</label><input id="pjThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Media URL</label><input id="pjMedia" value="${esc(existing?.media_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="pjThumbFile" type="file" accept="image/*"></div>
   <div class="field"><label>Media upload</label><input id="pjMediaFile" type="file" accept="image/*,video/*,.pdf,.zip"></div>
-  <div class="field full"><label>Social media URL</label><input id="pjYoutube" value="${esc(existing?.media_url||embedToWatchUrl(existing?.media_url))}" placeholder="Paste a YouTube, Instagram or X link…"><div class="meta" id="pjYoutubeStatus">Paste a YouTube, Instagram or X link to auto-fill project information.</div></div>
+  <div class="field full"><label>Social media URL</label><div style="display:flex;gap:8px;align-items:stretch"><input id="pjYoutube" value="${esc(existing?.media_url||embedToWatchUrl(existing?.media_url))}" placeholder="Paste a YouTube, Instagram or X link…" style="flex:1"><button class="btn" type="button" id="fetchSocialBtn">Fetch</button></div><div class="meta" id="pjYoutubeStatus">Paste a YouTube, Instagram or X link and Lunarist will auto-fill the project information.</div></div>
   <div class="field"><label>Media type</label><select id="pjType"><option value="image" ${existing?.media_type!=='video'?'selected':''}>Image</option><option value="video" ${existing?.media_type==='video'?'selected':''}>Video</option></select></div><div class="field"><label>Status</label><select id="pjStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div></div><div class="heroactions"><button class="btn primary" id="saveProject">${existing?'Save changes':'Create project'}</button>${existing?`<button class="btn" id="deleteProject">Delete</button>`:''}<button class="btn" id="cancelProject">Cancel</button></div><p id="projectMsg" style="color:var(--muted)"></p></div>`;
   
   const defaultCats=['Motion Design','3D Modeling','Branding','UI/UX Design','Illustration','Video Editing'];
@@ -1662,69 +1662,34 @@ function showProjectForm(existing=null){
   
   document.getElementById('cancelProject').onclick=()=>f.innerHTML='';
   const pjYoutube=document.getElementById('pjYoutube');
-
-  function detectSocialPlatform(raw){
-    try{
-      const u=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);
-      const h=u.hostname.toLowerCase().replace(/^www\./,'');
-      if(h==='youtube.com'||h==='m.youtube.com'||h==='youtu.be'||h==='music.youtube.com')return 'youtube';
-      if(h==='instagram.com'||h.endsWith('.instagram.com'))return 'instagram';
-      if(h==='x.com'||h==='twitter.com')return 'x';
-    }catch{}
-    return null;
-  }
-
+  const fetchSocialBtn=document.getElementById('fetchSocialBtn');
+  function detectSocialPlatform(raw){try{const u=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);const h=u.hostname.toLowerCase().replace(/^www\./,'');if(h==='youtube.com'||h==='m.youtube.com'||h==='youtu.be'||h==='music.youtube.com')return 'youtube';if(h==='instagram.com'||h.endsWith('.instagram.com'))return 'instagram';if(h==='x.com'||h==='twitter.com')return 'x'}catch{}return null}
   async function fetchSocialIntoForm(){
-    const raw=pjYoutube.value.trim();
-    const statusEl=document.getElementById('pjYoutubeStatus');
-    if(!raw){statusEl.textContent='Paste a YouTube, Instagram or X link to auto-fill project information.';return}
+    const raw=pjYoutube.value.trim(),statusEl=document.getElementById('pjYoutubeStatus');
+    if(!raw){statusEl.textContent='Paste a YouTube, Instagram or X link.';return}
     const platform=detectSocialPlatform(raw);
-    if(!platform){statusEl.textContent="That doesn't look like a supported YouTube, Instagram, or X link.";return}
-
-    let endpoint='/api/youtube?platform='+encodeURIComponent(platform)+'&url='+encodeURIComponent(raw);
-    if(platform==='youtube'){
-      const vid=extractYoutubeId(raw);
-      if(!vid){statusEl.textContent="That doesn't look like a YouTube link.";return}
-      endpoint='/api/youtube?videoId='+encodeURIComponent(vid);
-    }
-
+    if(!platform){statusEl.textContent='Unsupported URL. Use YouTube, Instagram, x.com, or twitter.com.';return}
+    if(fetchSocialBtn)fetchSocialBtn.disabled=true;
     statusEl.textContent='Fetching from '+(platform==='x'?'X':platform==='instagram'?'Instagram':'YouTube')+'…';
     try{
-      const r=await fetch(endpoint,{cache:'no-store'});
-      const d=await r.json();
-      if(!r.ok)throw new Error(d.error||'Could not fetch this post.');
-
-      const title=d.title||'';
-      const description=d.description||'';
-      const thumb=d.thumbnailUrl||d.thumbnail_url||'';
-      const mediaUrl=d.mediaUrl||'';
-      const mediaType=d.mediaType||'';
-
-      if(platform==='youtube'){
-        const vid=extractYoutubeId(raw);
-        document.getElementById('pjMedia').value='https://www.youtube.com/embed/'+vid;
-        document.getElementById('pjType').value='video';
-        if(!document.getElementById('pjThumb').value.trim())document.getElementById('pjThumb').value='https://img.youtube.com/vi/'+vid+'/hqdefault.jpg';
-      }else{
-        document.getElementById('pjMedia').value=mediaUrl||raw;
-        document.getElementById('pjType').value=(mediaType==='video'||/instagram\.com\/(?:reel|tv)\//i.test(raw))?'video':'image';
-        if(!document.getElementById('pjThumb').value.trim()&&thumb)document.getElementById('pjThumb').value=thumb;
-      }
-
+      let endpoint,vid=null;
+      if(platform==='youtube'){vid=extractYoutubeId(raw);if(!vid)throw new Error("That doesn't look like a YouTube link.");endpoint='/api/youtube?videoId='+encodeURIComponent(vid)}
+      else if(platform==='instagram')endpoint='/api/instagram?url='+encodeURIComponent(raw);
+      else endpoint='/api/x?url='+encodeURIComponent(raw);
+      const r=await fetch(endpoint,{cache:'no-store'}),d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||`Could not fetch ${platform}.`);
+      const title=d.title||d.name||'',description=d.description||d.caption||d.text||'',thumb=d.thumbnailUrl||d.thumbnail_url||d.thumbnail||'',mediaUrl=d.mediaUrl||d.media_url||'',mediaType=d.mediaType||d.media_type||'';
+      if(platform==='youtube'){document.getElementById('pjMedia').value='https://www.youtube.com/embed/'+vid;document.getElementById('pjType').value='video';if(!document.getElementById('pjThumb').value.trim())document.getElementById('pjThumb').value='https://img.youtube.com/vi/'+vid+'/hqdefault.jpg'}
+      else{document.getElementById('pjMedia').value=mediaUrl||raw;const isInstagramVideo=platform==='instagram'&&/(?:instagram\.com\/(?:reel|reels|tv)\b)/i.test(raw);document.getElementById('pjType').value=(mediaType==='video'||isInstagramVideo)?'video':'image';if(!document.getElementById('pjThumb').value.trim()&&thumb)document.getElementById('pjThumb').value=thumb}
       if(!document.getElementById('pjTitle').value.trim()&&title)document.getElementById('pjTitle').value=title;
       if(description)document.getElementById('pjDesc').value=description;
-
-      const metrics=[];
-      if(d.views!=null)metrics.push('Views '+Number(d.views).toLocaleString());
-      if(d.likes!=null)metrics.push('Likes '+Number(d.likes).toLocaleString());
-      if(d.reposts!=null)metrics.push('Reposts '+Number(d.reposts).toLocaleString());
-      statusEl.textContent='Loaded '+(title?`"${title.slice(0,90)}"`:'social post')+(metrics.length?' — '+metrics.join(' · '):'')+'.';
-    }catch(e){statusEl.textContent=e.message||'Could not fetch this social post.'}
+      const metrics=[];if(d.views!=null)metrics.push('Views '+Number(d.views).toLocaleString());if(d.likes!=null)metrics.push('Likes '+Number(d.likes).toLocaleString());if(d.reposts!=null)metrics.push('Reposts '+Number(d.reposts).toLocaleString());if(d.replies!=null)metrics.push('Replies '+Number(d.replies).toLocaleString());
+      statusEl.textContent='Loaded '+(title?'"'+title.slice(0,90)+'"':'social post')+(metrics.length?' — '+metrics.join(' · '):'')+'.';
+    }catch(e){console.error('[Lunarist social fetch]',e);statusEl.textContent=e.message||'Could not fetch this social post.'}
+    finally{if(fetchSocialBtn)fetchSocialBtn.disabled=false}
   }
-
-  pjYoutube.addEventListener('change',fetchSocialIntoForm);
-  pjYoutube.addEventListener('paste',()=>setTimeout(fetchSocialIntoForm,60));
-
+  fetchSocialBtn?.addEventListener('click',fetchSocialIntoForm);pjYoutube.addEventListener('change',fetchSocialIntoForm);pjYoutube.addEventListener('blur',()=>{if(pjYoutube.value.trim())fetchSocialIntoForm()});pjYoutube.addEventListener('paste',()=>setTimeout(fetchSocialIntoForm,120));
+  
   document.getElementById('saveProject').onclick=async()=>{
     const title=document.getElementById('pjTitle').value.trim(),categorySelectVal=catSelect.value,categoryNewVal=catNewInput.value.trim(),category=categorySelectVal==='__NEW__'?categoryNewVal:categorySelectVal,tags=document.getElementById('pjTags').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
     let status=document.getElementById('pjStatus').value;
