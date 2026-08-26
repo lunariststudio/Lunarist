@@ -1695,6 +1695,10 @@ function showProjectForm(existing=null){
     return detected||pjSocialPlatform.value;
   }
 
+  let socialFetchedViews=null;
+  let socialFetchedLikes=null;
+  let socialFetchedPlatform=null;
+
   async function fetchSocialIntoForm(){
     const url=pjSocialUrl.value.trim();
     if(!url)return;
@@ -1721,6 +1725,9 @@ function showProjectForm(existing=null){
       const r=await fetch(endpoint,{cache:'no-store'});
       const d=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(d.error||'Could not fetch this social link.');
+      socialFetchedPlatform=platform;
+      socialFetchedViews=Number(d.viewCount??d.views??0)||0;
+      socialFetchedLikes=Number(d.likeCount??d.likes??0)||0;
 
       document.getElementById('pjMedia').value=mediaUrl;
       document.getElementById('pjType').value=d.mediaType||mediaType;
@@ -1740,6 +1747,7 @@ function showProjectForm(existing=null){
       if(reposts)metrics.push('Reposts: '+reposts.toLocaleString());
       const creator=d.author||d.username||d.author_username;
       if(creator)metrics.unshift('By '+creator);
+      if(platform==='twitch' && !likes) metrics.push('Twitch does not provide a like count');
       pjSocialStatus.textContent='Loaded '+(names[platform]||platform)+(metrics.length?' — '+metrics.join(' · '):'');
     }catch(e){
       pjSocialStatus.textContent=e.message||'Could not fetch this social link.';
@@ -1779,7 +1787,11 @@ function showProjectForm(existing=null){
       media_url,
       media_type:document.getElementById('pjType').value,
       status,
-      published:status==='published'
+      published:status==='published',
+      ...(existing ? {} : {
+        views: socialFetchedViews ?? 0,
+        likes: socialFetchedLikes ?? 0
+      })
     };
     
     let result=existing?await supabaseClient.from('projects').update(payload).eq('id',existing.id).eq('owner_id',state.currentUser.id).select().single():await supabaseClient.from('projects').insert(payload).select().single();

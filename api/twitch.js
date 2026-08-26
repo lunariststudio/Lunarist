@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     if(parts[0].toLowerCase()==='videos'&&parts[1]){
       const d=await helix('/videos?id='+encodeURIComponent(parts[1])),v=d.data?.[0];
       if(!v)return res.status(404).json({error:'Twitch VOD not found.'});
-      return res.status(200).json({platform:'twitch',type:'video',mediaType:'video',id:v.id,url:input,title:v.title||'',description:v.description||'',author:v.user_name||'',username:v.user_login||'',thumbnail:v.thumbnail_url||'',game:v.game_name||'',viewCount:Number(v.view_count||0),publishedAt:v.published_at||null,duration:v.duration||'',isLive:false});
+      return res.status(200).json({platform:'twitch',type:'video',mediaType:'video',id:v.id,url:input,title:v.title||'',description:v.description||'',author:v.user_name||'',username:v.user_login||'',thumbnail:v.thumbnail_url ? v.thumbnail_url.replace('{width}','1280').replace('{height}','720') : '',game:v.game_name||'',viewCount:Number(v.view_count||0),publishedAt:v.published_at||null,duration:v.duration||'',isLive:false});
     }
     if(parts[0].toLowerCase()==='clip')return res.status(400).json({error:'Twitch Clips are not supported yet. Use a channel or VOD URL.'});
     const login=parts[0],users=await helix('/users?login='+encodeURIComponent(login)),user=users.data?.[0];
