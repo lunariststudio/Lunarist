@@ -1,9 +1,51 @@
-// Lunarist X fetcher with inline public fallback to stay within Vercel Hobby's 12-function limit.
-function clean(v){return String(v||'').trim().replace(/^['"]|['"]$/g,'').replace(/^Bearer\s+/i,'').trim();}
-function parse(raw){const u=new URL(/^https?:\/\//i.test(raw)?raw:`https://${raw}`);const h=u.hostname.toLowerCase().replace(/^www\./,'');if(!['x.com','twitter.com','mobile.twitter.com'].includes(h))throw new Error('That does not look like an X post URL.');const m=u.pathname.match(/\/(?:[^/]+)\/status\/(\d+)/i);if(!m)throw new Error('That does not look like an X post URL.');return{id:m[1],original:u.toString()};}
-function usageError(status,d){const s=JSON.stringify(d||{}).toLowerCase();return status===429||/usage.?cap|credits?.?deplet|credit.?deplet|quota|billing|spend.?limit|rate.?limit/.test(s);}
-async function oembed(url){const u=new URL('https://publish.x.com/oembed');u.searchParams.set('url',url);u.searchParams.set('omit_script','1');const r=await fetch(u);const d=await r.json().catch(()=>({}));return r.ok?d:null;}
-async function publicFallback(raw){try{const id=parse(raw).id;const u=new URL('https://cdn.syndication.twimg.com/tweet-result');u.searchParams.set('id',id);u.searchParams.set('lang','en');const r=await fetch(u,{headers:{'user-agent':'Mozilla/5.0 Lunarist/1.0'}});if(!r.ok)return{};const d=await r.json().catch(()=>({}));const media=Array.isArray(d.mediaDetails)?d.mediaDetails[0]:null;return{text:d.text||d.full_text||'',author:d.user?.name||'',username:d.user?.screen_name||'',thumbnail:media?.media_url_https||media?.media_url||media?.video_info?.variants?.[0]?.url||'',mediaUrl:media?.media_url_https||media?.media_url||'',mediaType:media?.type||''};}catch{return{};}}
-export default async function handler(req,res){try{const parsed=parse(req.query?.url||req.body?.url||'');const token=clean(process.env.X_BEARER_TOKEN);let embed=null,fallback={};try{embed=await oembed(`https://x.com/i/status/${parsed.id}`);}catch{}if(!token){fallback=await publicFallback(parsed.original);const text=fallback.text||'';return res.status(200).json({platform:'x',type:'post',url:`https://x.com/i/status/${parsed.id}`,id:parsed.id,title:text?text.split('\n')[0].slice(0,120):(embed?.title||'X post'),description:text,text,author:fallback.author||embed?.author_name||'',username:fallback.username||'',thumbnail:fallback.thumbnail||'',mediaUrl:fallback.mediaUrl||'',mediaType:fallback.mediaType||'',views:null,likes:null,replies:null,reposts:null,metricsUnavailable:true,quotaLimited:false,embedHtml:embed?.html||'',embedUrl:`https://x.com/i/status/${parsed.id}`});}
-const u=new URL(`https://api.x.com/2/tweets/${parsed.id}`);u.searchParams.set('tweet.fields','created_at,public_metrics,author_id,attachments,text');u.searchParams.set('expansions','author_id,attachments.media_keys');u.searchParams.set('user.fields','name,username,profile_image_url');u.searchParams.set('media.fields','url,preview_image_url,type,width,height,alt_text,public_metrics,duration_ms');const r=await fetch(u,{headers:{Authorization:`Bearer ${token}`}});const d=await r.json().catch(()=>({}));if(!r.ok){if(usageError(r.status,d)){fallback=await publicFallback(parsed.original);const text=fallback.text||'';return res.status(200).json({platform:'x',type:'post',url:`https://x.com/i/status/${parsed.id}`,id:parsed.id,title:text?text.split('\n')[0].slice(0,120):(embed?.title||'X post'),description:text,text,author:fallback.author||embed?.author_name||'',username:fallback.username||'',thumbnail:fallback.thumbnail||'',mediaUrl:fallback.mediaUrl||'',mediaType:fallback.mediaType||'',views:null,likes:null,replies:null,reposts:null,metricsUnavailable:true,quotaLimited:true,embedHtml:embed?.html||'',embedUrl:`https://x.com/i/status/${parsed.id}`,notice:'X API credits/usage are unavailable. Public post text and thumbnail fallback were used.'});}return res.status(r.status).json({error:d.detail||d.title||d.errors?.[0]?.message||'X API request failed.'});}
-const t=d.data||{},tm=t.public_metrics||{},author=(d.includes?.users||[])[0]||{},media=(d.includes?.media||[])[0]||{},mm=media.public_metrics||{};const isVideo=media.type==='video'||media.type==='animated_gif';const views=isVideo&&mm.view_count!=null?Number(mm.view_count):null,likes=tm.like_count!=null?Number(tm.like_count):null;return res.status(200).json({platform:'x',type:'post',url:`https://x.com/${author.username||'i'}/status/${parsed.id}`,id:parsed.id,title:t.text?t.text.split('\n')[0].slice(0,120):'X post',description:t.text||'',text:t.text||'',author:author.name||embed?.author_name||'',username:author.username||'',thumbnail:media.preview_image_url||media.url||'',mediaUrl:media.url||'',mediaType:media.type||'',createdAt:t.created_at||null,views:Number.isFinite(views)?views:null,viewCount:Number.isFinite(views)?views:null,likes:Number.isFinite(likes)?Number(likes):null,likeCount:Number.isFinite(likes)?Number(likes):null,replies:tm.reply_count!=null?Number(tm.reply_count):null,reposts:tm.retweet_count!=null?Number(tm.retweet_count):null,publicMetrics:tm,mediaPublicMetrics:mm,metricsUnavailable:false,quotaLimited:false,embedHtml:embed?.html||'',embedUrl:`https://x.com/i/status/${parsed.id}`});}catch(e){return res.status(400).json({error:e?.message||'Unable to fetch X data.'});}}
+export default async function handler(req, res) {
+  const input = String(req.query?.url || '').trim();
+  const match = input.match(/(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/[^/]+\/status\/(\d+)/i);
+  if (!match) return res.status(400).json({ error: 'Invalid X post URL. Use an x.com/.../status/... link.' });
+
+  const token = String(process.env.X_BEARER_TOKEN || process.env.TWITTER_BEARER_TOKEN || '').trim();
+  if (!token) return res.status(503).json({ error: 'X_BEARER_TOKEN is not configured in Vercel.' });
+
+  try {
+    const endpoint = new URL(`https://api.x.com/2/tweets/${match[1]}`);
+    endpoint.searchParams.set('tweet.fields', 'created_at,public_metrics,author_id,attachments');
+    endpoint.searchParams.set('expansions', 'author_id,attachments.media_keys');
+    endpoint.searchParams.set('user.fields', 'username,name,profile_image_url,verified');
+    endpoint.searchParams.set('media.fields', 'url,preview_image_url,type,width,height');
+
+    const r = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const detail = data?.detail || data?.error || data?.title || `X API returned ${r.status}`;
+      return res.status(r.status).json({ error: detail });
+    }
+
+    const post = data.data;
+    if (!post) return res.status(404).json({ error: 'X post not found or is not publicly accessible.' });
+    const author = (data.includes?.users || []).find(u => u.id === post.author_id) || {};
+    const media = (data.includes?.media || []).map(m => ({
+      type: m.type || '', url: m.url || '', previewImageUrl: m.preview_image_url || '',
+      width: m.width ?? null, height: m.height ?? null
+    }));
+    const metrics = post.public_metrics || {};
+    const firstMedia = media[0] || null;
+
+    return res.status(200).json({
+      platform: 'x', id: post.id, url: input,
+      title: post.text ? post.text.split(/\n+/)[0].slice(0, 140) : `Post by @${author.username || ''}`,
+      description: post.text || '', authorName: author.name || '', username: author.username || '',
+      profileImageUrl: author.profile_image_url || '',
+      thumbnailUrl: firstMedia?.previewImageUrl || (firstMedia?.type === 'photo' ? firstMedia.url : ''),
+      mediaUrl: firstMedia?.url || '', mediaType: firstMedia?.type || '',
+      likes: metrics.like_count != null ? Number(metrics.like_count) : null,
+      views: metrics.impression_count != null ? Number(metrics.impression_count) : null,
+      reposts: metrics.retweet_count != null ? Number(metrics.retweet_count) : null,
+      replies: metrics.reply_count != null ? Number(metrics.reply_count) : null,
+      quotes: metrics.quote_count != null ? Number(metrics.quote_count) : null,
+      createdAt: post.created_at || null, media
+    });
+  } catch (e) {
+    console.error('[X API]', e);
+    return res.status(502).json({ error: 'Unable to contact X API.' });
+  }
+}
