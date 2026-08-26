@@ -21,6 +21,22 @@ async function oembed(url){
   const d=await r.json().catch(()=>({}));
   return r.ok ? d : null;
 }
+// The oEmbed `html` field contains the tweet text inside a <p> tag even
+// though the API doesn't expose it as its own field. Pull it out so we
+// still have a usable description when there's no bearer token (or the
+// tweet-lookup API call fails), instead of always returning ''.
+function textFromEmbedHtml(html){
+  if(!html) return '';
+  const m=String(html).match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if(!m) return '';
+  return m[1]
+    .replace(/<br\s*\/?>/gi,'\n')
+    .replace(/<[^>]+>/g,'')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+    .replace(/&mdash;/g,'—').replace(/&nbsp;/g,' ')
+    .trim();
+}
 export default async function handler(req,res){
   try{
     const parsed=parse(req.query?.url||req.body?.url||'');
@@ -29,9 +45,11 @@ export default async function handler(req,res){
     try{ embed=await oembed(`https://x.com/i/status/${parsed.id}`); }catch{}
 
     if(!token){
+      const fallbackText=textFromEmbedHtml(embed?.html);
       return res.status(200).json({
         platform:'x',type:'post',url:`https://x.com/i/status/${parsed.id}`,id:parsed.id,
-        title:embed?.title||'X post',description:'',
+        title:fallbackText?fallbackText.split('\n')[0].slice(0,120):(embed?.title||'X post'),
+        description:fallbackText,text:fallbackText,
         author:embed?.author_name||'',username:'',
         thumbnail:'',mediaUrl:'',mediaType:'',
         views:null,likes:null,replies:null,reposts:null,
@@ -51,9 +69,11 @@ export default async function handler(req,res){
 
     if(!r.ok){
       if(usageError(r.status,d)){
+        const fallbackText=textFromEmbedHtml(embed?.html);
         return res.status(200).json({
           platform:'x',type:'post',url:`https://x.com/i/status/${parsed.id}`,id:parsed.id,
-          title:embed?.title||'X post',description:'',
+          title:fallbackText?fallbackText.split('\n')[0].slice(0,120):(embed?.title||'X post'),
+          description:fallbackText,text:fallbackText,
           author:embed?.author_name||'',username:'',
           thumbnail:'',mediaUrl:'',mediaType:'',
           views:null,likes:null,replies:null,reposts:null,
@@ -70,16 +90,20 @@ export default async function handler(req,res){
     const media=(d.includes?.media||[])[0]||{};
     const mm=media.public_metrics||{};
     const isVideo=media.type==='video'||media.type==='animated_gif';
-    // X public video views are exposed on the media public_metrics object.
-    // If impression_count is present on the post, it is not the same thing as
-    // video views, so only use it as a last-resort display metric.
-    const views=isVideo && mm.view_count!=null ? Number(mm.view_count) : null;
+    // X exposes video-specific view counts on the media object's
+    // public_metrics. For posts with no video (text/photo posts) that
+    // number doesn't exist, so fall back to the post's own impression_count
+    // (X's "views" counter on a normal tweet) instead of leaving it blank.
+    const videoViews=isVideo && mm.view_count!=null ? Number(mm.view_count) : null;
+    const impressions=tm.impression_count!=null ? Number(tm.impression_count) : null;
+    const views=videoViews!=null?videoViews:impressions;
     const likes=tm.like_count!=null ? Number(tm.like_count) : null;
+    const description=t.text||textFromEmbedHtml(embed?.html)||'';
 
     return res.status(200).json({
       platform:'x',type:'post',url:`https://x.com/${author.username||'i'}/status/${parsed.id}`,
-      id:parsed.id,title:t.text?t.text.split('\n')[0].slice(0,120):'X post',
-      description:t.text||'',text:t.text||'',
+      id:parsed.id,title:description?description.split('\n')[0].slice(0,120):'X post',
+      description,text:description,
       author:author.name||embed?.author_name||'',username:author.username||'',
       thumbnail:media.preview_image_url||media.url||'',
       mediaUrl:media.url||'',mediaType:media.type||'',
