@@ -1,0 +1,17 @@
+Twitch playback fix
+
+Root cause:
+Twitch embeds cannot use www.twitch.tv directly in an iframe. Twitch requires
+the official player.twitch.tv embed endpoint and a parent= parameter matching
+the host serving Lunarist.
+
+This version:
+- Converts Twitch VOD URLs to https://player.twitch.tv/?video=ID&parent=HOST
+- Converts Twitch channel URLs to https://player.twitch.tv/?channel=NAME&parent=HOST
+- Uses the current browser hostname as the parent, so the fix works on the
+  production Vercel domain and custom domains.
+- Preserves existing YouTube playback.
+- Applies the conversion both when saving a new Twitch project and when opening
+  an existing project saved with the raw www.twitch.tv URL.
+
+No Twitch secrets are placed in the frontend.

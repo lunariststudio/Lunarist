@@ -792,6 +792,25 @@ function bind(){
   });
 }
 
+function twitchEmbedUrl(raw){
+  const s=String(raw||'').trim();
+  if(!s)return '';
+  try{
+    const u=new URL(/^https?:\/\//i.test(s)?s:'https://'+s);
+    const host=u.hostname.toLowerCase().replace(/^www\./,'');
+    if(host!=='twitch.tv'&&host!=='m.twitch.tv')return '';
+    const parts=u.pathname.split('/').filter(Boolean);
+    const parent=encodeURIComponent(location.hostname||'lunaristudio.vercel.app');
+    if(parts[0]?.toLowerCase()==='videos'&&parts[1]){
+      return 'https://player.twitch.tv/?video='+encodeURIComponent(parts[1])+'&parent='+parent;
+    }
+    if(parts[0]&&parts[0].toLowerCase()!=='clip'&&parts[0].toLowerCase()!=='directory'){
+      return 'https://player.twitch.tv/?channel='+encodeURIComponent(parts[0])+'&parent='+parent;
+    }
+  }catch{}
+  return '';
+}
+
 async function openProject(id){
   const p=data.projects.find(x=>x.id===id);if(!p)return;
   await track(p);
@@ -800,7 +819,9 @@ async function openProject(id){
 
   updateSeoMeta(p.title, p.desc, p.image);
 
-  document.getElementById('modalMedia').innerHTML=p.video?`<iframe src="${esc(p.video)}${p.video.includes('?')?'&':'?'}autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
+  const twitchVideoUrl=twitchEmbedUrl(p.video||p.media_url||'');
+  const playbackUrl=twitchVideoUrl || (p.video ? (p.video + (p.video.includes('?')?'&':'?') + 'autoplay=1') : '');
+  document.getElementById('modalMedia').innerHTML=playbackUrl?`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
   
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(p.category)} ${p.lunarist_direct?`<span class="badge lunarist-direct-badge" title="Commissioned and purchased directly through Lunarist Studio" style="margin-left:8px;vertical-align:middle">✦ Lunarist Studio Commission</span>`:''}</div>
@@ -1725,6 +1746,10 @@ function showProjectForm(existing=null){
       const r=await fetch(endpoint,{cache:'no-store'});
       const d=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(d.error||'Could not fetch this social link.');
+      if(platform==='twitch'){
+        const twitchUrl=twitchEmbedUrl(d.url||url);
+        if(twitchUrl)mediaUrl=twitchUrl;
+      }
       socialFetchedPlatform=platform;
       socialFetchedViews=Number(d.viewCount??d.views??0)||0;
       socialFetchedLikes=Number(d.likeCount??d.likes??0)||0;
