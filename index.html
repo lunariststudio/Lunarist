@@ -463,6 +463,18 @@ function openService(id){
         <div class="field full"><label>Project Brief &amp; Description (Optional)</label><textarea id="inqBrief" placeholder="Tell them what you have in mind…"></textarea></div>
       </div>
 
+<!-- Full-screen Video Player Container -->
+<div style="width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center;">
+  <video 
+    src="RESPONSE_VIDEO_URL" 
+    poster="RESPONSE_POSTER_URL" 
+    controls 
+    autoplay 
+    playsinline 
+    style="width: 100%; height: 100%; object-fit: contain;">
+  </video>
+</div>
+
       <div style="margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)">
         <div class="eyebrow" style="margin-bottom:10px;color:var(--gold)">Add-ons &amp; Custom Options</div>
         ${addOns.length?`<div style="display:flex;flex-direction:column;gap:8px" id="svcModalAddons">
