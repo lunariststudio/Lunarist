@@ -95,6 +95,11 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<style>
+.social-embed-wrap blockquote{margin:0 auto!important;max-width:100%}
+.social-embed-wrap iframe{max-width:100%;border:0}
+</style>
 </head>
 <body>
 <div class="app" id="app">
@@ -819,10 +824,48 @@ async function openProject(id){
 
   updateSeoMeta(p.title, p.desc, p.image);
 
-  const twitchVideoUrl=twitchEmbedUrl(p.video||p.media_url||'');
-  const playbackUrl=twitchVideoUrl || (p.video ? (p.video + (p.video.includes('?')?'&':'?') + 'autoplay=1') : '');
-  document.getElementById('modalMedia').innerHTML=playbackUrl?`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
-  
+  const socialUrl=String(p.media_url||'');
+  let playbackUrl='';
+  let socialEmbedHtml='';
+  const lowerSocial=socialUrl.toLowerCase();
+
+  if(lowerSocial.includes('twitch.tv')){
+    playbackUrl=twitchEmbedUrl(socialUrl);
+  }else if(lowerSocial.includes('x.com/')||lowerSocial.includes('twitter.com/')){
+    try{
+      const rr=await fetch('/api/x?url='+encodeURIComponent(socialUrl),{cache:'no-store'});
+      const dd=await rr.json().catch(()=>({}));
+      socialEmbedHtml=dd.embedHtml||'';
+    }catch{}
+  }else if(lowerSocial.includes('instagram.com/')){
+    try{
+      const rr=await fetch('/api/instagram?url='+encodeURIComponent(socialUrl),{cache:'no-store'});
+      const dd=await rr.json().catch(()=>({}));
+      socialEmbedHtml=dd.embedHtml||'';
+    }catch{}
+  }else if(p.video){
+    playbackUrl=p.video.includes('youtube.com/embed/') ? p.video : '';
+  }
+
+  if(socialEmbedHtml){
+    document.getElementById('modalMedia').innerHTML=`<div class="social-embed-wrap" style="width:100%;height:100%;overflow:auto;display:flex;justify-content:center;align-items:flex-start;background:#000;padding:10px">${socialEmbedHtml}</div>`;
+    if(lowerSocial.includes('x.com')||lowerSocial.includes('twitter.com')){
+      if(!document.getElementById('xWidgetsScript')){
+        const sc=document.createElement('script');sc.id='xWidgetsScript';sc.async=true;sc.src='https://platform.x.com/widgets.js';document.head.appendChild(sc);
+      }
+      setTimeout(()=>window.twttr?.widgets?.load(document.getElementById('modalMedia')),100);
+    }else if(lowerSocial.includes('instagram.com')){
+      if(!document.getElementById('igEmbedScript')){
+        const sc=document.createElement('script');sc.id='igEmbedScript';sc.async=true;sc.src='https://www.instagram.com/embed.js';document.head.appendChild(sc);
+      }
+      setTimeout(()=>window.instgrm?.Embeds?.process(),100);
+    }
+  }else if(playbackUrl){
+    document.getElementById('modalMedia').innerHTML=`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`;
+  }else{
+    document.getElementById('modalMedia').innerHTML=`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
+  }
+
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(p.category)} ${p.lunarist_direct?`<span class="badge lunarist-direct-badge" title="Commissioned and purchased directly through Lunarist Studio" style="margin-left:8px;vertical-align:middle">✦ Lunarist Studio Commission</span>`:''}</div>
     <h2>${esc(p.title)}</h2>
@@ -1737,7 +1780,7 @@ function showProjectForm(existing=null){
         endpoint='/api/twitch?url='+encodeURIComponent(url);
       }else if(platform==='instagram'){
         endpoint='/api/instagram?url='+encodeURIComponent(url);
-        mediaType='image';
+        mediaType=/\/(reel|tv)\//i.test(url)?'video':'image';
       }else if(platform==='x'){
         endpoint='/api/x?url='+encodeURIComponent(url);
         mediaType='image';
@@ -1746,33 +1789,43 @@ function showProjectForm(existing=null){
       const r=await fetch(endpoint,{cache:'no-store'});
       const d=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(d.error||'Could not fetch this social link.');
+
       if(platform==='twitch'){
         const twitchUrl=twitchEmbedUrl(d.url||url);
         if(twitchUrl)mediaUrl=twitchUrl;
+      }else if(platform==='instagram'){
+        mediaUrl=d.embedUrl||url;
+      }else if(platform==='x'){
+        mediaUrl=d.embedUrl||url;
       }
+
       socialFetchedPlatform=platform;
-      socialFetchedViews=Number(d.viewCount??d.views??0)||0;
-      socialFetchedLikes=Number(d.likeCount??d.likes??0)||0;
+      socialFetchedViews=(d.viewCount??d.views??null);
+      socialFetchedLikes=(d.likeCount??d.likes??null);
 
       document.getElementById('pjMedia').value=mediaUrl;
       document.getElementById('pjType').value=d.mediaType||mediaType;
+
       const thumb=d.thumbnail||d.thumbnail_url||d.image||d.preview_image_url;
       if(thumb)document.getElementById('pjThumb').value=thumb;
+
       const title=d.title||d.name||'';
       const desc=d.description||d.caption||d.text||'';
-      if(!document.getElementById('pjTitle').value.trim()&&title)document.getElementById('pjTitle').value=title;
+      if(title)document.getElementById('pjTitle').value=title;
       if(desc)document.getElementById('pjDesc').value=desc;
 
       const metrics=[];
-      const views=Number(d.viewCount??d.views??d.viewers??0);
-      const likes=Number(d.likeCount??d.likes??0);
-      const reposts=Number(d.repostCount??d.reposts??0);
-      if(views)metrics.push((d.isLive?'Live viewers':'Views')+': '+views.toLocaleString());
-      if(likes)metrics.push('Likes: '+likes.toLocaleString());
-      if(reposts)metrics.push('Reposts: '+reposts.toLocaleString());
+      const views=(d.viewCount??d.views??null);
+      const likes=(d.likeCount??d.likes??null);
+      const reposts=(d.repostCount??d.reposts??null);
+      if(views!=null)metrics.push((d.isLive?'Live viewers':'Views')+': '+Number(views).toLocaleString());
+      if(likes!=null)metrics.push('Likes: '+Number(likes).toLocaleString());
+      if(reposts!=null)metrics.push('Reposts: '+Number(reposts).toLocaleString());
       const creator=d.author||d.username||d.author_username;
       if(creator)metrics.unshift('By '+creator);
-      if(platform==='twitch' && !likes) metrics.push('Twitch does not provide a like count');
+      if(platform==='twitch' && likes==null)metrics.push('Twitch does not provide a like count');
+      if(platform==='x' && d.quotaLimited)metrics.push('X player loaded; metrics unavailable until X API credits are restored');
+      if(platform==='instagram' && d.metricsUnavailable)metrics.push('Instagram player loaded; metrics require a supported Graph API token');
       pjSocialStatus.textContent='Loaded '+(names[platform]||platform)+(metrics.length?' — '+metrics.join(' · '):'');
     }catch(e){
       pjSocialStatus.textContent=e.message||'Could not fetch this social link.';
@@ -1814,8 +1867,8 @@ function showProjectForm(existing=null){
       status,
       published:status==='published',
       ...(existing ? {} : {
-        views: socialFetchedViews ?? 0,
-        likes: socialFetchedLikes ?? 0
+        views: socialFetchedViews != null ? Number(socialFetchedViews) : 0,
+        likes: socialFetchedLikes != null ? Number(socialFetchedLikes) : 0
       })
     };
     
