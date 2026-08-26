@@ -874,7 +874,7 @@ async function signInWithGoogle(){
   const btn=document.getElementById('googleAuth');btn.disabled=true;
   try{
     const isSignup=state.authMode==='signup';
-    let redirect=window.location.origin+'/?oauth=google';
+    let redirect=window.location.origin+window.location.pathname+'?oauth=google';
     if(isSignup){
       const email=document.getElementById('authEmail').value.trim().toLowerCase();
       const invite=document.getElementById('authInvite').value.trim().toUpperCase();
@@ -2215,7 +2215,7 @@ async function apiAuthHeaders(){
   try{const {data}=await supabaseClient.auth.getSession(); if(data?.session?.access_token)headers.Authorization=`Bearer ${data.session.access_token}`;}catch{}
   return headers;
 }
-async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey);supabaseClient.auth.onAuthStateChange(async(event,session)=>{await refreshUser();updateAccountButton();if(session&&pendingInvitationReservation())try{await redeemPendingInvitation()}catch{}});await refreshUser()}
+async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{try{await refreshUser();updateAccountButton();if(session&&pendingInvitationReservation())try{await redeemPendingInvitation()}catch(e){console.warn('Invitation redemption after auth:',e?.message||e)}}catch(e){console.error('Auth state refresh failed:',e)}},0)});await refreshUser()}
 async function loadData(){
   state.loadError=null;
   try{
