@@ -12,3 +12,9 @@ Fixes:
 - Keeps normal watch/embed/shorts/youtu.be URLs working.
 
 After replacing the files, commit and push to main. Vercel should deploy automatically.
+
+
+Instagram Vercel variables:
+- INSTAGRAM_ACCESS_TOKEN
+- META_APP_ID (optional fallback)
+- META_APP_SECRET (optional fallback)

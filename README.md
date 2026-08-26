@@ -122,3 +122,9 @@ Completed remaining admin capabilities:
 - Featured homepage curation
 - Studio settings persistence
 - Admin-only RLS policy for commissions and studio settings
+
+
+Instagram Vercel variables:
+- INSTAGRAM_ACCESS_TOKEN
+- META_APP_ID (optional fallback)
+- META_APP_SECRET (optional fallback)

@@ -3,8 +3,36 @@ export default async function handler(req, res) {
   const match = input.match(/(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/[^/]+\/status\/(\d+)/i);
   if (!match) return res.status(400).json({ error: 'Invalid X post URL. Use an x.com/.../status/... link.' });
 
-  const token = String(process.env.X_BEARER_TOKEN || process.env.TWITTER_BEARER_TOKEN || '').trim();
+  let token = String(process.env.X_BEARER_TOKEN || process.env.TWITTER_BEARER_TOKEN || '').trim();
+  token = token.replace(/^Bearer\s+/i, '').replace(/^['\"]|['\"]$/g, '').trim();
   if (!token) return res.status(503).json({ error: 'X_BEARER_TOKEN is not configured in Vercel.' });
+
+  async function oembedFallback(reason) {
+    try {
+      const o = new URL('https://publish.twitter.com/oembed');
+      o.searchParams.set('url', input);
+      o.searchParams.set('omit_script', 'true');
+      const r = await fetch(o);
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && (d.html || d.author_name)) {
+        return res.status(200).json({
+          platform: 'x', id: match[1], url: input,
+          title: d.author_name ? `Post by @${d.author_name}` : 'X post',
+          description: '', authorName: d.author_name || '',
+          username: d.author_url ? d.author_url.split('/').filter(Boolean).pop() || '' : '',
+          profileImageUrl: '', thumbnailUrl: '', mediaUrl: input, mediaType: 'embed',
+          likes: null, views: null, reposts: null, replies: null, quotes: null,
+          createdAt: null, media: [],
+          fallback: true,
+          warning: 'X API usage is currently unavailable. Basic post metadata was fetched via X oEmbed; engagement metrics require available X API credits.'
+        });
+      }
+    } catch (e) { console.error('[X oEmbed fallback]', e); }
+    return res.status(429).json({
+      error: 'X API credits/usage are depleted. Basic fallback metadata could not be fetched. Restore X API access/credits to fetch this post and its metrics.',
+      code: 'x_usage_capped', reason
+    });
+  }
 
   try {
     const endpoint = new URL(`https://api.x.com/2/tweets/${match[1]}`);
@@ -17,6 +45,8 @@ export default async function handler(req, res) {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const detail = data?.detail || data?.error || data?.title || `X API returned ${r.status}`;
+      const usageCapped = r.status === 402 || r.status === 429 || /usage.?cap|credit|monthly product cap|credits depleted|credits/i.test(detail);
+      if (usageCapped) return await oembedFallback(detail);
       return res.status(r.status).json({ error: detail });
     }
 

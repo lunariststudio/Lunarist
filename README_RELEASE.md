@@ -16,3 +16,9 @@ This package includes the current full Lunarist application package available in
 ## Security
 No `.env.local` or secret environment files are included in this ZIP.
 Configure production secrets in Vercel/Supabase environment settings.
+
+
+Instagram Vercel variables:
+- INSTAGRAM_ACCESS_TOKEN
+- META_APP_ID (optional fallback)
+- META_APP_SECRET (optional fallback)
