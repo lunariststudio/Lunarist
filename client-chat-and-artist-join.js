@@ -48,7 +48,7 @@
       .lcc-user:hover,.lcc-user.active{background:rgba(255,255,255,.06);border-color:var(--line)}.lcc-user img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#111}.lcc-user .lcc-role{display:block;color:var(--muted);font-size:10px;margin-top:2px}
       .lcc-main{display:flex;flex-direction:column}.lcc-head{padding:14px 16px;border-bottom:1px solid var(--line)}.lcc-body{flex:1;padding:16px;overflow:auto;min-height:340px}
       .lcc-msg{max-width:76%;padding:9px 12px;border-radius:14px;margin:7px 0;line-height:1.45;font-size:13px}.lcc-msg.mine{margin-left:auto;background:rgba(201,182,255,.15);border:1px solid rgba(201,182,255,.25)}.lcc-msg.theirs{background:rgba(255,255,255,.045);border:1px solid var(--line)}.lcc-time{display:block;margin-top:4px;color:var(--muted);font-size:9px}
-      .lcc-compose{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.lcc-compose textarea{flex:1;resize:none;min-height:44px;max-height:120px;border:1px solid var(--line);border-radius:12px;background:#0a0910;color:var(--text);padding:10px}.lcc-empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted);padding:40px}
+      .lcc-compose{padding:12px;border-top:1px solid var(--line)}.lcc-compose-row{display:flex;gap:8px;align-items:flex-end}.lcc-attach-btn{width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03);color:var(--text);cursor:pointer}.lcc-compose textarea{flex:1;resize:none;min-height:44px;max-height:120px;border:1px solid var(--line);border-radius:12px;background:#0a0910;color:var(--text);padding:10px}.lcc-empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted);padding:40px}.lcc-attachment-preview{display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.03)}.lcc-attachment-preview.show{display:flex}.lcc-attachment-preview button{border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer}.lcc-attachment-image{display:block;max-width:240px;max-height:220px;border-radius:10px;margin-top:7px}.lcc-attachment-file{display:inline-block;margin-top:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;color:var(--text);text-decoration:none}
       .lunarist-joined-date{margin-top:7px;color:var(--muted);font-size:11px}.lunarist-joined-date b{color:var(--text);font-weight:600}
       @media(max-width:760px){.lcc-wrap{grid-template-columns:1fr}.lcc-list{max-height:210px;overflow:auto}.lcc-user{display:inline-flex;width:auto;margin-right:5px}.lcc-list{white-space:nowrap}.lcc-user .lcc-copy{white-space:normal}}
     `;
@@ -79,7 +79,7 @@
 
   async function loadMessages(conversationId){
     const s=sb();if(!s||!conversationId)return {data:[],error:null};
-    return await s.from('messages').select('id,sender_id,content,body,created_at,is_read,read_at').eq('conversation_id',conversationId).order('created_at',{ascending:true});
+    return await s.from('messages').select('id,sender_id,content,body,attachment_url,created_at,is_read,read_at').eq('conversation_id',conversationId).order('created_at',{ascending:true});
   }
 
   async function findConversation(userId,artistId){
@@ -106,21 +106,29 @@
     const conversation=conv.data;
     let msgs=[];
     if(conversation){const r=await loadMessages(conversation.id);if(r.error){root.innerHTML=`<div class="lcc-empty"><div><b>Messages unavailable</b><br><span>${esc(r.error.message)}</span></div></div>`;return}msgs=r.data||[];}
-    root.innerHTML=`<div class="lcc-head"><div class="row"><img class="avatar" style="width:40px;height:40px" src="${esc(avatar(a))}" onerror="this.style.visibility='hidden'"><div><b>${esc(displayName(a))}</b><div class="meta">@${esc(a.username||'artist')} · ${esc(a.role||'Artist')}</div></div></div></div><div class="lcc-body" id="lcc-body">${msgs.length?msgs.map(m=>{const mine=String(m.sender_id)===String(user.id);return `<div class="lcc-msg ${mine?'mine':'theirs'}">${esc(m.body||m.content||'')}<span class="lcc-time">${new Date(m.created_at).toLocaleString()}</span></div>`}).join(''):`<div class="lcc-empty">Start the conversation with ${esc(displayName(a))}.</div>`}</div><form class="lcc-compose" id="lcc-compose"><textarea id="lcc-input" maxlength="5000" placeholder="Write a message…"></textarea><button class="btn primary" type="submit">Send</button></form>`;
+    root.innerHTML=`<div class="lcc-head"><div class="row"><img class="avatar" style="width:40px;height:40px" src="${esc(avatar(a))}" onerror="this.style.visibility='hidden'"><div><b>${esc(displayName(a))}</b><div class="meta">@${esc(a.username||'artist')} · ${esc(a.role||'Artist')}</div></div></div></div><div class="lcc-body" id="lcc-body">${msgs.length?msgs.map(m=>{const mine=String(m.sender_id)===String(user.id);const url=String(m.attachment_url||'');const isImage=/\.(png|jpe?g|gif|webp|svg)(?:[?#].*)?$/i.test(url);const attachment=url?(isImage?`<a href="${esc(url)}" target="_blank" rel="noopener"><img class="lcc-attachment-image" src="${esc(url)}" alt="Attachment" onerror="this.style.display='none'"></a>`:`<a class="lcc-attachment-file" href="${esc(url)}" target="_blank" rel="noopener">📎 Open attachment</a>`):'';return `<div class="lcc-msg ${mine?'mine':'theirs'}">${m.body||m.content?`<div>${esc(m.body||m.content||'').replace(/\n/g,'<br>')}</div>`:''}${attachment}<span class="lcc-time">${new Date(m.created_at).toLocaleString()}</span></div>`}).join(''):`<div class="lcc-empty">Start the conversation with ${esc(displayName(a))}.</div>`}</div><form class="lcc-compose" id="lcc-compose"><div class="lcc-attachment-preview" id="lcc-attachment-preview"><span id="lcc-attachment-name">Attachment</span><button type="button" id="lcc-attachment-remove">×</button></div><div class="lcc-compose-row"><button class="lcc-attach-btn" type="button" id="lcc-attach-btn" title="Attach a file">📎</button><textarea id="lcc-input" maxlength="5000" placeholder="Write a message…"></textarea><input id="lcc-file" type="file" hidden accept="image/*,.pdf,.zip,.rar,.txt,.doc,.docx,.psd,.ai,.fig,.mp4,.mov,.webm"><button class="btn primary" type="submit">Send</button></div><div class="meta" id="lcc-attach-status">Attach files up to 10MB</div></form>`;
     const body=root.querySelector('#lcc-body');if(body)body.scrollTop=body.scrollHeight;
+    let pendingFile=null;
+    const fileInput=root.querySelector('#lcc-file'),attachBtn=root.querySelector('#lcc-attach-btn'),preview=root.querySelector('#lcc-attachment-preview'),fileName=root.querySelector('#lcc-attachment-name'),status=root.querySelector('#lcc-attach-status');
+    const humanSize=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB';
+    const setFile=f=>{if(!f)return;if(f.size>10*1024*1024){toast('Chat files must be under 10MB');return}pendingFile=f;if(fileName)fileName.textContent=`${f.name} · ${humanSize(f.size)}`;preview?.classList.add('show');if(status)status.textContent='Ready to attach'};
+    const clearFile=()=>{pendingFile=null;if(fileInput)fileInput.value='';preview?.classList.remove('show');if(status)status.textContent='Attach files up to 10MB'};
+    attachBtn?.addEventListener('click',()=>fileInput?.click());fileInput?.addEventListener('change',e=>setFile(e.target.files?.[0]));root.querySelector('#lcc-attachment-remove')?.addEventListener('click',clearFile);
     root.querySelector('#lcc-compose').onsubmit=async e=>{
-      e.preventDefault();const input=root.querySelector('#lcc-input'),text=input.value.trim();if(!text)return;
+      e.preventDefault();const input=root.querySelector('#lcc-input'),text=input.value.trim();if(!text&&!pendingFile)return;
       const s=sb();if(!s){toast('Messaging is unavailable right now.');return}
-      input.disabled=true;
-      let c=conversation;
-      if(!c){const cr=await createConversation(user.id,a.id);if(cr.error){toast('Could not start conversation: '+cr.error.message);input.disabled=false;return}c=cr.data}
-      const ins=await s.from('messages').insert({conversation_id:c.id,sender_id:user.id,content:text,body:text});
-      if(ins.error){toast('Message could not be sent: '+ins.error.message);input.disabled=false;return}
-      await s.from('conversations').update({last_message_at:new Date().toISOString()}).eq('id',c.id);
-      // Best-effort only — mirrors index.html's sendNotification(). Never let a failure here
-      // (e.g. RLS on `notifications`) block the message, which has already been sent successfully.
-      try{await s.from('notifications').insert({user_id:a.id,title:'New Message',message:'A client sent you a message',type:'message'})}catch(e){console.warn('[Lunarist] notification insert failed (non-fatal):',e?.message||e)}
-      input.value='';input.disabled=false;renderConversation();
+      const send=e.currentTarget.querySelector('button[type=submit]');input.disabled=true;if(send)send.disabled=true;if(status)status.textContent=pendingFile?'Uploading attachment…':'Sending…';
+      try{
+        let c=conversation;
+        if(!c){const cr=await createConversation(user.id,a.id);if(cr.error)throw new Error('Could not start conversation: '+cr.error.message);c=cr.data}
+        let attachmentUrl=null;
+        if(pendingFile){const ext=(pendingFile.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');const path=`chat/${user.id}/${crypto.randomUUID()}-${ext}`;const up=await s.storage.from('commission-uploads').upload(path,pendingFile,{upsert:false,contentType:pendingFile.type||'application/octet-stream'});if(up.error)throw up.error;attachmentUrl=s.storage.from('commission-uploads').getPublicUrl(path).data.publicUrl}
+        const ins=await s.from('messages').insert({conversation_id:c.id,sender_id:user.id,content:text,body:text,attachment_url:attachmentUrl});
+        if(ins.error)throw ins.error;
+        await s.from('conversations').update({last_message_at:new Date().toISOString()}).eq('id',c.id);
+        try{await s.from('notifications').insert({user_id:a.id,title:'New Message',message:'A client sent you a message',type:'message'})}catch(e){console.warn('[Lunarist] notification insert failed (non-fatal):',e?.message||e)}
+        input.value='';clearFile();await renderConversation();
+      }catch(err){toast('Message could not be sent: '+(err?.message||err));if(status)status.textContent='Send failed · please try again'}finally{input.disabled=false;if(send)send.disabled=false}
     };
   }
 
