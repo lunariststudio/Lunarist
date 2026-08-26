@@ -2654,5 +2654,32 @@ async function capturePaypalReturnIfPresent(){
 <script src="/client-space-ui.js?v=2"></script>
 <script src="/social-links.js?v=1"></script>
 <script src="/client-chat-and-artist-join.js?v=5"></script>
+
+<script>
+/* Lunarist X/Instagram playback + metrics normalization */
+window.LunaristSocialFix = {
+  normalizeXEmbed(url) {
+    try {
+      const u=new URL(url);
+      const h=u.hostname.toLowerCase().replace(/^www\./,'');
+      const m=u.pathname.match(/\/(?:[^/]+)\/status\/(\d+)/i);
+      if ((h==='x.com'||h==='twitter.com') && m) {
+        return {type:'x', id:m[1], url:`https://x.com/i/status/${m[1]}`};
+      }
+    } catch(e){}
+    return null;
+  },
+  mapMetrics(data) {
+    const m=data?.publicMetrics||data?.public_metrics||{};
+    return {
+      views:Number(data?.views ?? data?.viewCount ?? m.impression_count ?? 0),
+      likes:Number(data?.likes ?? data?.likeCount ?? m.like_count ?? 0),
+      replies:Number(data?.replies ?? m.reply_count ?? 0),
+      reposts:Number(data?.reposts ?? m.retweet_count ?? 0)
+    };
+  }
+};
+</script>
+
 </body>
 </html>
