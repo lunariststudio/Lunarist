@@ -627,7 +627,7 @@ function openService(id){
         const conv = await createOrGetConversation(m.id, s.id);
         if(conv) {
           const initTxt = `👋 New Inquiry for "${s.title}":\n${info.message||'No brief provided'}`;
-          await supabaseClient.from('messages').insert({ conversation_id: conv.id, sender_id: state.currentUser.id, content: initTxt, attachment_url: info.attachment_url });
+          await supabaseClient.from('messages').insert({ conversation_id: conv.id, sender_id: state.currentUser.id, content: initTxt, body: initTxt, attachment_url: info.attachment_url });
           await sendNotification(m.id, 'New Service Inquiry', `Received a new inquiry for ${s.title}`, 'inquiry');
         }
       }
@@ -1318,6 +1318,7 @@ async function selectConversation(convId) {
         conversation_id: convId,
         sender_id: state.currentUser.id,
         content: txt,
+        body: txt,
         attachment_url: attachmentUrl
       }).select().single();
       if(error)throw error;
