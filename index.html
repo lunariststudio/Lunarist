@@ -830,7 +830,8 @@ function toast(t){const e=document.getElementById('toast');e.textContent=t;e.cla
 function openAuth(mode='signin'){
   state.authMode=mode;
   const m=mode==='signup';
-  const invite=state.inviteCode||localStorage.getItem('lunarist_pending_invite')||'';
+  const invite=String(state.inviteCode||localStorage.getItem('lunarist_pending_invite')||'').trim().toUpperCase();
+  if(invite) state.inviteCode=invite;
   document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';
   document.getElementById('authSubtitle').textContent=m?(invite?'You were invited to join Lunarist as a Member.':'Member accounts require a one-time invitation.'):'Sign in securely with your Google account.';
   document.getElementById('authEmailWrap').style.display=m?'flex':'none';
@@ -839,11 +840,13 @@ function openAuth(mode='signin'){
   document.getElementById('authInviteWrap').style.display=m?'flex':'none';
   document.getElementById('authEmail').value='';
   document.getElementById('authInvite').value=invite;
+  document.getElementById('authInvite').readOnly=!!invite;
   document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';
   document.getElementById('authModeHint').textContent=m?(invite?'One-time invitation detected.':'A valid invitation code is required for Member signup.'):'Google is the only available sign-in method.';
   document.getElementById('authMessage').textContent='';
   const google=document.getElementById('googleAuth');
   google.textContent=m?'Continue with Google (invitation required)':'Continue with Google';
+  if(m && invite) setTimeout(()=>document.getElementById('authInvite')?.focus(),50);
 }
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
 async function reserveInvitation(code,email){
@@ -2484,7 +2487,31 @@ async function capturePaypalReturnIfPresent(){
     history.replaceState({},'',clean);
   }
 }
-(async()=>{const params=new URLSearchParams(location.search);state.inviteCode=(params.get('invite')||'').trim().toUpperCase();const nonce=(params.get('nonce')||'').trim();if(state.inviteCode)localStorage.setItem('lunarist_pending_invite',state.inviteCode);if(state.inviteCode&&nonce){const old=pendingInvitationReservation();localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:state.inviteCode,nonce,email:old?.email||'',at:Date.now()}));}await loadData();updateAccountButton();await redeemPendingInvitation();await capturePaypalReturnIfPresent();if(state.inviteCode&&!state.currentUser)openAuth('signup')})();
+(async()=>{
+  const params=new URLSearchParams(location.search);
+  const invite=(params.get('invite')||'').trim().toUpperCase();
+  const nonce=(params.get('nonce')||'').trim();
+  const validInvite=/^[A-Z0-9]{8,32}$/.test(invite);
+  if(validInvite){
+    state.inviteCode=invite;
+    localStorage.setItem('lunarist_pending_invite',invite);
+    document.documentElement.dataset.invitationLink='true';
+  }
+  if(validInvite&&nonce){
+    const old=pendingInvitationReservation();
+    localStorage.setItem('lunarist_invite_reservation',JSON.stringify({code:invite,nonce,email:old?.email||'',at:Date.now()}));
+  }
+  await loadData();
+  updateAccountButton();
+  await redeemPendingInvitation();
+  await capturePaypalReturnIfPresent();
+  if(validInvite&&!state.currentUser){
+    // Invitation links always open the Member signup/invitation tab and prefill the code.
+    openAuth('signup');
+    const inviteInput=document.getElementById('authInvite');
+    if(inviteInput){inviteInput.value=invite;inviteInput.readOnly=true;setTimeout(()=>inviteInput.focus(),80);}
+  }
+})();
 </script>
 <script src="/profile-sync.js"></script>
 <script src="/lunarist-enhancements.js?v=2"></script>
