@@ -1,77 +1,129 @@
-// api/x.js - Direct X Media Extraction Handler
+// Lunarist X fetcher
+// Vercel env: X_BEARER_TOKEN
+function clean(v){return String(v||'').trim().replace(/^['"]|['"]$/g,'').replace(/^Bearer\s+/i,'').trim();}
+function parse(raw){
+  const u=new URL(/^https?:\/\//i.test(raw)?raw:`https://${raw}`);
+  const h=u.hostname.toLowerCase().replace(/^www\./,'');
+  if(!['x.com','twitter.com','mobile.twitter.com'].includes(h)) throw new Error('That does not look like an X post URL.');
+  const m=u.pathname.match(/\/(?:[^/]+)\/status\/(\d+)/i);
+  if(!m) throw new Error('That does not look like an X post URL.');
+  return {id:m[1], original:u.toString()};
+}
+function usageError(status,d){
+  const s=JSON.stringify(d||{}).toLowerCase();
+  return status===429 || /usage.?cap|credits?.?deplet|credit.?deplet|quota|billing|spend.?limit|rate.?limit/.test(s);
+}
+async function oembed(url){
+  const u=new URL('https://publish.x.com/oembed');
+  u.searchParams.set('url',url);
+  u.searchParams.set('omit_script','1');
+  const r=await fetch(u);
+  const d=await r.json().catch(()=>({}));
+  return r.ok ? d : null;
+}
+function textFromEmbedHtml(html){
+  if(!html) return '';
+  const m=String(html).match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if(!m) return '';
+  return m[1]
+    .replace(/<br\s*\/?>/gi,'\n')
+    .replace(/<[^>]+>/g,'')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+    .replace(/&mdash;/g,'—').replace(/&nbsp;/g,' ')
+    .trim();
+}
 
-export default async function handler(req, res) {
-  const { url, id } = req.query;
+export default async function handler(req,res){
+  try{
+    const parsed=parse(req.query?.url||req.body?.url||'');
+    const token=clean(process.env.X_BEARER_TOKEN);
+    let embed=null;
+    try{ embed=await oembed(`https://x.com/i/status/${parsed.id}`); }catch{}
 
-  // Extract tweet ID from query or full URL
-  let tweetId = id;
-  if (!tweetId && url) {
-    const match = url.match(/status\/(\d+)/);
-    if (match) tweetId = match[1];
-  }
-
-  if (!tweetId) {
-    return res.status(400).json({ error: 'Missing tweet ID or URL parameter' });
-  }
-
-  try {
-    // Fetch tweet details from public API endpoints or syndication proxy
-    const apiUrl = `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=x`;
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch tweet media' });
+    if(!token){
+      const fallbackText=textFromEmbedHtml(embed?.html);
+      return res.status(200).json({
+        platform:'x',type:'post',url:`https://x.com/i/status/${parsed.id}`,id:parsed.id,
+        title:fallbackText?fallbackText.split('\n')[0].slice(0,120):(embed?.title||'X post'),
+        description:fallbackText,text:fallbackText,
+        author:embed?.author_name||'',username:'',
+        thumbnail:'',mediaUrl:'',mediaType:'',
+        views:null,likes:null,replies:null,reposts:null,
+        metricsUnavailable:true,quotaLimited:false,
+        embedHtml:embed?.html||'',embedUrl:`https://x.com/i/status/${parsed.id}`
+      });
     }
 
-    const data = await response.json();
+    const u=new URL(`https://api.x.com/2/tweets/${parsed.id}`);
+    u.searchParams.set('tweet.fields','created_at,public_metrics,author_id,attachments,text');
+    u.searchParams.set('expansions','author_id,attachments.media_keys');
+    u.searchParams.set('user.fields','name,username,profile_image_url');
+    // Request variants field to retrieve direct video URLs
+    u.searchParams.set('media.fields','url,preview_image_url,type,width,height,alt_text,public_metrics,duration_ms,variants');
 
-    // Parse video media variants
-    let videoUrl = null;
-    let posterUrl = null;
+    const r=await fetch(u,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json().catch(()=>({}));
 
-    if (data.video && data.video.variants) {
-      // Find highest bitrate MP4 video variant
-      const mp4Variants = data.video.variants
-        .filter(v => v.type === 'video/mp4' || v.content_type === 'video/mp4')
-        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-
-      if (mp4Variants.length > 0) {
-        videoUrl = mp4Variants[0].src || mp4Variants[0].url;
+    if(!r.ok){
+      if(usageError(r.status,d)){
+        const fallbackText=textFromEmbedHtml(embed?.html);
+        return res.status(200).json({
+          platform:'x',type:'post',url:`https://x.com/i/status/${parsed.id}`,id:parsed.id,
+          title:fallbackText?fallbackText.split('\n')[0].slice(0,120):(embed?.title||'X post'),
+          description:fallbackText,text:fallbackText,
+          author:embed?.author_name||'',username:'',
+          thumbnail:'',mediaUrl:'',mediaType:'',
+          views:null,likes:null,replies:null,reposts:null,
+          metricsUnavailable:true,quotaLimited:true,
+          embedHtml:embed?.html||'',embedUrl:`https://x.com/i/status/${parsed.id}`,
+          notice:'X API credits/usage are unavailable. The post can still be embedded, but API metrics are unavailable.'
+        });
       }
-      posterUrl = data.video.poster || (data.mediaDetails && data.mediaDetails[0]?.media_url_https);
-    } else if (data.mediaDetails && data.mediaDetails[0]?.video_info) {
-      const variants = data.mediaDetails[0].video_info.variants || [];
-      const mp4Variants = variants
+      return res.status(r.status).json({error:d.detail||d.title||d.errors?.[0]?.message||'X API request failed.'});
+    }
+
+    const t=d.data||{}, tm=t.public_metrics||{};
+    const author=(d.includes?.users||[])[0]||{};
+    const media=(d.includes?.media||[])[0]||{};
+    const mm=media.public_metrics||{};
+    const isVideo=media.type==='video'||media.type==='animated_gif';
+
+    // Extract the highest-bitrate MP4 URL from media.variants
+    let directVideoUrl = '';
+    if (isVideo && Array.isArray(media.variants)) {
+      const mp4s = media.variants
         .filter(v => v.content_type === 'video/mp4')
         .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-
-      if (mp4Variants.length > 0) {
-        videoUrl = mp4Variants[0].url;
+      if (mp4s.length > 0) {
+        directVideoUrl = mp4s[0].url;
       }
-      posterUrl = data.mediaDetails[0].media_url_https;
     }
 
-    if (!videoUrl) {
-      return res.status(444).json({ error: 'No video media found in this tweet' });
-    }
-
-    // Set CORS headers for full-screen web video playback
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate');
+    const videoViews=isVideo && mm.view_count!=null ? Number(mm.view_count) : null;
+    const impressions=tm.impression_count!=null ? Number(tm.impression_count) : null;
+    const views=videoViews!=null?videoViews:impressions;
+    const likes=tm.like_count!=null ? Number(tm.like_count) : null;
+    const description=t.text||textFromEmbedHtml(embed?.html)||'';
 
     return res.status(200).json({
-      success: true,
-      tweetId,
-      videoUrl,
-      posterUrl,
-      text: data.text || ''
+      platform:'x',type:'post',url:`https://x.com/${author.username||'i'}/status/${parsed.id}`,
+      id:parsed.id,title:description?description.split('\n')[0].slice(0,120):'X post',
+      description,text:description,
+      author:author.name||embed?.author_name||'',username:author.username||'',
+      thumbnail:media.preview_image_url||media.url||'',
+      mediaUrl: directVideoUrl || media.url || '',
+      mediaType: directVideoUrl ? 'video' : (media.type || ''),
+      createdAt:t.created_at||null,
+      views:Number.isFinite(views)?views:null,
+      viewCount:Number.isFinite(views)?views:null,
+      likes:Number.isFinite(likes)?likes:null,
+      likeCount:Number.isFinite(likes)?likes:null,
+      replies:tm.reply_count!=null?Number(tm.reply_count):null,
+      reposts:tm.retweet_count!=null?Number(tm.retweet_count):null,
+      publicMetrics:tm, mediaPublicMetrics:mm,
+      metricsUnavailable:false,quotaLimited:false,
+      embedHtml:embed?.html||'',embedUrl:`https://x.com/i/status/${parsed.id}`
     });
-  } catch (error) {
-    console.error('X Media API Error:', error);
-    return res.status(500).json({ error: 'Internal server error fetching X media' });
-  }
+  }catch(e){return res.status(400).json({error:e?.message||'Unable to fetch X data.'});}
 }
