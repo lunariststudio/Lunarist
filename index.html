@@ -274,13 +274,24 @@ function addonIcon(title){
 
 async function sendNotification(userId, title, message, type='info', link=null) {
   if(!userId) return;
-  await supabaseClient.from('notifications').insert({
-    user_id: userId,
-    title,
-    message,
-    type,
-    link
-  });
+  // Best-effort only. This inserts a row on behalf of the OTHER party (user_id !== auth.uid()),
+  // which a same-row-only RLS policy on `notifications` will reject. Previously that rejection
+  // was unhandled and bubbled up into sendMsg()'s try/catch, so a failed "New Message" notification
+  // showed as "Could not send message" even though the message itself had already been inserted —
+  // this only ever hit the artist's reply flow, since the client-side chat path never calls this.
+  // Swallow failures here; the message send must never depend on the notification succeeding.
+  try{
+    const { error } = await supabaseClient.from('notifications').insert({
+      user_id: userId,
+      title,
+      message,
+      type,
+      link
+    });
+    if(error) console.warn('[Lunarist] notification insert failed (non-fatal):', error.message);
+  }catch(e){
+    console.warn('[Lunarist] notification insert failed (non-fatal):', e?.message||e);
+  }
 }
 
 async function loadUserNotifications() {
@@ -2476,6 +2487,6 @@ async function capturePaypalReturnIfPresent(){
 <script src="/client-space.js?v=2"></script>
 <script src="/client-space-ui.js?v=2"></script>
 <script src="/social-links.js?v=1"></script>
-<script src="/client-chat-and-artist-join.js?v=4"></script>
+<script src="/client-chat-and-artist-join.js?v=5"></script>
 </body>
 </html>
