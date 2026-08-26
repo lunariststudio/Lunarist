@@ -82,6 +82,7 @@
   let editorModal=null;
   let editorBody=null;
   let editorStage=null;
+  let editorFormId=null;
   let originalOpenDashboard=null;
   let originalShowProjectForm=null;
   let originalShowServiceForm=null;
@@ -128,13 +129,14 @@
     if(!editorModal)return;
     editorModal.classList.remove('open');
     document.body.style.overflow='';
-    if(editorBody&&editorBody.firstChild){
-      const form=document.getElementById('projectForm')||document.getElementById('serviceForm');
+    if(editorBody&&editorBody.firstChild&&editorFormId){
+      const form=document.getElementById(editorFormId);
       if(form){
         while(editorBody.firstChild)form.appendChild(editorBody.firstChild);
         form.innerHTML='';
       }
     }
+    editorFormId=null;
   }
 
   function moveCurrentFormToPopup(kind,existing){
@@ -142,6 +144,7 @@
     const id=kind==='project'?'projectForm':'serviceForm';
     const form=document.getElementById(id);
     if(!form)return;
+    editorFormId=id;
     while(editorBody.firstChild)editorBody.removeChild(editorBody.firstChild);
     while(form.firstChild)editorBody.appendChild(form.firstChild);
     const title=kind==='project'?(existing?'Edit project':'New project'):(existing?'Edit service':'New service');
@@ -151,20 +154,6 @@
 
     const cancelId=kind==='project'?'cancelProject':'cancelService';
     document.getElementById(cancelId)?.addEventListener('click',()=>closeEditor(),{once:true});
-
-    const saveId=kind==='project'?'saveProject':'saveService';
-    const save=document.getElementById(saveId);
-    if(save){
-      save.addEventListener('click',()=>{
-        // The original handler performs validation and the Supabase write.
-        // Keep the popup open on validation/database errors; successful writes
-        // call openDashboard(), which is wrapped below to close this popup.
-        setTimeout(()=>{
-          const msg=document.getElementById(kind==='project'?'projectMsg':'serviceMsg');
-          if(msg&&msg.textContent.trim())return;
-        },100);
-      },{once:true});
-    }
   }
 
   function installEditorPopups(){
@@ -182,19 +171,20 @@
 
     window.showProjectForm=function(existing=null){
       ensureEditorModal();
-      editorStage.appendChild(document.getElementById('projectForm')||document.createElement('div'));
-      const form=editorStage.querySelector('#projectForm');
-      if(form)document.body.appendChild(form);
+      const form=document.getElementById('projectForm');
+      if(!form)return;
+      editorStage.appendChild(form);
+      document.body.appendChild(form);
       originalShowProjectForm.call(this,existing);
       moveCurrentFormToPopup('project',existing);
     };
 
     window.showServiceForm=function(existing=null){
       ensureEditorModal();
-      const current=document.getElementById('serviceForm');
-      if(current)editorStage.appendChild(current);
-      const form=editorStage.querySelector('#serviceForm');
-      if(form)document.body.appendChild(form);
+      const form=document.getElementById('serviceForm');
+      if(!form)return;
+      editorStage.appendChild(form);
+      document.body.appendChild(form);
       originalShowServiceForm.call(this,existing);
       moveCurrentFormToPopup('service',existing);
     };
