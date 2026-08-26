@@ -196,11 +196,28 @@ function goRoute(route,replace){state.route=route;const path=pathForRoute(route)
 function routeFromPath(){const seg=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,''));if(!seg)return 'home';if(seg==='discover')return 'discover';if(seg==='artists')return 'artists';if(seg==='services')return 'services';if(seg==='commissions')return 'commissions';if(seg==='admin')return 'admin';if(RESERVED_ROUTES.includes(seg.toLowerCase()))return 'home';const m=memberByUsername(seg);return m?'member:'+m.id:'home'}
 function extractYoutubeId(url){
   if(!url) return null;
-  const s = String(url).trim();
-  let m = s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
-  if(m) return m[1];
+  const s=String(url).trim();
   if(/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
-  return null;
+  try{
+    const normalized=/^[a-z][a-z0-9+.-]*:\/\//i.test(s)?s:'https://'+s;
+    const u=new URL(normalized);
+    const host=u.hostname.toLowerCase().replace(/^www\./,'');
+    if(host==='youtu.be'){
+      const id=u.pathname.split('/').filter(Boolean)[0];
+      return /^[A-Za-z0-9_-]{11}$/.test(id||'')?id:null;
+    }
+    if(host==='youtube.com'||host==='m.youtube.com'||host==='music.youtube.com'){
+      const v=u.searchParams.get('v');
+      if(/^[A-Za-z0-9_-]{11}$/.test(v||'')) return v;
+      const parts=u.pathname.split('/').filter(Boolean);
+      if(['embed','shorts','live','v'].includes(parts[0])){
+        const id=parts[1];
+        return /^[A-Za-z0-9_-]{11}$/.test(id||'')?id:null;
+      }
+    }
+  }catch{}
+  const m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/i);
+  return m?m[1]:null;
 }
 function embedToWatchUrl(u){const m=String(u||'').match(/embed\/([A-Za-z0-9_-]{11})/);return m?('https://youtu.be/'+m[1]):''}
 window.addEventListener('popstate',()=>{state.route=routeFromPath();render()});
@@ -847,9 +864,6 @@ function openAuth(mode='signin'){
   const google=document.getElementById('googleAuth');
   google.textContent=m?'Continue with Google (invitation required)':'Continue with Google';
   if(m && invite) setTimeout(()=>document.getElementById('authInvite')?.focus(),50);
-  // Always display the authentication modal when openAuth() is called.
-  // This makes invitation links open the signup modal directly.
-  document.getElementById('authModal')?.classList.add('open');
 }
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
 async function reserveInvitation(code,email){
@@ -2297,10 +2311,20 @@ async function loadData(){
         try {
           const r = await fetch('/api/youtube?videoId=' + encodeURIComponent(vid));
           const res = await r.json();
-          if (res && res.viewCount !== undefined && res.viewCount !== null) {
-            p.views = Number(res.viewCount);
-            supabaseClient.from('projects').update({ views: p.views }).eq('id', p.id).then(() => {});
-            render(true);
+          if (res) {
+            const patch={};
+            if(res.viewCount !== undefined && res.viewCount !== null && Number.isFinite(Number(res.viewCount))){
+              p.views=Number(res.viewCount);
+              patch.views=p.views;
+            }
+            if(res.likeCount !== undefined && res.likeCount !== null && Number.isFinite(Number(res.likeCount))){
+              p.likes=Number(res.likeCount);
+              patch.likes=p.likes;
+            }
+            if(Object.keys(patch).length){
+              supabaseClient.from('projects').update(patch).eq('id', p.id).then(() => {});
+              render(true);
+            }
           }
         } catch(e) {}
       }
