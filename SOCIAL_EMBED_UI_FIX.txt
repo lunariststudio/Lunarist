@@ -1,0 +1,9 @@
+Lunarist Social Embed UI Fix
+
+- Enlarges X and Instagram embeds.
+- Centers embeds inside the project player.
+- Gives embeds a responsive max width and taller viewport.
+- Improves mobile sizing.
+- Keeps native fullscreen support from the previous fix.
+- X quota-unavailable status no longer says the player is unavailable; it says the player loaded and metrics are unavailable.
+- Does not bypass X API credit limits.

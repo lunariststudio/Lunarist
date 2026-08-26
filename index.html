@@ -106,6 +106,63 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 #modalMedia.social-player-fullscreen iframe,#modalMedia.social-player-fullscreen video,#modalMedia.social-player-fullscreen .social-embed-wrap{width:100%!important;height:100%!important;max-width:none!important}
 .social-fullscreen-btn{position:absolute;right:14px;top:14px;z-index:100000;border:0;border-radius:10px;padding:10px 13px;background:rgba(0,0,0,.72);color:#fff;cursor:pointer;font-size:14px}
 </style>
+
+<style id="lunaristSocialEmbedZoom">
+/* Social embeds: large, centered, responsive */
+.social-embed-wrap{
+  width:min(100%,1100px)!important;
+  height:100%!important;
+  min-height:520px!important;
+  margin:0 auto!important;
+  padding:24px!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:auto!important;
+  background:#000!important;
+}
+.social-embed-wrap blockquote{
+  width:min(100%,900px)!important;
+  max-width:900px!important;
+  margin:0 auto!important;
+}
+.social-embed-wrap iframe{
+  width:100%!important;
+  max-width:900px!important;
+  min-height:520px!important;
+  border:0!important;
+}
+.social-embed-wrap .instagram-media{
+  width:min(100%,900px)!important;
+  max-width:900px!important;
+  min-width:326px!important;
+  margin:0 auto!important;
+}
+#modalMedia.social-social-player{
+  width:100%!important;
+  min-height:620px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#000!important;
+}
+#modalMedia.social-social-player iframe{
+  width:min(100%,1100px)!important;
+  height:min(78vh,760px)!important;
+  min-height:520px!important;
+  max-width:1100px!important;
+  border:0!important;
+  display:block!important;
+  margin:auto!important;
+}
+@media(max-width:700px){
+  .social-embed-wrap{padding:8px!important;min-height:440px!important}
+  .social-embed-wrap iframe{min-height:440px!important}
+  #modalMedia.social-social-player{min-height:480px!important}
+  #modalMedia.social-social-player iframe{height:70vh!important;min-height:440px!important}
+}
+</style>
 </head>
 <body>
 <div class="app" id="app">
@@ -855,7 +912,8 @@ async function openProject(id){
   }
 
   if(socialEmbedHtml){
-    document.getElementById('modalMedia').innerHTML=`<div class="social-embed-wrap" style="width:100%;height:100%;overflow:auto;display:flex;justify-content:center;align-items:flex-start;background:#000;padding:10px">${socialEmbedHtml}</div>`;
+    document.getElementById('modalMedia').classList.add('social-social-player');
+    document.getElementById('modalMedia').innerHTML=`<div class="social-embed-wrap">${socialEmbedHtml}</div>`;
     if(lowerSocial.includes('x.com')||lowerSocial.includes('twitter.com')){
       if(!document.getElementById('xWidgetsScript')){
         const sc=document.createElement('script');sc.id='xWidgetsScript';sc.async=true;sc.src='https://platform.x.com/widgets.js';document.head.appendChild(sc);
@@ -868,8 +926,10 @@ async function openProject(id){
       setTimeout(()=>window.instgrm?.Embeds?.process(),100);
     }
   }else if(playbackUrl){
+    document.getElementById('modalMedia').classList.add('social-social-player');
     document.getElementById('modalMedia').innerHTML=`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`;
   }else{
+    document.getElementById('modalMedia').classList.remove('social-social-player');
     document.getElementById('modalMedia').innerHTML=`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover" alt="" onerror="handleImageError(this)">`;
   }
 
@@ -1841,6 +1901,9 @@ function showProjectForm(existing=null){
       if(platform==='x' && d.quotaLimited)metrics.push('X player loaded; metrics unavailable until X API credits are restored');
       if(platform==='instagram' && d.metricsUnavailable)metrics.push('Instagram player loaded; metrics require a supported Graph API token');
       pjSocialStatus.textContent='Loaded '+(names[platform]||platform)+(metrics.length?' — '+metrics.join(' · '):'');
+      if(platform==='x' && d.quotaLimited){
+        pjSocialStatus.textContent='Loaded X — '+(creator?'By '+creator+' · ':'')+'X player loaded · metrics unavailable';
+      }
     }catch(e){
       pjSocialStatus.textContent=e.message||'Could not fetch this social link.';
     }
