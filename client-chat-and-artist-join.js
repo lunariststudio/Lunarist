@@ -117,6 +117,9 @@
       const ins=await s.from('messages').insert({conversation_id:c.id,sender_id:user.id,content:text,body:text});
       if(ins.error){toast('Message could not be sent: '+ins.error.message);input.disabled=false;return}
       await s.from('conversations').update({last_message_at:new Date().toISOString()}).eq('id',c.id);
+      // Best-effort only — mirrors index.html's sendNotification(). Never let a failure here
+      // (e.g. RLS on `notifications`) block the message, which has already been sent successfully.
+      try{await s.from('notifications').insert({user_id:a.id,title:'New Message',message:'A client sent you a message',type:'message'})}catch(e){console.warn('[Lunarist] notification insert failed (non-fatal):',e?.message||e)}
       input.value='';input.disabled=false;renderConversation();
     };
   }
