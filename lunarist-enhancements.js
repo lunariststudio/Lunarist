@@ -74,11 +74,6 @@
       el.textContent=el.dataset.usdText.replace(/\$\s*(\d+(?:\.\d+)?)/g,(_,n)=>`¥${Math.round(Number(n)*r).toLocaleString('ja-JP')}`).replace(/\bUSD\b/g,'JPY');
     });
   }
-
-  /* Member editor popup patch.
-     The main index still owns the real Supabase save/update logic. We only move
-     those existing forms into a proper modal, so no database behavior is duplicated.
-  */
   let editorModal=null;
   let editorBody=null;
   let editorStage=null;
@@ -86,132 +81,62 @@
   let originalOpenDashboard=null;
   let originalShowProjectForm=null;
   let originalShowServiceForm=null;
-
   function installEditorStyles(){
     if(document.getElementById('lunarist-editor-popup-style'))return;
-    const style=document.createElement('style');
-    style.id='lunarist-editor-popup-style';
-    style.textContent=`
-      #lunaristEditorModal{z-index:500;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,1,6,.82);backdrop-filter:blur(16px)}
-      #lunaristEditorModal.open{display:flex}
-      #lunaristEditorModal .editor-popup-box{width:min(980px,100%);max-height:92vh;overflow:auto;background:#100e18;border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:0;transform:translateY(14px) scale(.985);opacity:0;transition:transform .3s var(--ease),opacity .25s var(--ease)}
-      #lunaristEditorModal.open .editor-popup-box{transform:none;opacity:1}
-      #lunaristEditorModal .editor-popup-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line);background:rgba(16,14,24,.94);backdrop-filter:blur(14px)}
-      #lunaristEditorModal .editor-popup-head h2{margin:0;font-size:20px}
-      #lunaristEditorModal .editor-popup-body{padding:20px}
-      #lunaristEditorModal .editor-popup-body>.panel{margin:0!important;border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}
-      #lunaristEditorModal .editor-popup-body .heroactions{position:sticky;bottom:-20px;z-index:3;margin:20px -20px -20px;padding:14px 20px;background:rgba(16,14,24,.96);border-top:1px solid var(--line);backdrop-filter:blur(14px)}
-      @media(max-width:720px){#lunaristEditorModal{padding:8px}#lunaristEditorModal .editor-popup-box{max-height:96vh;border-radius:18px}#lunaristEditorModal .editor-popup-head{padding:14px 16px}#lunaristEditorModal .editor-popup-body{padding:16px}#lunaristEditorModal .editor-popup-body .heroactions{margin:16px -16px -16px;padding:12px 16px;flex-wrap:wrap}}
-    `;
-    document.head.appendChild(style);
+    const style=document.createElement('style');style.id='lunarist-editor-popup-style';style.textContent=`#lunaristEditorModal{z-index:500;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,1,6,.82);backdrop-filter:blur(16px)}#lunaristEditorModal.open{display:flex}#lunaristEditorModal .editor-popup-box{width:min(980px,100%);max-height:92vh;overflow:auto;background:#100e18;border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:0;transform:translateY(14px) scale(.985);opacity:0;transition:transform .3s var(--ease),opacity .25s var(--ease)}#lunaristEditorModal.open .editor-popup-box{transform:none;opacity:1}#lunaristEditorModal .editor-popup-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line);background:rgba(16,14,24,.94);backdrop-filter:blur(14px)}#lunaristEditorModal .editor-popup-head h2{margin:0;font-size:20px}#lunaristEditorModal .editor-popup-body{padding:20px}#lunaristEditorModal .editor-popup-body>.panel{margin:0!important;border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}#lunaristEditorModal .editor-popup-body .heroactions{position:sticky;bottom:-20px;z-index:3;margin:20px -20px -20px;padding:14px 20px;background:rgba(16,14,24,.96);border-top:1px solid var(--line);backdrop-filter:blur(14px)}@media(max-width:720px){#lunaristEditorModal{padding:8px}#lunaristEditorModal .editor-popup-box{max-height:96vh;border-radius:18px}#lunaristEditorModal .editor-popup-head{padding:14px 16px}#lunaristEditorModal .editor-popup-body{padding:16px}#lunaristEditorModal .editor-popup-body .heroactions{margin:16px -16px -16px;padding:12px 16px;flex-wrap:wrap}}`;document.head.appendChild(style);
   }
-
   function ensureEditorModal(){
-    if(editorModal)return;
-    installEditorStyles();
-    editorStage=document.createElement('div');
-    editorStage.id='lunaristEditorStage';
-    editorStage.style.display='none';
-    document.body.appendChild(editorStage);
-
-    editorModal=document.createElement('div');
-    editorModal.id='lunaristEditorModal';
-    editorModal.className='modal';
-    editorModal.innerHTML=`<div class="editor-popup-box" role="dialog" aria-modal="true" aria-labelledby="lunaristEditorTitle"><div class="editor-popup-head"><h2 id="lunaristEditorTitle">Edit</h2><button type="button" class="iconbtn" id="lunaristEditorClose" aria-label="Close">×</button></div><div class="editor-popup-body" id="lunaristEditorBody"></div></div>`;
-    document.body.appendChild(editorModal);
-    editorBody=document.getElementById('lunaristEditorBody');
-    document.getElementById('lunaristEditorClose').onclick=closeEditor;
-    editorModal.addEventListener('click',e=>{if(e.target===editorModal)closeEditor()});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&editorModal?.classList.contains('open'))closeEditor()});
+    if(editorModal)return;installEditorStyles();editorStage=document.createElement('div');editorStage.id='lunaristEditorStage';editorStage.style.display='none';document.body.appendChild(editorStage);editorModal=document.createElement('div');editorModal.id='lunaristEditorModal';editorModal.className='modal';editorModal.innerHTML=`<div class="editor-popup-box" role="dialog" aria-modal="true" aria-labelledby="lunaristEditorTitle"><div class="editor-popup-head"><h2 id="lunaristEditorTitle">Edit</h2><button type="button" class="iconbtn" id="lunaristEditorClose" aria-label="Close">×</button></div><div class="editor-popup-body" id="lunaristEditorBody"></div></div>`;document.body.appendChild(editorModal);editorBody=document.getElementById('lunaristEditorBody');document.getElementById('lunaristEditorClose').onclick=closeEditor;editorModal.addEventListener('click',e=>{if(e.target===editorModal)closeEditor()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&editorModal?.classList.contains('open'))closeEditor()});
   }
-
-  function closeEditor(){
-    if(!editorModal)return;
-    editorModal.classList.remove('open');
-    document.body.style.overflow='';
-    if(editorBody&&editorBody.firstChild&&editorFormId){
-      const form=document.getElementById(editorFormId);
-      if(form){
-        while(editorBody.firstChild)form.appendChild(editorBody.firstChild);
-        form.innerHTML='';
-      }
-    }
-    editorFormId=null;
-  }
-
-  function moveCurrentFormToPopup(kind,existing){
-    ensureEditorModal();
-    const id=kind==='project'?'projectForm':'serviceForm';
-    const form=document.getElementById(id);
-    if(!form)return;
-    editorFormId=id;
-    while(editorBody.firstChild)editorBody.removeChild(editorBody.firstChild);
-    while(form.firstChild)editorBody.appendChild(form.firstChild);
-    const title=kind==='project'?(existing?'Edit project':'New project'):(existing?'Edit service':'New service');
-    document.getElementById('lunaristEditorTitle').textContent=title;
-    editorModal.classList.add('open');
-    document.body.style.overflow='hidden';
-
-    const cancelId=kind==='project'?'cancelProject':'cancelService';
-    document.getElementById(cancelId)?.addEventListener('click',()=>closeEditor(),{once:true});
-  }
-
+  function closeEditor(){if(!editorModal)return;editorModal.classList.remove('open');document.body.style.overflow='';if(editorBody&&editorBody.firstChild&&editorFormId){const form=document.getElementById(editorFormId);if(form){while(editorBody.firstChild)form.appendChild(editorBody.firstChild);form.innerHTML=''}}editorFormId=null}
+  function moveCurrentFormToPopup(kind,existing){ensureEditorModal();const id=kind==='project'?'projectForm':'serviceForm';const form=document.getElementById(id);if(!form)return;editorFormId=id;while(editorBody.firstChild)editorBody.removeChild(editorBody.firstChild);while(form.firstChild)editorBody.appendChild(form.firstChild);const title=kind==='project'?(existing?'Edit project':'New project'):(existing?'Edit service':'New service');document.getElementById('lunaristEditorTitle').textContent=title;editorModal.classList.add('open');document.body.style.overflow='hidden';const cancelId=kind==='project'?'cancelProject':'cancelService';document.getElementById(cancelId)?.addEventListener('click',()=>closeEditor(),{once:true})}
   function installEditorPopups(){
-    if(!window.showProjectForm||!window.showServiceForm||window.__lunaristEditorPopupInstalled)return;
-    window.__lunaristEditorPopupInstalled=true;
-    originalShowProjectForm=window.showProjectForm;
-    originalShowServiceForm=window.showServiceForm;
-    originalOpenDashboard=window.openDashboard;
-
-    window.openDashboard=function(){
-      const result=originalOpenDashboard.apply(this,arguments);
-      if(editorModal?.classList.contains('open'))closeEditor();
-      return result;
-    };
-
-    window.showProjectForm=function(existing=null){
-      ensureEditorModal();
-      const form=document.getElementById('projectForm');
-      if(!form)return;
-      editorStage.appendChild(form);
-      document.body.appendChild(form);
-      originalShowProjectForm.call(this,existing);
-      moveCurrentFormToPopup('project',existing);
-    };
-
-    window.showServiceForm=function(existing=null){
-      ensureEditorModal();
-      const form=document.getElementById('serviceForm');
-      if(!form)return;
-      editorStage.appendChild(form);
-      document.body.appendChild(form);
-      originalShowServiceForm.call(this,existing);
-      moveCurrentFormToPopup('service',existing);
-    };
+    if(!window.showProjectForm||!window.showServiceForm||window.__lunaristEditorPopupInstalled)return;window.__lunaristEditorPopupInstalled=true;originalShowProjectForm=window.showProjectForm;originalShowServiceForm=window.showServiceForm;originalOpenDashboard=window.openDashboard;
+    window.openDashboard=function(){const result=originalOpenDashboard.apply(this,arguments);if(editorModal?.classList.contains('open'))closeEditor();return result};
+    window.showProjectForm=function(existing=null){ensureEditorModal();const form=document.getElementById('projectForm');if(!form)return;editorStage.appendChild(form);document.body.appendChild(form);originalShowProjectForm.call(this,existing);moveCurrentFormToPopup('project',existing)};
+    window.showServiceForm=function(existing=null){ensureEditorModal();const form=document.getElementById('serviceForm');if(!form)return;editorStage.appendChild(form);document.body.appendChild(form);originalShowServiceForm.call(this,existing);moveCurrentFormToPopup('service',existing)};
   }
-
+  /* Project engagement counters: one view and one like per browser session.
+     The existing track() still records recommendation events; these RPCs persist counters atomically in Supabase. */
+  let originalTrack=null;
+  function installProjectCounters(){
+    if(window.__lunaristProjectCountersInstalled||typeof window.track!=='function')return;
+    originalTrack=window.track;
+    window.track=async function(p,type='view'){
+      const isView=type==='view', isLike=type==='like';
+      const alreadyViewed=state?.session?.viewed?.includes(p.id);
+      const alreadyLiked=state?.session?.liked?.includes(p.id);
+      const shouldCount=isView?!alreadyViewed:isLike?!alreadyLiked:false;
+      if(isLike&&!alreadyLiked){state.session.liked.unshift(p.id);state.session.liked=state.session.liked.slice(0,100)}
+      const result=await originalTrack.apply(this,arguments);
+      if(!shouldCount||!window.supabaseClient||!state.backendReady)return {counted:false};
+      try{
+        const fn=isView?'increment_project_view':'increment_project_like';
+        const {data,error}=await supabaseClient.rpc(fn,{p_project_id:p.id});
+        if(error)throw error;
+        const count=Number(data);
+        if(isView)p.views=count;else p.likes=count;
+        return {counted:true,count};
+      }catch(e){
+        if(isLike){state.session.liked=state.session.liked.filter(id=>id!==p.id);saveSession()}
+        return {counted:false,error:e};
+      }
+    };
+    window.__lunaristProjectCountersInstalled=true;
+  }
   let busy=false;
   async function scan(){
     if(busy)return;busy=true;
     try{
-      installEditorPopups();
+      installEditorPopups();installProjectCounters();
       const s=await loadService();if(!s){lastTitle='';service=null;return}
       syncDuration();installValidation();await translateAddons();await convertCurrency();
     }finally{busy=false}
   }
-  const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(scan,30)});obs.t=null;
-  obs.observe(document.body,{childList:true,subtree:true,characterData:true});
-  document.addEventListener('change',e=>{if(e.target.matches('.modalAddonCheck')){scan()}},{capture:true});
+  const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(scan,30)});obs.t=null;obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+  document.addEventListener('change',e=>{if(e.target.matches('.modalAddonCheck'))scan()},{capture:true});
   document.addEventListener('click',e=>{if(e.target.closest('.lang-switch'))setTimeout(scan,80)},{capture:true});
   const nativeFetch=window.fetch;
-  window.fetch=async function(input,init){
-    try{
-      const url=typeof input==='string'?input:(input?.url||'');
-      if(/\/api\/paypal(?:\?|$)/.test(url)&&init?.body&&lang()==='ja'&&typeof init.body==='string'){
-        const body=JSON.parse(init.body);body.currency='JPY';init={...init,body:JSON.stringify(body)};
-      }
-    }catch{}
-    return nativeFetch.apply(this,arguments);
-  };
+  window.fetch=async function(input,init){try{const url=typeof input==='string'?input:(input?.url||'');if(/\/api\/paypal(?:\?|$)/.test(url)&&init?.body&&lang()==='ja'&&typeof init.body==='string'){const body=JSON.parse(init.body);body.currency='JPY';init={...init,body:JSON.stringify(body)}}}catch{}return nativeFetch.apply(this,arguments)};
   scan();
 })();
