@@ -847,6 +847,9 @@ function openAuth(mode='signin'){
   const google=document.getElementById('googleAuth');
   google.textContent=m?'Continue with Google (invitation required)':'Continue with Google';
   if(m && invite) setTimeout(()=>document.getElementById('authInvite')?.focus(),50);
+  // Always display the authentication modal when openAuth() is called.
+  // This makes invitation links open the signup modal directly.
+  document.getElementById('authModal')?.classList.add('open');
 }
 function closeAuth(){document.getElementById('authModal').classList.remove('open')}
 async function reserveInvitation(code,email){
