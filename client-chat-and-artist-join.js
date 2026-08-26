@@ -3,11 +3,18 @@
   if(typeof window==='undefined') return;
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const sb=()=>window.supabaseClient||window.supabase||window.sb||null;
+  // NOTE: index.html declares `supabaseClient` and `state` with `let`/`const` at the top level of
+  // an inline <script>, so they are NOT properties of `window` (only `var`/function declarations are).
+  // They ARE reachable as bare identifiers from other classic scripts on the same page though, since
+  // all classic <script> tags share one global lexical scope. `window.supabase` is a different thing
+  // entirely — it's the @supabase/supabase-js library namespace (just `{createClient, ...}`), not the
+  // initialized client, so it must never be used as a fallback here or every call below silently breaks.
+  const sb=()=>{try{if(typeof supabaseClient!=='undefined'&&supabaseClient)return supabaseClient}catch(e){}return window.supabaseClient||null};
+  const curUser=()=>{try{return (typeof state!=='undefined'&&state&&state.currentUser)||null}catch(e){return null}};
   const authUser=async()=>{
     const s=sb();
-    if(!s?.auth?.getUser)return window.state?.currentUser||null;
-    try{return (await s.auth.getUser()).data?.user||null}catch{return window.state?.currentUser||null}
+    if(!s?.auth?.getUser)return curUser();
+    try{return (await s.auth.getUser()).data?.user||curUser()}catch{return curUser()}
   };
 
   let artistCache=[];
@@ -150,8 +157,13 @@
   async function start(){
     if(running)return;running=true;
     await boot();
-    let ticks=0;
-    const timer=setInterval(async()=>{await boot();if(++ticks>=40)clearInterval(timer)},750);
+    // Client Space's own script (client-space.js) fully rebuilds #clientSpaceTabs's innerHTML
+    // (wiping out the Messages tab we inject) every time the client portal is opened or refreshed —
+    // e.g. approving a delivery, saving the profile, or clicking the nav button again — which can
+    // happen minutes into a session, not just on initial page load. A short-lived polling window
+    // (as this used to be) means the tab reliably vanishes forever the first time that happens after
+    // it expires. Keep checking indefinitely; boot()/addTab() are cheap and already idempotent.
+    setInterval(boot,750);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
