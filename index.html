@@ -106,7 +106,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div><div class="attachment-viewer" id="attachmentViewer" aria-hidden="true"><div class="attachment-viewer-box" role="dialog" aria-modal="true" aria-labelledby="attachmentViewerTitle"><div class="attachment-viewer-head"><div class="attachment-viewer-title" id="attachmentViewerTitle">Attachment</div><button class="iconbtn" type="button" id="attachmentViewerClose" title="Close">×</button></div><div class="attachment-viewer-body" id="attachmentViewerBody"></div></div></div>
 <div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="saved" data-i18n="savedTab">Saved 🔖</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-saved"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
-<div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Save work, publish projects and manage your creative profile.</p><div class="formgrid" style="margin-top:18px"><div class="field full"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field full"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once. Google signup uses the email entered above.</div></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="authSubmit">Sign in</button><button class="btn" id="authToggle">Create account</button></div><div style="margin-top:10px"><button class="btn" id="googleAuth" style="width:100%">Continue with Google</button></div><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn" id="forgotPassword" style="padding:0;background:none;border:0">Forgot password?</button><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
+<div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Sign in securely with your Google account.</p><div class="formgrid" style="margin-top:18px"><div class="field full" id="authEmailWrap" style="display:none"><label>Google account email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"><div class="meta" style="margin-top:6px">Used only to reserve your one-time Member invitation before Google sign-in.</div></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once.</div></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="googleAuth" style="width:100%">Continue with Google</button><button class="btn" id="authToggle">Create account</button></div><div class="row" style="justify-content:center;margin-top:10px"><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <style>
 .lunarist-direct-badge{background:linear-gradient(135deg,rgba(255,112,196,.22),rgba(201,182,255,.2));border:1px solid rgba(255,150,218,.55);color:#ffd5f1;box-shadow:0 6px 20px rgba(255,112,196,.12);font-weight:800;letter-spacing:.02em}
 .thumb .overlay{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
@@ -828,20 +828,20 @@ async function openProject(id){
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML='';updateSeoMeta('','','')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){
-  state.authMode=mode;const m=mode==='signup';
+  state.authMode=mode;
+  const m=mode==='signup';
   const invite=state.inviteCode||localStorage.getItem('lunarist_pending_invite')||'';
   document.getElementById('authTitle').textContent=m?'Create your Lunarist account':'Sign in';
-  document.getElementById('authSubtitle').textContent=m?(invite?'You were invited to join Lunarist as a Member.':'Member accounts require a one-time invitation.'):'Save work, publish projects and manage your creative profile.';
-  document.getElementById('authSubmit').textContent=m?'Create account':'Sign in';
-  document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';
+  document.getElementById('authSubtitle').textContent=m?(invite?'You were invited to join Lunarist as a Member.':'Member accounts require a one-time invitation.'):'Sign in securely with your Google account.';
+  document.getElementById('authEmailWrap').style.display=m?'flex':'none';
   document.getElementById('authUsernameWrap').style.display=m?'flex':'none';
   document.getElementById('authDisplayWrap').style.display=m?'flex':'none';
   document.getElementById('authInviteWrap').style.display=m?'flex':'none';
+  document.getElementById('authEmail').value='';
   document.getElementById('authInvite').value=invite;
-  document.getElementById('forgotPassword').style.display=m?'none':'inline-flex';
-  document.getElementById('authModeHint').textContent=m?(invite?'One-time invitation detected.':'Open a valid invitation link first.'):'Use Google or email/password';
+  document.getElementById('authToggle').textContent=m?'I already have an account':'Create account';
+  document.getElementById('authModeHint').textContent=m?(invite?'One-time invitation detected.':'A valid invitation code is required for Member signup.'):'Google is the only available sign-in method.';
   document.getElementById('authMessage').textContent='';
-  document.getElementById('authModal').classList.add('open');
   const google=document.getElementById('googleAuth');
   google.textContent=m?'Continue with Google (invitation required)':'Continue with Google';
 }
@@ -870,40 +870,25 @@ async function redeemPendingInvitation(){
     localStorage.removeItem('lunarist_pending_invite');localStorage.removeItem('lunarist_invite_reservation');state.inviteCode='';
   }
 }
-async function authSubmit(){
-  const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value,username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32),display=document.getElementById('authDisplay').value.trim(),invite=document.getElementById('authInvite').value.trim().toUpperCase();
-  if(!email||!password||(state.authMode==='signup'&&!username)){document.getElementById('authMessage').textContent='Please complete the required fields.';return}
-  document.getElementById('authSubmit').disabled=true;
-  try{
-    if(state.authMode==='signup'){
-      if(!invite||!/^[A-Z0-9]{8,32}$/.test(invite))throw new Error('A valid one-time invitation code is required to create a Member account.');
-      await reserveInvitation(invite,email);
-      const {data:d,error}=await supabaseClient.auth.signUp({email,password,options:{data:{username,display_name:display||username,invite_code:invite}}});
-      if(error)throw error;
-      document.getElementById('authMessage').textContent=d.session?'Account created.':'Check your email to confirm your account.';
-      if(d.session){await redeemInvitation(invite,pendingInvitationReservation()?.nonce);closeAuth();await refreshUser();openDashboard()}
-    }else{
-      const {error}=await supabaseClient.auth.signInWithPassword({email,password});if(error)throw error;closeAuth();await refreshUser();openDashboard()
-    }
-  }catch(e){document.getElementById('authMessage').textContent=e.message||'Authentication failed.'}finally{document.getElementById('authSubmit').disabled=false}
-}
 async function signInWithGoogle(){
   const btn=document.getElementById('googleAuth');btn.disabled=true;
   try{
     const isSignup=state.authMode==='signup';
     let redirect=window.location.origin+'/?oauth=google';
     if(isSignup){
-      const email=document.getElementById('authEmail').value.trim();
+      const email=document.getElementById('authEmail').value.trim().toLowerCase();
       const invite=document.getElementById('authInvite').value.trim().toUpperCase();
-      if(!email)throw new Error('Enter the Google account email first so the invitation can be reserved to it.');
+      if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw new Error('Enter the Google account email you will use to sign in.');
       if(!invite||!/^[A-Z0-9]{8,32}$/.test(invite))throw new Error('A valid one-time invitation code is required for Google signup.');
       const reservation=await reserveInvitation(invite,email);
       redirect=window.location.origin+'/?oauth=google&invite='+encodeURIComponent(invite)+'&nonce='+encodeURIComponent(reservation.nonce);
+      const username=document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32);
+      const display=document.getElementById('authDisplay').value.trim();
+      localStorage.setItem('lunarist_google_profile',JSON.stringify({username,display_name:display}));
     }
     const {error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:redirect}});if(error)throw error;
   }catch(e){document.getElementById('authMessage').textContent=e.message||'Google sign-in failed.';btn.disabled=false}
 }
-async function resetPassword(){const email=document.getElementById('authEmail').value.trim();if(!email){document.getElementById('authMessage').textContent='Enter your email first.';return}document.getElementById('forgotPassword').disabled=true;try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/?reset=1'});if(error)throw error;document.getElementById('authMessage').textContent='Password reset email sent. Check your inbox.'}catch(e){document.getElementById('authMessage').textContent=e.message||'Unable to send reset email.'}finally{document.getElementById('forgotPassword').disabled=false}}
 
 async function refreshUser(){
   const {data:{session}}=await supabaseClient.auth.getSession();
@@ -2479,7 +2464,7 @@ function applyLanguage(lang){
 function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>{applyLanguage(el.dataset.lang);render();});}
 function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
 
-document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authSubmit').onclick=authSubmit;document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;document.getElementById('forgotPassword').onclick=resetPassword;
+document.getElementById('accountBtn').onclick=()=>state.currentUser?openDashboard():openAuth('signin');document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
 async function capturePaypalReturnIfPresent(){
   const params=new URLSearchParams(location.search);
   const paypalStatus=params.get('paypal');
