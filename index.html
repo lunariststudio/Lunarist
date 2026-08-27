@@ -248,6 +248,12 @@ function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.
 function card(p,feature=false){
   const m=member(p.member);
   const directBadge=p.lunarist_direct?`<span class="badge lunarist-direct-badge" title="Commissioned and purchased directly through Lunarist Studio">✦ Lunarist Studio Commission</span>`:'';
+  // X does not reliably expose public view counts through the available API.
+  // On Discovery cards, show the real X like count instead of a misleading 0 views.
+  const xProject=isXStatusUrl(p.media_url||p.mediaUrl||p.video||'');
+  const discoveryMetric=xProject
+    ? `${formatViews(p.likes)} likes`
+    : `${formatViews(p.views)} views`;
   return `<article class="card ${feature?'feature':''}" data-project="${p.id}">
     <div class="thumb">
       <img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy" onerror="handleImageError(this)">
@@ -255,7 +261,7 @@ function card(p,feature=false){
     </div>
     <div class="cardbody">
       <div class="title">${esc(p.title)}</div>
-      <div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')} · ${formatViews(p.views)} views</span></div>
+      <div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')} · ${discoveryMetric}</span></div>
       ${p.lunarist_direct?`<div class="lunarist-direct-label">✦ Purchased through Lunarist Studio</div>`:''}
       <div class="tags">${(p.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     </div>
