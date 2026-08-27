@@ -29,9 +29,23 @@
   function links(m){const v=m?.social_links||m?.socials||{};return{x:v.x||v.twitter||'',instagram:v.instagram||'',youtube:v.youtube||'',website:v.website||v.web||''}}
   function html(m){const l=links(m);return Object.entries(l).filter(([,v])=>v).map(([k,v])=>`<a class="lunarist-social-link" href="${esc(v)}" target="_blank" rel="noopener noreferrer"><span class="lunarist-social-icon">${icons[k]}</span>${labels[k]}</a>`).join('')}
   function host(){
-    const client=document.getElementById('client-space-profile');if(client)return client;
-    const nodes=[...document.querySelectorAll('.drawer,.modal,[role="dialog"]')];
-    return nodes.reverse().find(n=>{const t=(n.innerText||'').toLowerCase();return t.includes('edit profile')||t.includes('profile color scheme')})||null;
+    // Member Space is the primary home for editing social links.
+    // Prefer the currently visible/active dashboard section so the editor
+    // appears inside Member Space rather than being injected into Profile.
+    const active=[...document.querySelectorAll('.dashsection.active')].reverse();
+    const memberSection=active.find(n=>{
+      const t=(n.innerText||'').toLowerCase();
+      const id=(n.id||'').toLowerCase();
+      return id.includes('member') || t.includes('member space') || t.includes('my project') || t.includes('my commission');
+    });
+    if(memberSection)return memberSection;
+    const memberNodes=[...document.querySelectorAll('[id*="member" i],[class*="member" i]')].reverse();
+    const member=memberNodes.find(n=>{
+      const t=(n.innerText||'').toLowerCase();
+      return t.includes('member space') || n.id.toLowerCase().includes('member-space') || n.id.toLowerCase()==='memberspace';
+    });
+    if(member)return member;
+    return active[0]||null;
   }
   function valuesBox(m){
     const l=links(m);return `<div class="lunarist-social-editor"><h3>Social &amp; Website</h3><p>Add clickable links to your public Lunarist profile. Leave blank to hide a platform.</p><div class="lunarist-social-grid">${Object.keys(labels).map(k=>`<div class="lunarist-social-field"><label>${labels[k]}</label><input data-lunarist-social="${k}" value="${esc(l[k])}" placeholder="${k==='website'?'https://yourwebsite.com':k==='youtube'?'https://youtube.com/@username':`https://${k}.com/username`}"></div>`).join('')}</div><div class="lunarist-social-actions"><button type="button" class="btn" id="lunaristSaveSocial">Save social links</button></div></div>`;
@@ -39,12 +53,8 @@
   function injectEditor(){
     const m=member();const h=host();if(!m||!h||h.querySelector('.lunarist-social-editor'))return;
     const box=document.createElement('div');box.innerHTML=valuesBox(m);const editor=box.firstElementChild;
-    if(h.id==='client-space-profile'){
-      const panel=h.querySelector('.panel');(panel||h).appendChild(editor);
-    }else{
-      const tos=h.querySelector('.profile-tos-card');
-      if(tos)tos.parentElement.insertBefore(editor,tos);else h.appendChild(editor);
-    }
+    const panel=h.querySelector('.panel');
+    (panel||h).appendChild(editor);
     editor.querySelector('#lunaristSaveSocial').onclick=save;
   }
   async function save(){
@@ -52,8 +62,6 @@
     const out={};let bad=false;
     h.querySelectorAll('[data-lunarist-social]').forEach(i=>{const k=i.dataset.lunaristSocial;const raw=i.value.trim();const n=normalize(raw,k);if(raw&&!n){bad=true;i.style.borderColor='var(--danger,#ff7d8e)'}else{i.style.borderColor='';}out[k]=n});
     if(bad){toast('Please enter valid social or website URLs.');return}
-    // Keep both fields in sync. `socials` is the legacy/public-profile field;
-    // `social_links` is the dedicated field used by this feature.
     const r=await supabaseClient.from('profiles').update({social_links:out,socials:out,updated_at:new Date().toISOString()}).eq('id',state.currentUser.id);
     if(r.error){toast('Social links could not be saved: '+r.error.message);return}
     if(state.currentMember){state.currentMember.social_links=out;state.currentMember.socials=out;}
@@ -62,8 +70,6 @@
   }
   function renderPublic(){
     const m=member();if(!m)return;const content=html(m);if(!content)return;
-    // The main profile page has a dedicated mount point. Use it first so the
-    // feature is visible even though that page does not use the older profile-card markup.
     const dedicated=document.getElementById('profileSocialLinks');
     if(dedicated){
       if(!dedicated.querySelector('.lunarist-social-public')){
