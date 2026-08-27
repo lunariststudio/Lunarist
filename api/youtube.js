@@ -1,4 +1,74 @@
-async function youtubeFallback(videoId){try{const url=`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,r=await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`),d=await r.json();if(!r.ok)throw Error();return{title:d.title||'',description:'',publishedAt:null,channelTitle:d.author_name||'',viewCount:null,likeCount:null,likes:null,isLive:false,actualStartTime:null,scheduledStartTime:null,quotaExceeded:true,quotaMessage:'YouTube API quota is exhausted. Basic metadata is shown without API statistics.',thumbnailUrl:`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}}catch{return{title:'',description:'',publishedAt:null,channelTitle:'',viewCount:null,likeCount:null,likes:null,isLive:false,actualStartTime:null,scheduledStartTime:null,quotaExceeded:true,quotaMessage:'YouTube API quota is exhausted. Statistics are temporarily unavailable.',thumbnailUrl:`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}}}
+async function youtubeFallback(videoId){
+  const videoUrl=`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+  let title='',description='',channelTitle='',viewCount=null,likeCount=null,publishedAt=null;
+  const thumbnailUrl=`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+  // oEmbed remains available when the Data API quota is exhausted and gives us
+  // the canonical title + channel without consuming YouTube Data API quota.
+  try{
+    const r=await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`,{headers:{'accept':'application/json'},signal:AbortSignal.timeout(7000)});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok){title=d.title||'';channelTitle=d.author_name||'';}
+  }catch{}
+
+  // The public watch page can expose the same metadata/statistics that a user
+  // can see in YouTube. This is only a fallback; it does NOT use an API key and
+  // therefore does not consume YouTube Data API quota.
+  try{
+    const r=await fetch(videoUrl,{headers:{
+      'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36',
+      'accept-language':'en-US,en;q=0.9'
+    },signal:AbortSignal.timeout(9000)});
+    const html=await r.text();
+    if(r.ok){
+      const meta=(name)=>{
+        const re=new RegExp(`<meta[^>]+(?:property|name)=["']${name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}["'][^>]+content=["']([^"']*)["']`,'i');
+        const m=html.match(re); return m?m[1]:'';
+      };
+      const decode=(v)=>String(v||'').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+      const ogTitle=decode(meta('og:title'));
+      const ogDescription=decode(meta('og:description'));
+      if(ogTitle)title=ogTitle;
+      if(ogDescription)description=ogDescription;
+
+      // Prefer the videoDetails object for views. For likes, YouTube's watch
+      // page has historically exposed likeCount in its serialized data. Keep
+      // these guarded because YouTube can change this markup at any time.
+      const videoView=html.match(/"videoDetails"\s*:\s*\{[\s\S]{0,60000}?"viewCount"\s*:\s*"(\d+)"/);
+      if(videoView)viewCount=Number(videoView[1]);
+      else { const firstView=html.match(/"viewCount"\s*:\s*"(\d+)"/); if(firstView)viewCount=Number(firstView[1]); }
+      const firstLike=html.match(/"likeCount"\s*:\s*"(\d+)"/);
+      if(firstLike)likeCount=Number(firstLike[1]);
+
+      const pub=html.match(/"publishDate"\s*:\s*"([^"]+)"/);
+      if(pub)publishedAt=pub[1];
+      const author=html.match(/"ownerChannelName"\s*:\s*"([^"]+)"/);
+      if(author)channelTitle=decode(author[1]);
+
+      // JSON-LD is a useful description/title fallback when og:* is absent.
+      if(!description){
+        const ld=html.match(/"description"\s*:\s*"((?:\\.|[^"\\])*)"/);
+        if(ld){try{description=JSON.parse('"'+ld[1]+'"')}catch{description=decode(ld[1])}}
+      }
+    }
+  }catch{}
+
+  return{
+    title,
+    description,
+    publishedAt,
+    channelTitle,
+    viewCount,
+    likeCount,
+    likes:likeCount,
+    isLive:false,
+    actualStartTime:null,
+    scheduledStartTime:null,
+    quotaExceeded:true,
+    quotaMessage:'YouTube API quota is exhausted. Project metadata and any publicly exposed statistics were loaded from YouTube without using the Data API quota.',
+    thumbnailUrl
+  };
+}
 export default async function handler(req, res) {
   const platform = String(req.query?.platform || 'youtube').toLowerCase();
   if (platform === 'x' || platform === 'twitter') {

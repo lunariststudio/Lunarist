@@ -1802,8 +1802,15 @@ function showProjectForm(existing=null){
       if(thumb)document.getElementById('pjThumb').value=thumb;
       const title=d.title||d.name||'';
       const desc=d.description||d.caption||d.text||'';
-      if(!document.getElementById('pjTitle').value.trim()&&title)document.getElementById('pjTitle').value=title;
-      if(desc)document.getElementById('pjDesc').value=desc;
+      // When YouTube's Data API quota is exhausted, the fallback still returns
+      // public watch-page metadata. Treat that as authoritative for auto-fill so
+      // Projects don't remain stuck with an empty/old title or description.
+      if(title && (platform==='youtube' && d.quotaExceeded || !document.getElementById('pjTitle').value.trim())){
+        document.getElementById('pjTitle').value=title;
+      }
+      if(desc && (platform==='youtube' && d.quotaExceeded || !document.getElementById('pjDesc').value.trim())){
+        document.getElementById('pjDesc').value=desc;
+      }
 
       const metrics=[];
       const views=Number(d.viewCount??d.views??d.viewers??0);
