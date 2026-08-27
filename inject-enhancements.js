@@ -3,9 +3,11 @@ const path=require('path');
 const file=path.join(process.cwd(),'index.html');
 if(!fs.existsSync(file))throw new Error('index.html not found');
 let html=fs.readFileSync(file,'utf8');
-const requiredScripts=['lunarist-enhancements.js','social-links.js','member-social-fix.js','client-messaging.js','client-chat-and-artist-join.js','x-project-player.js','social-project-fix.js','slides-pricing.js','slides-live-ui.js','slides-persistence-fix.js','slides-hard-save.js','project-slides-view.js','services-drag-drop.js','x-discovery-likes.js','slides-final-fix.js','slides-addon-logic.js','slides-addon-logic-fix.js','project-media-carousel-fix.js'];
+const requiredScripts=['lunarist-enhancements.js','social-links.js','member-social-fix.js','client-messaging.js','client-chat-and-artist-join.js','x-project-player.js','social-project-fix.js','services-drag-drop.js','x-discovery-likes.js','project-media-manager.js'];
 if(!html.includes('</body>'))throw new Error('index.html has no closing body tag');
-for(const name of requiredScripts){const alreadyPresent=new RegExp(`<script[^>]*src=["']/${name.replace(/\./g,'\\.')}(\\?[^"']*)?["'][^>]*>`).test(html);if(!alreadyPresent)html=html.replace('</body>',`<script src="/${name}"></script>\n</body>`);}
+const removedScripts=['slides-pricing.js','slides-live-ui.js','slides-persistence-fix.js','slides-hard-save.js','project-slides-view.js','slides-final-fix.js','slides-addon-logic.js','slides-addon-logic-fix.js','project-media-carousel-fix.js'];
+for(const name of removedScripts){const re=new RegExp(`\\s*<script[^>]*src=["']/${name.replace(/\\./g,'\\\\.')}(\\?[^"']*)?["'][^>]*><\\/script>\\s*`,'g');html=html.replace(re,'\n');}
+for(const name of requiredScripts){const alreadyPresent=new RegExp(`<script[^>]*src=["']/${name.replace(/\\./g,'\\\\.')}(\\?[^"']*)?["'][^>]*>`).test(html);if(!alreadyPresent)html=html.replace('</body>',`<script src="/${name}"></script>\n</body>`);}
 html=html.replace(/\s*<script src="\/client-route-safety\.js\?v=1"><\/script>\s*/g,'\n');
 fs.writeFileSync(file,html);
-console.log('Lunarist enhancements injected: social players, messaging, metrics, Project Slides persistence/viewer, draggable Services, Slides fully integrated into Add-ons, and Project Media multi-upload/carousel.');
+console.log('Lunarist enhancements injected: social players, messaging, metrics, draggable Services, and Project Media multi-upload/carousel.');
