@@ -10,6 +10,6 @@ for(const name of removedScripts){const re=new RegExp(`\\s*<script[^>]*src=["']/
 for(const name of requiredScripts){const alreadyPresent=new RegExp(`<script[^>]*src=["']/${name.replace(/\\./g,'\\\\.')}(\\?[^"']*)?["'][^>]*>`).test(html);if(!alreadyPresent)html=html.replace('</body>',`<script src="/${name}"></script>\n</body>`);}
 html=html.replace(/\s*<script src="\/client-route-safety\.js\?v=1"><\/script>\s*/g,'\n');
 if(!html.includes('window.state=state'))html=html.replace(/const data=\{members:\[\],projects:\[\],services:\[\],recommendations:\[\]\};/,'const data={members:[],projects:[],services:[],recommendations:[]};window.state=state;window.data=data;');
-if(!html.includes('window.__lunaristGetSession'))html=html.replace('async function loadConfig(){','window.__lunaristGetSession=async()=>{try{return (await supabaseClient.auth.getSession()).data.session||null}catch{return null}};\nasync function loadConfig(){');
+if(!html.includes('window.supabaseClient=window.supabase.createClient'))html=html.replace('supabaseClient=window.supabase.createClient','supabaseClient=window.supabaseClient=window.supabase.createClient');
 fs.writeFileSync(file,html);
 console.log('Lunarist enhancements injected: social players, messaging, metrics, draggable Services, and Project Media multi-upload/carousel; legacy standalone Slides scripts removed.');
