@@ -1,54 +1,72 @@
 async function youtubeFallback(videoId){
   const videoUrl=`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
   let title='',description='',channelTitle='',viewCount=null,likeCount=null,publishedAt=null;
-  const thumbnailUrl=`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  let thumbnailUrl=`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
-  // oEmbed remains available when the Data API quota is exhausted and gives us
-  // the canonical title + channel without consuming YouTube Data API quota.
+  const decodeHtml=(v)=>String(v||'').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/gi,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  const decodeJs=(v)=>{try{return JSON.parse('"'+String(v).replace(/\\/g,'\\').replace(/"/g,'\\"')+'"')}catch{return decodeHtml(v)}};
+  const extractString=(html,key)=>{
+    const re=new RegExp('"'+key.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"');
+    const m=html.match(re); return m?decodeJs(m[1]):'';
+  };
+  const extractNumber=(html,key)=>{
+    const re=new RegExp('"'+key.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'"\\s*:\\s*"?(\\d+)"?');
+    const m=html.match(re); return m?Number(m[1]):null;
+  };
+
+  // oEmbed is independent of the YouTube Data API quota. It reliably supplies
+  // the canonical title, creator and thumbnail even when the API is exhausted.
   try{
-    const r=await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`,{headers:{'accept':'application/json'},signal:AbortSignal.timeout(7000)});
+    const r=await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`,{
+      headers:{accept:'application/json'},signal:AbortSignal.timeout(7000)
+    });
     const d=await r.json().catch(()=>({}));
-    if(r.ok){title=d.title||'';channelTitle=d.author_name||'';}
+    if(r.ok){
+      title=d.title||'';
+      channelTitle=d.author_name||'';
+      thumbnailUrl=d.thumbnail_url||thumbnailUrl;
+    }
   }catch{}
 
-  // The public watch page can expose the same metadata/statistics that a user
-  // can see in YouTube. This is only a fallback; it does NOT use an API key and
-  // therefore does not consume YouTube Data API quota.
+  // The watch page contains ytInitialPlayerResponse / videoDetails. Unlike the
+  // Data API this request consumes no YouTube Data API quota. Prefer these
+  // fields for the actual video description and public counters.
   try{
     const r=await fetch(videoUrl,{headers:{
       'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36',
+      'accept':'text/html,application/xhtml+xml',
       'accept-language':'en-US,en;q=0.9'
-    },signal:AbortSignal.timeout(9000)});
+    },signal:AbortSignal.timeout(10000)});
     const html=await r.text();
     if(r.ok){
+      // videoDetails is the most stable source for title/description/channel/views.
+      title=extractString(html,'title')||title;
+      description=extractString(html,'shortDescription')||description;
+      channelTitle=extractString(html,'author')||extractString(html,'ownerChannelName')||channelTitle;
+      const vc=extractNumber(html,'viewCount'); if(Number.isFinite(vc))viewCount=vc;
+      const pub=extractString(html,'publishDate'); if(pub)publishedAt=pub;
+
+      // Player response also carries the public like count on many watch pages.
+      const lc=extractNumber(html,'likeCount'); if(Number.isFinite(lc))likeCount=lc;
+
+      // Prefer the actual high-quality player thumbnail if present.
+      const thumb=extractString(html,'url');
+      if(thumb && /i\.ytimg\.com|ytimg\.com/.test(thumb))thumbnailUrl=thumb;
+
+      // Meta tags are a secondary fallback for title/description/thumbnail.
       const meta=(name)=>{
-        const re=new RegExp(`<meta[^>]+(?:property|name)=["']${name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}["'][^>]+content=["']([^"']*)["']`,'i');
-        const m=html.match(re); return m?m[1]:'';
+        const escaped=name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&');
+        const re=new RegExp("<meta[^>]+(?:property|name)=[\"']"+escaped+"[\"'][^>]+content=[\"']([^\"']*)[\"']",'i');
+        const m=html.match(re); return m?decodeHtml(m[1]):'';
       };
-      const decode=(v)=>String(v||'').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
-      const ogTitle=decode(meta('og:title'));
-      const ogDescription=decode(meta('og:description'));
-      if(ogTitle)title=ogTitle;
-      if(ogDescription)description=ogDescription;
+      title=title||meta('og:title');
+      description=description||meta('description')||meta('og:description');
+      thumbnailUrl=meta('og:image')||thumbnailUrl;
 
-      // Prefer the videoDetails object for views. For likes, YouTube's watch
-      // page has historically exposed likeCount in its serialized data. Keep
-      // these guarded because YouTube can change this markup at any time.
-      const videoView=html.match(/"videoDetails"\s*:\s*\{[\s\S]{0,60000}?"viewCount"\s*:\s*"(\d+)"/);
-      if(videoView)viewCount=Number(videoView[1]);
-      else { const firstView=html.match(/"viewCount"\s*:\s*"(\d+)"/); if(firstView)viewCount=Number(firstView[1]); }
-      const firstLike=html.match(/"likeCount"\s*:\s*"(\d+)"/);
-      if(firstLike)likeCount=Number(firstLike[1]);
-
-      const pub=html.match(/"publishDate"\s*:\s*"([^"]+)"/);
-      if(pub)publishedAt=pub[1];
-      const author=html.match(/"ownerChannelName"\s*:\s*"([^"]+)"/);
-      if(author)channelTitle=decode(author[1]);
-
-      // JSON-LD is a useful description/title fallback when og:* is absent.
+      // JSON-LD can provide the description if YouTube changes its player markup.
       if(!description){
-        const ld=html.match(/"description"\s*:\s*"((?:\\.|[^"\\])*)"/);
-        if(ld){try{description=JSON.parse('"'+ld[1]+'"')}catch{description=decode(ld[1])}}
+        const ld=html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+        if(ld){try{const j=JSON.parse(ld[1]);const item=Array.isArray(j)?j.find(x=>x?.['@type']==='VideoObject'):j;if(item?.description)description=item.description;if(item?.name&&!title)title=item.name;if(item?.thumbnailUrl){const t=Array.isArray(item.thumbnailUrl)?item.thumbnailUrl[0]:item.thumbnailUrl;if(t)thumbnailUrl=t;}}catch{}}
       }
     }
   }catch{}
@@ -65,7 +83,7 @@ async function youtubeFallback(videoId){
     actualStartTime:null,
     scheduledStartTime:null,
     quotaExceeded:true,
-    quotaMessage:'YouTube API quota is exhausted. Project metadata and any publicly exposed statistics were loaded from YouTube without using the Data API quota.',
+    quotaMessage:'YouTube API quota is exhausted. Metadata and publicly exposed statistics were loaded from YouTube without using the Data API quota.',
     thumbnailUrl
   };
 }
@@ -83,5 +101,5 @@ export default async function handler(req, res) {
     const input=String(req.query?.url||'').trim();try{const u=new URL(input),host=u.hostname.toLowerCase().replace(/^www\./,'');if(host!=='instagram.com'&&!host.endsWith('.instagram.com'))throw Error()}catch{return res.status(400).json({error:'Invalid Instagram URL'})}const token=process.env.INSTAGRAM_ACCESS_TOKEN||process.env.META_ACCESS_TOKEN;if(!token)return res.status(503).json({error:'INSTAGRAM_ACCESS_TOKEN is not configured'});try{const endpoint=new URL('https://graph.facebook.com/v22.0/instagram_oembed');endpoint.searchParams.set('url',input);endpoint.searchParams.set('access_token',token);endpoint.searchParams.set('omitscript','true');const r=await fetch(endpoint),data=await r.json();if(!r.ok)return res.status(r.status).json({error:data?.error?.message||'Instagram API request failed'});return res.status(200).json({platform:'instagram',url:input,title:data.title||'',authorName:data.author_name||'',authorUrl:data.author_url||'',thumbnailUrl:data.thumbnail_url||'',html:data.html||'',provider:data.provider_name||'Instagram',likes:null,views:null,mediaUrl:input,mediaType:'image'})}catch{return res.status(500).json({error:'Unable to contact Instagram'})}
   }
   const videoId=String(req.query?.videoId||'').trim();if(!/^[A-Za-z0-9_-]{11}$/.test(videoId))return res.status(400).json({error:'Invalid YouTube video ID'});const key=process.env.YOUTUBE_API_KEY;if(!key){const fallback=await youtubeFallback(videoId);return res.status(200).json(fallback)}
-  try{const url=`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,liveStreamingDetails&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(key)}`,r=await fetch(url),data=await r.json();if(!r.ok){const reason=data?.error?.errors?.[0]?.reason||'';if(r.status===403&&reason==='quotaExceeded')return res.status(200).json(await youtubeFallback(videoId));return res.status(r.status).json({error:data?.error?.message||'YouTube API request failed'})}const item=data.items?.[0];if(!item)return res.status(404).json({error:'YouTube video not found'});const statistics=item.statistics||{},live=item.liveStreamingDetails||{};return res.status(200).json({title:item.snippet?.title||'',description:item.snippet?.description||'',publishedAt:item.snippet?.publishedAt||'',channelTitle:item.snippet?.channelTitle||'',viewCount:statistics.viewCount!=null?Number(statistics.viewCount):null,likeCount:statistics.likeCount!=null?Number(statistics.likeCount):null,likes:statistics.likeCount!=null?Number(statistics.likeCount):null,isLive:!!live.actualStartTime&&!live.actualEndTime,actualStartTime:live.actualStartTime||null,scheduledStartTime:live.scheduledStartTime||null,thumbnailUrl:item.snippet?.thumbnails?.high?.url||item.snippet?.thumbnails?.default?.url||''})}catch{return res.status(500).json({error:'Unable to contact YouTube'})}
+  try{const url=`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,liveStreamingDetails&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(key)}`,r=await fetch(url),data=await r.json();if(!r.ok){const reason=data?.error?.errors?.[0]?.reason||'';if(r.status===403&&['quotaExceeded','dailyLimitExceeded','userRateLimitExceeded','rateLimitExceeded'].includes(reason))return res.status(200).json(await youtubeFallback(videoId));return res.status(r.status).json({error:data?.error?.message||'YouTube API request failed'})}const item=data.items?.[0];if(!item)return res.status(404).json({error:'YouTube video not found'});const statistics=item.statistics||{},live=item.liveStreamingDetails||{};return res.status(200).json({title:item.snippet?.title||'',description:item.snippet?.description||'',publishedAt:item.snippet?.publishedAt||'',channelTitle:item.snippet?.channelTitle||'',viewCount:statistics.viewCount!=null?Number(statistics.viewCount):null,likeCount:statistics.likeCount!=null?Number(statistics.likeCount):null,likes:statistics.likeCount!=null?Number(statistics.likeCount):null,isLive:!!live.actualStartTime&&!live.actualEndTime,actualStartTime:live.actualStartTime||null,scheduledStartTime:live.scheduledStartTime||null,thumbnailUrl:item.snippet?.thumbnails?.high?.url||item.snippet?.thumbnails?.default?.url||''})}catch{return res.status(500).json({error:'Unable to contact YouTube'})}
 }

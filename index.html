@@ -1798,13 +1798,14 @@ function showProjectForm(existing=null){
 
       document.getElementById('pjMedia').value=mediaUrl;
       document.getElementById('pjType').value=d.mediaType||mediaType;
-      const thumb=d.thumbnail||d.thumbnail_url||d.image||d.preview_image_url;
+      const thumb=d.thumbnail||d.thumbnail_url||d.thumbnailUrl||d.image||d.preview_image_url;
       if(thumb)document.getElementById('pjThumb').value=thumb;
       const title=d.title||d.name||'';
       const desc=d.description||d.caption||d.text||'';
-      // When YouTube's Data API quota is exhausted, the fallback still returns
-      // public watch-page metadata. Treat that as authoritative for auto-fill so
-      // Projects don't remain stuck with an empty/old title or description.
+      // YouTube quota fallback returns the public watch-page metadata. For a
+      // fresh social fetch, always populate empty fields; when quota is
+      // exhausted, also replace stale auto-filled values so the Project form
+      // reflects the fetched video rather than remaining blank.
       if(title && (platform==='youtube' && d.quotaExceeded || !document.getElementById('pjTitle').value.trim())){
         document.getElementById('pjTitle').value=title;
       }
