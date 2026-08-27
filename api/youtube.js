@@ -5,14 +5,36 @@ async function youtubeFallback(videoId){
 
   const decodeHtml=(v)=>String(v||'').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/gi,"'").replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
   const decodeJs=(v)=>{try{return JSON.parse('"'+String(v).replace(/\\/g,'\\').replace(/"/g,'\\"')+'"')}catch{return decodeHtml(v)}};
-  const extractString=(html,key)=>{
-    const re=new RegExp('"'+key.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"');
-    const m=html.match(re); return m?decodeJs(m[1]):'';
+  // Do NOT regex the first generic "title" / "viewCount" on a YouTube page.
+  // The page contains many unrelated title/view fields, which can accidentally
+  // put a view label into the Project title. Read the canonical videoDetails
+  // object from ytInitialPlayerResponse first.
+  const extractPlayerResponse=(html)=>{
+    const marker='ytInitialPlayerResponse = ';
+    const at=html.indexOf(marker);
+    if(at<0)return null;
+    let i=at+marker.length;
+    while(i<html.length && /\s/.test(html[i]))i++;
+    if(html[i]!=='{')return null;
+    let depth=0,inStr=false,esc=false;
+    for(let j=i;j<html.length;j++){
+      const c=html[j];
+      if(inStr){
+        if(esc)esc=false; else if(c==='\\')esc=true; else if(c==='"')inStr=false;
+        continue;
+      }
+      if(c==='"'){inStr=true;continue;}
+      if(c==='{')depth++;
+      else if(c==='}') { depth--; if(depth===0){ try{return JSON.parse(html.slice(i,j+1));}catch{return null;} } }
+    }
+    return null;
   };
-  const extractNumber=(html,key)=>{
-    const re=new RegExp('"'+key.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'"\\s*:\\s*"?(\\d+)"?');
-    const m=html.match(re); return m?Number(m[1]):null;
+  const extractMeta=(html,name)=>{
+    const escaped=String(name).replace(/[.*+?^${}()|[\\]\\]/g,'\\$&');
+    const re=new RegExp("<meta[^>]+(?:property|name)=[\"']"+escaped+"[\"'][^>]+content=[\"']([^\"']*)[\"']",'i');
+    const m=html.match(re); return m?decodeHtml(m[1]):'';
   };
+
 
   // oEmbed is independent of the YouTube Data API quota. It reliably supplies
   // the canonical title, creator and thumbnail even when the API is exhausted.
@@ -39,29 +61,27 @@ async function youtubeFallback(videoId){
     },signal:AbortSignal.timeout(10000)});
     const html=await r.text();
     if(r.ok){
-      // videoDetails is the most stable source for title/description/channel/views.
-      title=extractString(html,'title')||title;
-      description=extractString(html,'shortDescription')||description;
-      channelTitle=extractString(html,'author')||extractString(html,'ownerChannelName')||channelTitle;
-      const vc=extractNumber(html,'viewCount'); if(Number.isFinite(vc))viewCount=vc;
-      const pub=extractString(html,'publishDate'); if(pub)publishedAt=pub;
+      const player=extractPlayerResponse(html);
+      const vd=player?.videoDetails||{};
+      // Only accept the title/description/counters from videoDetails. This
+      // prevents unrelated page labels such as "4.6K views" from becoming the
+      // Project title.
+      if(vd.title)title=vd.title;
+      if(vd.shortDescription)description=vd.shortDescription;
+      if(vd.author)channelTitle=vd.author;
+      if(vd.viewCount!=null && /^\d+$/.test(String(vd.viewCount)))viewCount=Number(vd.viewCount);
+      if(vd.publishDate)publishedAt=vd.publishDate;
 
-      // Player response also carries the public like count on many watch pages.
-      const lc=extractNumber(html,'likeCount'); if(Number.isFinite(lc))likeCount=lc;
-
-      // Prefer the actual high-quality player thumbnail if present.
-      const thumb=extractString(html,'url');
-      if(thumb && /i\.ytimg\.com|ytimg\.com/.test(thumb))thumbnailUrl=thumb;
+      const playerVideo=player?.videoDetails||{};
+      if(playerVideo.likeCount!=null && /^\d+$/.test(String(playerVideo.likeCount)))likeCount=Number(playerVideo.likeCount);
+      const thumbs=player?.videoDetails?.thumbnail?.thumbnails||[];
+      const thumb=thumbs.length?thumbs[thumbs.length-1]?.url:'';
+      if(thumb)thumbnailUrl=thumb;
 
       // Meta tags are a secondary fallback for title/description/thumbnail.
-      const meta=(name)=>{
-        const escaped=name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&');
-        const re=new RegExp("<meta[^>]+(?:property|name)=[\"']"+escaped+"[\"'][^>]+content=[\"']([^\"']*)[\"']",'i');
-        const m=html.match(re); return m?decodeHtml(m[1]):'';
-      };
-      title=title||meta('og:title');
-      description=description||meta('description')||meta('og:description');
-      thumbnailUrl=meta('og:image')||thumbnailUrl;
+      title=title||extractMeta(html,'og:title');
+      description=description||extractMeta(html,'description')||extractMeta(html,'og:description');
+      thumbnailUrl=extractMeta(html,'og:image')||thumbnailUrl;
 
       // JSON-LD can provide the description if YouTube changes its player markup.
       if(!description){
