@@ -2693,6 +2693,7 @@ async function capturePaypalReturnIfPresent(){
   if(validInvite&&!state.currentUser){
     // Invitation links always open the Member signup/invitation tab and prefill the code.
     openAuth('signup');
+    document.getElementById('authModal')?.classList.add('open');
     const inviteInput=document.getElementById('authInvite');
     if(inviteInput){inviteInput.value=invite;inviteInput.readOnly=true;setTimeout(()=>inviteInput.focus(),80);}
   }
