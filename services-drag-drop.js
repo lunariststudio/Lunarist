@@ -1,0 +1,34 @@
+// Lunarist Services drag & drop ordering.
+// Mirrors the Projects-style reorder interaction and persists order in Supabase.
+(function(){
+  if(typeof window==='undefined'||window.__lunaristServicesDnD)return;
+  window.__lunaristServicesDnD=true;
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  let timer=null,busy=false;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function style(){if($('#lunarist-services-dnd-style'))return;const s=document.createElement('style');s.id='lunarist-services-dnd-style';s.textContent=`.ls-service-drag-handle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.035);color:var(--muted);cursor:grab;user-select:none;touch-action:none;font-size:16px;flex:0 0 auto}.ls-service-drag-handle:active{cursor:grabbing}.ls-service-dnd-card{position:relative}.ls-service-dnd-card.ls-dragging{opacity:.45;transform:scale(.99)}.ls-service-dnd-card.ls-drag-over{outline:2px dashed var(--gold);outline-offset:3px}.ls-service-dnd-badge{position:absolute;top:8px;left:8px;z-index:4;padding:4px 7px;border-radius:999px;background:rgba(0,0,0,.72);color:var(--text);font-size:10px;font-weight:800;pointer-events:none}.ls-services-drop-hint{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;border:1px dashed var(--line);border-radius:11px;color:var(--muted);font-size:12px}.ls-services-drop-hint b{color:var(--text)}@media(max-width:700px){.ls-service-drag-handle{width:36px;height:36px}.ls-services-drop-hint{font-size:11px}}`;document.head.appendChild(s)}
+  function currentUserId(){return window.state?.currentUser?.id||window.state?.user?.id||''}
+  async function rows(){if(!window.supabaseClient||!currentUserId())return [];try{const r=await supabaseClient.from('services').select('id,title,sort_order').eq('owner_id',currentUserId()).order('sort_order',{ascending:true}).order('created_at',{ascending:true});return r.error?[]:(r.data||[])}catch{return []}}
+  function textOf(el){return (el.textContent||'').replace(/\s+/g,' ').trim()}
+  function cardForTitle(title){
+    const candidates=$$('body *').filter(el=>{if(el.children.length>12)return false;const t=textOf(el);return t===title||t.includes(title)});
+    candidates.sort((a,b)=>a.children.length-b.children.length);
+    for(const el of candidates){let p=el;for(let i=0;i<5&&p&&p!==document.body;i++,p=p.parentElement){if(/button/i.test(p.innerHTML)&&(/edit|delete|service/i.test(p.innerHTML)||p.querySelector('button')))return p}}
+    return candidates[0]||null;
+  }
+  function findCards(serviceRows){
+    const cards=[];for(const r of serviceRows){const el=cardForTitle(r.title);if(!el||cards.some(x=>x.el===el))continue;cards.push({el,row:r})}
+    return cards;
+  }
+  function commonParent(cards){if(cards.length<2)return null;let p=cards[0].el.parentElement;while(p&&p!==document.body){if(cards.every(c=>c.el.parentElement===p))return p;p=p.parentElement}return cards.every(c=>c.el.parentElement===cards[0].el.parentElement)?cards[0].el.parentElement:null}
+  function addHandle(card){if(card.el.querySelector(':scope > .ls-service-drag-handle'))return;card.el.classList.add('ls-service-dnd-card');card.el.setAttribute('draggable','true');const h=document.createElement('div');h.className='ls-service-drag-handle';h.title='Drag to reorder service';h.setAttribute('aria-label','Drag to reorder service');h.textContent='⠿';card.el.insertBefore(h,card.el.firstChild);const badge=document.createElement('span');badge.className='ls-service-dnd-badge';badge.textContent='Drag';card.el.appendChild(badge);}
+  async function save(parent,cards){if(!window.supabaseClient||!currentUserId())return;const ordered=[...parent.children].map((el,i)=>cards.find(c=>c.el===el)).filter(Boolean);if(!ordered.length)return;try{const results=await Promise.all(ordered.map((c,i)=>supabaseClient.from('services').update({sort_order:i}).eq('id',c.row.id).eq('owner_id',currentUserId())));if(results.some(r=>r.error))throw Error('Could not save service order');ordered.forEach((c,i)=>{c.row.sort_order=i;window.data?.services?.find?.(x=>x.id===c.row.id)&&(window.data.services.find(x=>x.id===c.row.id).sort_order=i)});window.toast?.('Service order saved.')}catch(e){window.toast?.('Could not save service order: '+e.message)}}
+  function bind(parent,cards){
+    if(parent.dataset.lunaristServicesDnd==='1')return;parent.dataset.lunaristServicesDnd='1';
+    let dragging=null;
+    cards.forEach(c=>{addHandle(c);c.el.addEventListener('dragstart',e=>{dragging=c.el;c.el.classList.add('ls-dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',c.row.id)});c.el.addEventListener('dragend',async()=>{if(!dragging)return;c.el.classList.remove('ls-dragging');cards.forEach(x=>x.el.classList.remove('ls-drag-over'));await save(parent,cards);dragging=null});c.el.addEventListener('dragover',e=>{if(!dragging||dragging===c.el)return;e.preventDefault();const rect=c.el.getBoundingClientRect();const after=e.clientY>rect.top+rect.height/2;if(after)parent.insertBefore(dragging,c.el.nextSibling);else parent.insertBefore(dragging,c.el);cards.forEach(x=>x.el.classList.toggle('ls-drag-over',x.el===c.el))});c.el.addEventListener('dragleave',()=>c.el.classList.remove('ls-drag-over'));
+      let touchStart=null; c.el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;if(!e.target.closest('.ls-service-drag-handle'))return;touchStart={x:e.clientX,y:e.clientY};c.el.setPointerCapture?.(e.pointerId)});c.el.addEventListener('pointermove',e=>{if(!touchStart)return;const dx=e.clientX-touchStart.x,dy=e.clientY-touchStart.y;if(Math.hypot(dx,dy)<8)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.ls-service-dnd-card');if(!target||target===c.el||target.parentElement!==parent)return;const rect=target.getBoundingClientRect();if(e.clientY>rect.top+rect.height/2)parent.insertBefore(c.el,target.nextSibling);else parent.insertBefore(c.el,target);});c.el.addEventListener('pointerup',async()=>{if(!touchStart)return;touchStart=null;await save(parent,cards)});});
+  }
+  async function scan(){if(busy)return;busy=true;try{style();const rs=await rows();if(rs.length<2)return;const cards=findCards(rs);if(cards.length<2)return;const parent=commonParent(cards);if(!parent)return;cards.forEach(addHandle);bind(parent,cards);if(!$('#lsServicesDropHint')){const hint=document.createElement('div');hint.id='lsServicesDropHint';hint.className='ls-services-drop-hint';hint.innerHTML='<b>Services:</b> drag the ⠿ handle to reorder. Your order is saved automatically.';parent.parentElement?.insertBefore(hint,parent)}}finally{busy=false}}
+  const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(scan,250)});obs.observe(document.body,{childList:true,subtree:true});scan();
+})();
