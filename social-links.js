@@ -52,14 +52,25 @@
     const out={};let bad=false;
     h.querySelectorAll('[data-lunarist-social]').forEach(i=>{const k=i.dataset.lunaristSocial;const raw=i.value.trim();const n=normalize(raw,k);if(raw&&!n){bad=true;i.style.borderColor='var(--danger,#ff7d8e)'}else{i.style.borderColor='';}out[k]=n});
     if(bad){toast('Please enter valid social or website URLs.');return}
-    const r=await supabaseClient.from('profiles').update({social_links:out,updated_at:new Date().toISOString()}).eq('id',state.currentUser.id);
+    // Keep both fields in sync. `socials` is the legacy/public-profile field;
+    // `social_links` is the dedicated field used by this feature.
+    const r=await supabaseClient.from('profiles').update({social_links:out,socials:out,updated_at:new Date().toISOString()}).eq('id',state.currentUser.id);
     if(r.error){toast('Social links could not be saved: '+r.error.message);return}
-    if(state.currentMember)state.currentMember.social_links=out;
-    if(window.data?.members){const mm=data.members.find(x=>x.id===state.currentUser.id);if(mm)mm.social_links=out;}
+    if(state.currentMember){state.currentMember.social_links=out;state.currentMember.socials=out;}
+    if(window.data?.members){const mm=data.members.find(x=>x.id===state.currentUser.id);if(mm){mm.social_links=out;mm.socials=out;}}
     toast('Social links saved.');renderPublic();
   }
   function renderPublic(){
     const m=member();if(!m)return;const content=html(m);if(!content)return;
+    // The main profile page has a dedicated mount point. Use it first so the
+    // feature is visible even though that page does not use the older profile-card markup.
+    const dedicated=document.getElementById('profileSocialLinks');
+    if(dedicated){
+      if(!dedicated.querySelector('.lunarist-social-public')){
+        dedicated.innerHTML=`<div class="lunarist-social-public"><div class="eyebrow">Find me elsewhere</div><div class="lunarist-social-links">${content}</div></div>`;
+      }
+      return;
+    }
     const roots=[...document.querySelectorAll('.profile-card,.profile,.client-public-profile,.artistcard,.panel')];
     const h=roots.reverse().find(n=>{const t=(n.innerText||'').toLowerCase();return t.includes(String(m.username||'').toLowerCase())&&t.includes(String(m.name||m.display_name||'').toLowerCase())});
     if(!h||h.querySelector('.lunarist-social-public'))return;
