@@ -17,3 +17,8 @@ X_BEARER_TOKEN
 INSTAGRAM_ACCESS_TOKEN
 META_APP_ID (optional, for app configuration)
 META_APP_SECRET (optional, for app configuration)
+
+2026-08-28 X metrics refresh fix:
+- X project player now uses a 10-second TTL cache and force-refreshes metrics when the modal sync runs.
+- Discover X cards refresh live likes from /api/x with a short 15-second client cache.
+- Removed hardcoded X web bearer/query fallbacks from source; configure X_WEB_BEARER and X_WEB_TWEET_QUERY_ID in Vercel instead.
