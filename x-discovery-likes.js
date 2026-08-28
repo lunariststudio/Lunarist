@@ -21,7 +21,7 @@
       const d=await metrics(id); if(!d)return;
       const meta=card.querySelector('.meta.artist span')||card.querySelector('.meta span'); if(!meta)return;
       const name=(meta.dataset.xDiscoveryName)||(meta.textContent||'').split('·')[0].trim(); meta.dataset.xDiscoveryName=name;
-      const parts=[]; if(d.likes!=null)parts.push(`${fmt(d.likes)} likes`); if(d.views!=null)parts.push(`${fmt(d.views)} views`);
+      const parts=[]; if(d.likes!=null)parts.push(`${fmt(d.likes)} likes`); const engagement=[d.likes,d.replies,d.reposts,d.quotes].map(Number); if(engagement.every(Number.isFinite))parts.push(`${fmt(engagement.reduce((a,v)=>a+v,0))} engagements`);
       if(parts.length)meta.textContent=name+' · '+parts.join(' · ');
     }));
   }
