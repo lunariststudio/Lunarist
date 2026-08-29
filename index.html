@@ -153,6 +153,69 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
   .modalmedia.auto-ratio iframe{width:100%!important;height:auto!important;max-height:68dvh!important;aspect-ratio:16/9!important;}
 }
 </style>
+
+<style id="lunarist-youtube-thumbnail-final-fix">
+/* YouTube project/service thumbnails: fill the card preview with no black bars.
+   This rule intentionally comes after the generic auto-ratio/mobile rules so
+   those rules cannot override YouTube's fixed 16:9 presentation. */
+.thumb.thumb-youtube,
+.thumb.youtube{
+  aspect-ratio:16/9!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  background:#000!important;
+}
+.thumb.thumb-youtube img,
+.thumb.youtube img{
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  display:block!important;
+  transform:none!important;
+}
+.card:hover .thumb.thumb-youtube img,
+.card:hover .thumb.youtube img{
+  transform:none!important;
+}
+@media(max-width:720px){
+  .thumb.thumb-youtube,
+  .thumb.youtube{
+    aspect-ratio:16/9!important;
+    height:auto!important;
+  }
+  .thumb.thumb-youtube img,
+  .thumb.youtube img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+  }
+}
+</style>
+<script id="lunarist-youtube-thumbnail-final-js">
+(function(){
+  function markYoutubeThumbnails(root){
+    (root||document).querySelectorAll('.card .thumb img').forEach(function(img){
+      var card=img.closest('.card');
+      var thumb=img.closest('.thumb');
+      if(!card||!thumb)return;
+      var source=(card.dataset.youtubeUrl||'')+' '+(img.currentSrc||img.src||'');
+      if(/(?:youtube(?:-nocookie)?\.com|youtu\.be|ytimg\.com)/i.test(source)){
+        thumb.classList.add('thumb-youtube');
+        thumb.classList.add('youtube');
+      }
+    });
+  }
+  window.markYoutubeThumbnails=markYoutubeThumbnails;
+  document.addEventListener('DOMContentLoaded',function(){markYoutubeThumbnails(document);});
+  new MutationObserver(function(){markYoutubeThumbnails(document);}).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
 </head>
 <body>
 <div class="app" id="app">
@@ -347,6 +410,7 @@ function applyNaturalMediaRatio(el, img, opts={}){
 }
 function bindAutoRatioMedia(root=document){
   root.querySelectorAll('.thumb img').forEach(img=>applyNaturalMediaRatio(img.parentElement,img));
+  if(window.markYoutubeThumbnails) window.markYoutubeThumbnails(root);
 }
 function card(p,feature=false){
   const m=member(p.member);
