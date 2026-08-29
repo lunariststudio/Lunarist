@@ -648,6 +648,10 @@ function openService(id){
   let paymentType='deposit';
   let pendingAttachmentUrl=null;
 
+  // Initialize the pricing UI immediately when the service modal opens.
+  // Previously the total remained at $0.00 until an add-on was toggled or
+  // another interaction caused refreshPaymentUI() to run.
+
   function getSelectedAddonOptions(){
     return Array.from(document.querySelectorAll('.modalAddonCheck:checked')).map(cb=>{const ao=addOns[Number(cb.dataset.idx)];return {ao,durationSeconds:addonIsDuration(ao)?parseDurationInput(document.querySelector(`[data-duration-idx=\"${cb.dataset.idx}\"]`)?.value):null}}).filter(x=>x.ao);
   }
@@ -680,6 +684,9 @@ function openService(id){
     depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)'; fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
     if(invalidDuration){document.getElementById('inquiryMsg').textContent=state.language==='ja'?'動画時間を入力してください。':'Enter a valid video duration (mm:ss).'}else{document.getElementById('inquiryMsg').textContent='';}
   }
+  // Render the real base service price immediately on modal open.
+  refreshPaymentUI();
+
   const depositOptionEl=document.getElementById('depositOption');
   const fullOptionEl=document.getElementById('fullOption');
   depositOptionEl?.addEventListener('click',()=>{paymentType='deposit';refreshPaymentUI();});
