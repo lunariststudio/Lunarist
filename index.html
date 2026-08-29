@@ -218,6 +218,28 @@ const state={route:'home',filter:'All',query:'',session:{id:'s_'+Math.random().t
 const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
+
+function parseServicePrice(value, fallback=0){
+  if(value===null||value===undefined)return Number(fallback)||0;
+  let raw=String(value).trim();
+  if(!raw)return Number(fallback)||0;
+  // Accept normal forms such as 30, $30, USD 30, $ 30, 30 USD, 30.00, and 30,00.
+  raw=raw.replace(/[,$€£¥]/g,'').replace(/(USD|JPY|EUR|GBP)/ig,'').trim();
+  // Be forgiving of a common O-for-0 typo when it is adjacent to digits.
+  raw=raw.replace(/(?<=\d)[Oo](?=\d)/g,'0').replace(/(?<=\$|\s)[Oo](?=\d)/g,'0');
+  const match=raw.match(/[-+]?\d+(?:[.,]\d+)?/);
+  if(!match)return Number(fallback)||0;
+  const n=Number(match[0].replace(',','.'));
+  return Number.isFinite(n)&&n>0?n:(Number(fallback)||0);
+}
+function serviceBasePrice(service){
+  if(!service)return 0;
+  const parsed=parseServicePrice(service.price_from,0);
+  if(parsed>0)return parsed;
+  const amount=Number(service.amount);
+  return Number.isFinite(amount)&&amount>0?amount:0;
+}
+
 function updateSeoMeta(title, desc, image) {
   const pageTitle = title ? `${title} — Lunarist Studio` : 'Lunarist Studio — Unleash Your Dream';
   document.title = pageTitle;
@@ -520,7 +542,7 @@ function openService(id){
   const m=member(s.member);
   const examples=(s.projectIds||[]).map(pid=>data.projects.find(p=>p.id===pid)).filter(Boolean);
   const addOns = (Array.isArray(s.add_ons) ? s.add_ons : []).map(ao=>isVideoDurationAddon(ao)?{...ao,type:'duration',duration:true,included_seconds:Number(ao.included_seconds??180)||180,unit_seconds:Number(ao.unit_seconds??30)||30,price:Number(ao.price??10)||10}:ao);
-  const basePrice = parseFloat(String(s.price_from||'0').replace(/[^0-9.]/g,''))||0;
+  const basePrice = serviceBasePrice(s);
   const canCheckout = basePrice>0;
 
   updateSeoMeta(s.title, s.description, s.thumbnail_url);
@@ -584,11 +606,11 @@ function openService(id){
 
       ${canCheckout?`
         <div class="formgrid" style="margin-top:14px">
-          <div class="field" id="depositOption" style="cursor:pointer;border:1px solid var(--gold);border-radius:12px;padding:12px;text-align:center">
+          <div class="field" id="depositOption" role="button" tabindex="0" style="cursor:pointer;border:1px solid var(--gold);border-radius:12px;padding:12px;text-align:center">
             <b style="color:var(--gold)" id="depositAmountLabel">50% Deposit</b>
             <div class="meta" id="depositSubLabel">Save Slot</div>
           </div>
-          <div class="field" id="fullOption" style="cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
+          <div class="field" id="fullOption" role="button" tabindex="0" style="cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center">
             <b id="fullAmountLabel">Full Amount</b>
             <div class="meta">Pay Upfront</div>
           </div>
@@ -658,6 +680,13 @@ function openService(id){
     depEl.style.borderColor=paymentType==='deposit'?'var(--gold)':'var(--line)'; fullEl.style.borderColor=paymentType==='full'?'var(--gold)':'var(--line)';
     if(invalidDuration){document.getElementById('inquiryMsg').textContent=state.language==='ja'?'動画時間を入力してください。':'Enter a valid video duration (mm:ss).'}else{document.getElementById('inquiryMsg').textContent='';}
   }
+  const depositOptionEl=document.getElementById('depositOption');
+  const fullOptionEl=document.getElementById('fullOption');
+  depositOptionEl?.addEventListener('click',()=>{paymentType='deposit';refreshPaymentUI();});
+  fullOptionEl?.addEventListener('click',()=>{paymentType='full';refreshPaymentUI();});
+  [depositOptionEl,fullOptionEl].forEach(el=>el?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}}));
+  if(depositOptionEl){depositOptionEl.setAttribute('role','button');depositOptionEl.setAttribute('tabindex','0');}
+  if(fullOptionEl){fullOptionEl.setAttribute('role','button');fullOptionEl.setAttribute('tabindex','0');}
   async function translateVisibleAddons(){if(state.language!=='ja')return;for(const [idx,ao] of addOns.entries()){const el=document.querySelector(`[data-addon-title=\"${idx}\"]`);if(!el)continue;const t=await translateAddonText(ao.title);el.textContent=t;const help=document.querySelector(`[data-duration-help=\"${idx}\"]`);if(help)help.textContent='動画の合計時間を入力してください。';}}
 
   document.querySelectorAll('.modalAddonCheck').forEach(cb=>cb.onchange=()=>{const idx=Number(cb.dataset.idx);const ctl=document.querySelector(`[data-duration-control=\"${idx}\"]`);if(ctl)ctl.style.display=cb.checked?'block':'none';if(!cb.checked){const input=document.querySelector(`[data-duration-idx=\"${idx}\"]`);if(input)input.value='';}refreshPaymentUI();});
@@ -1185,7 +1214,7 @@ async function openDashboard(initialTab='overview'){
   
   const [{data:ps},{data:ss},{data:clientCommissions,error:commissionError}]=await Promise.all([
     supabaseClient.from('projects').select('*').eq('owner_id',m.id).order('created_at',{ascending:false}),
-    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,status,published,featured,views,add_ons,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('created_at',{ascending:false}),
+    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,amount,delivery_time,thumbnail_url,status,published,featured,views,add_ons,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('created_at',{ascending:false}),
     supabaseClient.from('commissions').select('id,service_id,artist_id,client_id,status,payment_type,deposit_amount,total_amount,amount,currency,target_deadline,created_at,updated_at,project_title,client_name,company,paypal_order_id,paypal_capture_id,service:service_id(id,title,thumbnail_url),artist:artist_id(id,display_name,username,avatar_url),client_reviews(id,rating,review,published,created_at)').eq('client_id',m.id).order('created_at',{ascending:false})
   ]);
   state.myCommissions=clientCommissions||[];
@@ -1730,7 +1759,7 @@ function showServiceForm(existing=null){
   };
 
   function refreshServiceEditorPrice(){
-    const base=money(document.getElementById('svPrice')?.value);
+    const base=parseServicePrice(document.getElementById('svPrice')?.value,0);
     const rows=Array.from(document.querySelectorAll('.addonRow'));
     let total=base;
     rows.forEach(row=>{
@@ -1780,9 +1809,9 @@ function showServiceForm(existing=null){
     try{if(thumbFile)thumbnail_url=await uploadProjectFile(thumbFile,'service-thumb')}catch(e){document.getElementById('serviceMsg').textContent='Upload failed: '+(e.message||'Unable to upload file.');return}
     
     const keySlug=(title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+state.currentUser.id.slice(0,8)).slice(0,120);
-    const rawPrice=document.getElementById('svPrice').value.replace(/[^0-9.]/g,'');
-    const parsedAmount=parseFloat(rawPrice);
-    const amountNum=(!isNaN(parsedAmount)&&parsedAmount>0)?parsedAmount:1;
+    const enteredPrice=document.getElementById('svPrice').value.trim();
+    const amountNum=parseServicePrice(enteredPrice,0);
+    if(amountNum<=0){document.getElementById('serviceMsg').textContent='Enter a valid starting price, e.g. 30 or $30.';return}
     const payload={key:keySlug,slug:keySlug,label:title,amount:amountNum,artist_id:state.currentUser.id,owner_id:state.currentUser.id,title,category,tags,description:document.getElementById('svDesc').value.trim(),price_from:document.getElementById('svPrice').value.trim(),delivery_time:document.getElementById('svDelivery').value.trim(),thumbnail_url,status,published:status==='published',add_ons};
     
     let result=existing?await supabaseClient.from('services').update(payload).eq('id',existing.id).or(`owner_id.eq.${state.currentUser.id},artist_id.eq.${state.currentUser.id}`).select().single():await supabaseClient.from('services').insert(payload).select().single();
@@ -2552,7 +2581,7 @@ async function loadData(){
       slides:Array.isArray(x.slides)?x.slides:[]
     }));
 
-    data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));
+    data.services=(Array.isArray(sv)?sv:[]).map(x=>({id:x.id,member:x.owner_id||x.artist_id,title:x.title,category:x.category,tags:x.tags||[],price_from:x.price_from||'',amount:Number(x.amount||0),delivery_time:x.delivery_time||'',thumbnail_url:x.thumbnail_url||'',views:Number(x.views||0),created_at:x.created_at,description:x.description||'',add_ons:x.add_ons||[],projectIds:(x.service_projects||[]).map(sp=>sp.project_id)}));
     
     state.backendReady=true;
     if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}
