@@ -113,140 +113,44 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
   .attachment-viewer-body img,.attachment-viewer-body video{width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;}
 }
 </style>
+<style id="lunarist-auto-ratio-media-fix">
+/* Preserve the actual media ratio everywhere. The JS adds .auto-ratio after
+   reading naturalWidth/naturalHeight so arbitrary ratios work without cropping. */
+.thumb.auto-ratio{aspect-ratio:auto!important;height:auto!important;min-height:0!important;display:block!important;}
+.thumb.auto-ratio img{width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;object-fit:initial!important;object-position:center!important;display:block!important;transform:none;}
+.card:hover .thumb.auto-ratio img{transform:none!important;}
 
-<style id="lunarist-mobile-complete-optimization">
-/* Complete mobile optimization for cards, media, forms, modals, navigation and touch UI. */
-@media (max-width: 720px){
-  :root{--radius:18px}
-  html,body{width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
-  body{font-size:14px;padding-bottom:env(safe-area-inset-bottom)}
-  button,.btn,.filter,.navbtn,.iconbtn,input,select,textarea{touch-action:manipulation}
-  .nav{position:sticky;top:0}
-  .navin{height:58px;min-height:58px;padding:0 10px;gap:6px}
-  .brand{font-size:12px;letter-spacing:.12em;white-space:nowrap}
-  .nav-tools{gap:4px!important}
-  .lang-switch{font-size:11px!important;min-height:36px}
-  .notif-btn{min-width:38px;min-height:38px}
-  .mobile{min-height:38px;padding:8px 10px!important}
-  .userchip{min-height:40px;padding:4px 8px 4px 4px;max-width:132px}
-  .userchip .avatar{width:30px;height:30px}
-  .container{padding-left:12px;padding-right:12px}
-  .hero{padding:42px 0 28px}
-  h1{font-size:clamp(42px,13vw,58px);line-height:.92;margin:12px 0 18px;max-width:100%}
-  .hero p{font-size:15px;line-height:1.55}
-  .section{padding:22px 0 38px}
-  .sectionhead{gap:10px;margin-bottom:14px}
-  .sectionhead h2{font-size:24px}
-  .sectionhead p{font-size:12px}
-  .heroactions{gap:8px;margin-top:20px}
-  .heroactions .btn{min-height:42px}
-
-  /* Two-column cards stay compact; media never gets enlarged beyond its box. */
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-  .card{border-radius:16px;min-width:0;width:100%;transform:none!important}
-  .card:hover{transform:none!important;box-shadow:none}
-  .thumb,.feature .thumb{width:100%;height:auto;aspect-ratio:16/10!important;min-height:0!important;max-height:none!important}
-  .thumb img,.thumb video{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-position:center!important;transform:none!important}
-  .thumb img:not(.portrait),.thumb img.portrait{object-fit:contain!important}
-  .thumb.thumb-youtube img{object-fit:cover!important}
-  .services-page .thumb img:not(.portrait),.service-card .thumb img:not(.portrait){object-fit:cover!important}
-  .services-page .thumb img.portrait,.service-card .thumb img.portrait{object-fit:contain!important}
-  .overlay{padding:7px;gap:4px}
-  .badge{font-size:9px;padding:5px 7px;max-width:calc(100% - 14px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cardbody{padding:10px}
-  .title{font-size:13px;line-height:1.35}
-  .meta{font-size:11px;line-height:1.35}
-  .tags{gap:4px;margin-top:7px}
-  .tag{font-size:9px;padding:3px 6px}
-  .artist{gap:7px;min-width:0}
-  .artist .avatar{width:26px;height:26px;flex:0 0 26px}
-
-  .discoverbar,.dashnav{scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-  .discoverbar::-webkit-scrollbar,.dashnav::-webkit-scrollbar{display:none}
-  .filter{min-height:38px;padding:8px 11px}
-  .search{min-height:42px}
-  .artistgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}
-  .artistcard{padding:12px;border-radius:15px}
-
-  /* Modals / project & service detail media */
-  .modal{padding:6px!important;align-items:flex-end!important}
-  .modalbox{width:100%!important;max-width:100%!important;max-height:calc(100dvh - 6px)!important;border-radius:20px 20px 12px 12px!important;overflow:auto!important;-webkit-overflow-scrolling:touch}
-  .modalclose{right:10px;top:10px;width:40px;height:40px;z-index:3}
-  .modalmedia{width:100%!important;height:min(58dvh,520px)!important;min-height:190px!important;max-height:58dvh!important}
-  .modalmedia img,.modalmedia video{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important}
-  .modalmedia iframe{min-height:220px!important;height:58dvh!important;max-height:58dvh!important}
-  .modalcontent{padding:14px!important}
-  .modalcontent h2{font-size:25px;line-height:1.15;padding-right:38px}
-  .stats{gap:6px;margin:12px 0}
-  .stat{padding:7px 9px;font-size:11px}
-
-  /* Dashboard / editors */
-  .drawerpanel{width:100%;padding:14px 12px calc(18px + env(safe-area-inset-bottom));border-left:0}
-  .dashhead{margin-bottom:14px}
-  .dashnav{gap:5px;margin-bottom:14px;padding-bottom:3px}
-  .dashnav .filter{flex:0 0 auto}
-  .panel{padding:14px;border-radius:17px}
-  .formgrid{grid-template-columns:1fr!important;gap:10px}
-  .field.full{grid-column:auto!important}
-  .field input,.field textarea,.field select{font-size:16px;min-height:44px}
-  .field textarea{min-height:110px}
-  .field input[type=file]{font-size:13px;min-height:44px}
-  .heroactions{flex-wrap:wrap}
-  .heroactions .btn{flex:1 1 140px}
-  .service-addons-field{padding:12px!important}
-  .service-addons-heading{gap:8px;flex-direction:column}
-  .addon-main-row{padding-right:48px}
-  .addon-duration-settings{grid-template-columns:1fr!important}
-  .addon-duration-intro{grid-column:auto}
-  .portfolio-check-item{padding:8px;min-height:52px}
-  .portfolio-check-thumb{width:58px}
-
-  /* Inline project editor grid cannot keep its desktop 180px column on phones. */
-  .field.full > div[style*="grid-template-columns"]{grid-template-columns:1fr!important;width:100%!important}
-
-  /* Lists / tables */
-  .listitem{gap:8px;padding:10px 0;align-items:flex-start}
-  .listthumb{width:76px!important;min-width:76px!important;height:52px!important;aspect-ratio:16/10!important;object-fit:contain!important}
-
-  /* Attachment viewer */
-  .attachment-viewer{padding:5px!important}
-  .attachment-viewer-box{width:100%!important;height:calc(100dvh - 10px)!important;max-height:calc(100dvh - 10px)!important;border-radius:18px!important}
-  .attachment-viewer-head{height:52px;padding:8px 10px}
-  .attachment-viewer-body{padding:6px!important}
-  .attachment-viewer-body img,.attachment-viewer-body video{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;object-fit:contain!important}
-  .attachment-viewer-body iframe{width:100%!important;height:100%!important}
-
-  .footer{padding:24px 0 calc(24px + env(safe-area-inset-bottom))}
-  .footer .row{align-items:flex-start;gap:8px;flex-direction:column}
-  .toast{bottom:calc(14px + env(safe-area-inset-bottom));max-width:calc(100vw - 24px);text-align:center}
+.modalmedia.auto-ratio{
+  width:var(--media-width,100%);
+  max-width:100%;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  display:block!important;
+  overflow:hidden!important;
+  background:transparent!important;
+  margin-inline:auto;
 }
-
-@media (max-width:380px){
-  .navin{padding:0 7px;gap:4px}
-  .brand{font-size:11px}
-  .userchip{max-width:108px}
-  .userchip span:last-child{max-width:52px!important}
-  .grid{gap:6px!important}
-  .cardbody{padding:8px}
-  .title{font-size:12px}
-  .meta{font-size:10px}
-  .hero{padding-top:34px}
+.modalmedia.auto-ratio img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-width:100%!important;
+  max-height:72vh!important;
+  object-fit:contain!important;
+  object-position:center!important;
 }
-</style>
-
-
-<style id="lunarist-auto-media-ratio">
-/* Automatically preserve the uploaded media's real aspect ratio on cards and detail modals. */
-.thumb.media-auto-ratio{aspect-ratio:var(--media-ratio,16/10)!important;height:auto!important;min-height:0!important;}
-.thumb.media-auto-ratio img,.thumb.media-auto-ratio video{width:100%!important;height:auto!important;aspect-ratio:var(--media-ratio,16/10);object-fit:contain!important;object-position:center!important;}
-.thumb.thumb-youtube.media-auto-ratio img{object-fit:cover!important;}
-.modalmedia.media-auto-ratio{aspect-ratio:var(--media-ratio,16/9)!important;height:auto!important;min-height:0!important;max-height:72vh!important;}
-.modalmedia.media-auto-ratio img,.modalmedia.media-auto-ratio video{width:100%!important;height:auto!important;max-height:72vh!important;object-fit:contain!important;object-position:center!important;}
+.modalmedia.auto-ratio video{
+  display:block!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:72vh!important;object-fit:contain!important;
+}
+.modalmedia.auto-ratio iframe{display:block!important;width:100%!important;height:auto!important;aspect-ratio:16/9!important;min-height:0!important;max-height:72vh!important;}
 @media(max-width:720px){
-  .thumb.media-auto-ratio,.feature .thumb.media-auto-ratio{aspect-ratio:var(--media-ratio,16/10)!important;height:auto!important;}
-  .thumb.media-auto-ratio img,.thumb.media-auto-ratio video{height:auto!important;max-height:none!important;}
-  .modalmedia.media-auto-ratio{aspect-ratio:var(--media-ratio,16/9)!important;height:auto!important;min-height:0!important;max-height:58dvh!important;}
-  .modalmedia.media-auto-ratio img,.modalmedia.media-auto-ratio video{height:auto!important;max-height:58dvh!important;}
+  .thumb.auto-ratio{aspect-ratio:auto!important;height:auto!important;}
+  .thumb.auto-ratio img{width:100%!important;height:auto!important;max-height:none!important;}
+  .modalmedia.auto-ratio{width:var(--media-width,100%)!important;height:auto!important;min-height:0!important;max-height:none!important;}
+  .modalmedia.auto-ratio img,.modalmedia.auto-ratio video{width:100%!important;height:auto!important;max-height:68dvh!important;}
+  .modalmedia.auto-ratio iframe{width:100%!important;height:auto!important;max-height:68dvh!important;aspect-ratio:16/9!important;}
 }
 </style>
 </head>
@@ -399,29 +303,28 @@ async function refreshRecommendations(){
 }
 async function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);(p.tags||[]).forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{});}
 function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.pravatar.cc/160?u=unknown')}" alt="${esc(m?.name||'Artist')}" loading="lazy" onerror="handleImageError(this)">`}
-function applyAutoMediaRatio(media,container){
-  if(!media||!container)return;
-  const apply=()=>{
-    const w=Number(media.naturalWidth||media.videoWidth||0),h=Number(media.naturalHeight||media.videoHeight||0);
-    if(!(w>0&&h>0))return;
-    const ratio=w/h;
-    container.style.setProperty('--media-ratio',String(ratio));
-    container.classList.add('media-auto-ratio');
-    if(container.classList.contains('modalmedia')){
-      const maxH=Math.min(window.innerHeight*(window.matchMedia('(max-width: 720px)').matches?.58:.72), window.matchMedia('(max-width: 720px)').matches?520:720);
-      const availableW=Math.max(1,container.clientWidth||container.parentElement?.clientWidth||w);
-      const naturalH=availableW/ratio;
-      container.style.height=Math.min(naturalH,maxH)+'px';
+function applyNaturalMediaRatio(el, img, opts={}){
+  if(!el || !img) return;
+  const set=()=>{
+    const w=Number(img.naturalWidth||0), h=Number(img.naturalHeight||0);
+    if(!w || !h) return;
+    el.classList.add('auto-ratio');
+    el.style.setProperty('--media-ratio', `${w} / ${h}`);
+    if(opts.modal){
+      // Keep the media box itself the same ratio as the source so there are
+      // no artificial black/empty columns around portrait or custom-ratio art.
+      const maxH=(window.innerWidth<=720 ? window.innerHeight*0.68 : window.innerHeight*0.72);
+      const maxW=Math.max(240, Math.min(window.innerWidth*(window.innerWidth<=720?.94:.88), 960));
+      const ratio=w/h;
+      const width=Math.min(maxW, maxH*ratio);
+      el.style.setProperty('--media-width', `${Math.max(1,width)}px`);
     }
   };
-  if(media.complete && (media.naturalWidth||media.videoWidth)) apply();
-  else { media.addEventListener('load',apply,{once:true}); media.addEventListener('loadedmetadata',apply,{once:true}); }
+  if(img.complete) set();
+  img.addEventListener('load',set,{once:true});
 }
-function bindAutoMediaRatios(root=document){
-  root.querySelectorAll('.thumb img,.thumb video,.modalmedia img,.modalmedia video').forEach(media=>{
-    const container=media.closest('.thumb,.modalmedia');
-    if(container)applyAutoMediaRatio(media,container);
-  });
+function bindAutoRatioMedia(root=document){
+  root.querySelectorAll('.thumb img').forEach(img=>applyNaturalMediaRatio(img.parentElement,img));
 }
 function card(p,feature=false){
   const m=member(p.member);
@@ -435,8 +338,8 @@ function card(p,feature=false){
     : `${formatViews(p.views)} views`;
   const thumbClass=youtubeProject?'thumb thumb-youtube':'thumb';
   return `<article class="card ${feature?'feature':''}" data-project="${p.id}">
-    <div class="${thumbClass}">
-      <img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy" onerror="handleImageError(this)">
+    <div class="${thumbClass} auto-ratio">
+      <img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy" onload="applyNaturalMediaRatio(this.parentElement,this)" onerror="handleImageError(this)">
       <div class="overlay"><span class="badge">${esc(p.category)}</span>${directBadge}</div>
     </div>
     <div class="cardbody">
@@ -447,7 +350,7 @@ function card(p,feature=false){
     </div>
   </article>`;
 }
-function serviceCard(s){const m=member(s.member);return `<article class="card service-card services-page" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onload="this.classList.toggle('portrait',this.naturalHeight>this.naturalWidth);applyAutoMediaRatio(this,this.closest('.thumb'))" onerror="handleImageError(this)"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
+function serviceCard(s){const m=member(s.member);return `<article class="card service-card services-page" data-service="${s.id}"><div class="thumb auto-ratio"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onload="this.classList.toggle('portrait',this.naturalHeight>this.naturalWidth);applyNaturalMediaRatio(this.parentElement,this)" onerror="handleImageError(this)"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
 function money(v){const n=Number(String(v??'').replace(/[^0-9.]/g,''));return Number.isFinite(n)&&n>0?n:0}
@@ -622,7 +525,10 @@ function openService(id){
 
   updateSeoMeta(s.title, s.description, s.thumbnail_url);
 
-  document.getElementById('modalMedia').innerHTML=`<img src="${esc(s.thumbnail_url||'')}" class="auto-ratio-media" style="width:100%;height:auto;object-fit:contain;display:block" alt="" onload="applyAutoMediaRatio(this,this.closest('.modalmedia'))" onerror="handleImageError(this)">`;
+  const serviceModalMedia=document.getElementById('modalMedia');
+  serviceModalMedia.classList.add('auto-ratio');
+  serviceModalMedia.style.removeProperty('--media-width');
+  serviceModalMedia.innerHTML=`<img src="${esc(s.thumbnail_url||'')}" alt="" onload="applyNaturalMediaRatio(this.parentElement,this,{modal:true})" onerror="handleImageError(this)">`;
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(s.category)}</div>
     <h2>${esc(s.title)}</h2>
@@ -700,7 +606,6 @@ function openService(id){
   `;
 
   document.getElementById('projectModal').classList.add('open');
-  bindAutoMediaRatios(document.getElementById('projectModal'));
 
   if(state.language==='ja' && m?.tos && !m.tos_ja){
     const status=document.getElementById('inquiryTosTranslationStatus');
@@ -1043,7 +948,16 @@ async function openProject(id){
     modalMediaEl.innerHTML=`<div style="width:100%;height:100%;overflow:auto;background:#000;display:flex;align-items:center;justify-content:center;padding:14px"><blockquote class="twitter-tweet" data-theme="dark"><a href="${esc(xStatusUrl)}"></a></blockquote></div>`;
     loadTwitterWidgets().then(w=>{ if(w&&w.widgets)w.widgets.load(modalMediaEl); });
   }else{
-    modalMediaEl.innerHTML=playbackUrl?`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`:`<img src="${esc(p.image)}" class="auto-ratio-media" style="width:100%;height:auto;object-fit:contain;display:block" alt="" onload="applyAutoMediaRatio(this,this.closest('.modalmedia'))" onerror="handleImageError(this)">`;
+    modalMediaEl.classList.remove('auto-ratio');
+    modalMediaEl.style.removeProperty('--media-width');
+    if(playbackUrl){
+      modalMediaEl.innerHTML=`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`;
+      // Embedded platforms have a known presentation ratio; keep it compact instead of stretching the old fixed-height box.
+      modalMediaEl.classList.add('auto-ratio');
+      modalMediaEl.style.setProperty('--media-width', `${Math.min(window.innerWidth*(window.innerWidth<=720?.94:.88),960)}px`);
+    }else{
+      modalMediaEl.innerHTML=`<img src="${esc(p.image)}" alt="" onload="applyNaturalMediaRatio(this.parentElement,this,{modal:true})" onerror="handleImageError(this)">`;
+    }
   }
   
   document.getElementById('modalContent').innerHTML=`
@@ -1080,15 +994,13 @@ async function openProject(id){
   `;
 
   document.getElementById('projectModal').classList.add('open');
-  bindAutoMediaRatios(document.getElementById('projectModal'));
   document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};
   document.getElementById('saveBtn').onclick=()=>toggleSaveProject(p.id);
   document.querySelector('[data-modal-member]').onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
   document.querySelectorAll('[data-open-service]').forEach(b=>b.onclick=()=>{closeModal();openService(b.dataset.openService)});
 }
 
-window.addEventListener('resize',()=>{const mm=document.getElementById('modalMedia');if(mm?.classList.contains('media-auto-ratio')){const media=mm.querySelector('img,video');if(media)applyAutoMediaRatio(media,mm);}});
-function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML='';updateSeoMeta('','','')}
+function closeModal(){document.getElementById('projectModal').classList.remove('open');const mm=document.getElementById('modalMedia');mm.innerHTML='';mm.classList.remove('auto-ratio');mm.style.removeProperty('--media-width');updateSeoMeta('','','')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){
   state.authMode=mode;
