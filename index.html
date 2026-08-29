@@ -234,6 +234,21 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 }
 </style>
 
+
+<style id="lunarist-auto-media-ratio">
+/* Automatically preserve the uploaded media's real aspect ratio on cards and detail modals. */
+.thumb.media-auto-ratio{aspect-ratio:var(--media-ratio,16/10)!important;height:auto!important;min-height:0!important;}
+.thumb.media-auto-ratio img,.thumb.media-auto-ratio video{width:100%!important;height:auto!important;aspect-ratio:var(--media-ratio,16/10);object-fit:contain!important;object-position:center!important;}
+.thumb.thumb-youtube.media-auto-ratio img{object-fit:cover!important;}
+.modalmedia.media-auto-ratio{aspect-ratio:var(--media-ratio,16/9)!important;height:auto!important;min-height:0!important;max-height:72vh!important;}
+.modalmedia.media-auto-ratio img,.modalmedia.media-auto-ratio video{width:100%!important;height:auto!important;max-height:72vh!important;object-fit:contain!important;object-position:center!important;}
+@media(max-width:720px){
+  .thumb.media-auto-ratio,.feature .thumb.media-auto-ratio{aspect-ratio:var(--media-ratio,16/10)!important;height:auto!important;}
+  .thumb.media-auto-ratio img,.thumb.media-auto-ratio video{height:auto!important;max-height:none!important;}
+  .modalmedia.media-auto-ratio{aspect-ratio:var(--media-ratio,16/9)!important;height:auto!important;min-height:0!important;max-height:58dvh!important;}
+  .modalmedia.media-auto-ratio img,.modalmedia.media-auto-ratio video{height:auto!important;max-height:58dvh!important;}
+}
+</style>
 </head>
 <body>
 <div class="app" id="app">
@@ -384,6 +399,30 @@ async function refreshRecommendations(){
 }
 async function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);(p.tags||[]).forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{});}
 function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.pravatar.cc/160?u=unknown')}" alt="${esc(m?.name||'Artist')}" loading="lazy" onerror="handleImageError(this)">`}
+function applyAutoMediaRatio(media,container){
+  if(!media||!container)return;
+  const apply=()=>{
+    const w=Number(media.naturalWidth||media.videoWidth||0),h=Number(media.naturalHeight||media.videoHeight||0);
+    if(!(w>0&&h>0))return;
+    const ratio=w/h;
+    container.style.setProperty('--media-ratio',String(ratio));
+    container.classList.add('media-auto-ratio');
+    if(container.classList.contains('modalmedia')){
+      const maxH=Math.min(window.innerHeight*(window.matchMedia('(max-width: 720px)').matches?.58:.72), window.matchMedia('(max-width: 720px)').matches?520:720);
+      const availableW=Math.max(1,container.clientWidth||container.parentElement?.clientWidth||w);
+      const naturalH=availableW/ratio;
+      container.style.height=Math.min(naturalH,maxH)+'px';
+    }
+  };
+  if(media.complete && (media.naturalWidth||media.videoWidth)) apply();
+  else { media.addEventListener('load',apply,{once:true}); media.addEventListener('loadedmetadata',apply,{once:true}); }
+}
+function bindAutoMediaRatios(root=document){
+  root.querySelectorAll('.thumb img,.thumb video,.modalmedia img,.modalmedia video').forEach(media=>{
+    const container=media.closest('.thumb,.modalmedia');
+    if(container)applyAutoMediaRatio(media,container);
+  });
+}
 function card(p,feature=false){
   const m=member(p.member);
   const directBadge=p.lunarist_direct?`<span class="badge lunarist-direct-badge" title="Commissioned and purchased directly through Lunarist Studio">✦ Lunarist Studio Commission</span>`:'';
@@ -408,7 +447,7 @@ function card(p,feature=false){
     </div>
   </article>`;
 }
-function serviceCard(s){const m=member(s.member);return `<article class="card service-card services-page" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onload="this.classList.toggle('portrait',this.naturalHeight>this.naturalWidth)" onerror="handleImageError(this)"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
+function serviceCard(s){const m=member(s.member);return `<article class="card service-card services-page" data-service="${s.id}"><div class="thumb"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onload="this.classList.toggle('portrait',this.naturalHeight>this.naturalWidth);applyAutoMediaRatio(this,this.closest('.thumb'))" onerror="handleImageError(this)"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
 function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
 function money(v){const n=Number(String(v??'').replace(/[^0-9.]/g,''));return Number.isFinite(n)&&n>0?n:0}
@@ -583,7 +622,7 @@ function openService(id){
 
   updateSeoMeta(s.title, s.description, s.thumbnail_url);
 
-  document.getElementById('modalMedia').innerHTML=`<img src="${esc(s.thumbnail_url||'')}" style="width:100%;height:100%;object-fit:contain;display:block" alt="" onerror="handleImageError(this)">`;
+  document.getElementById('modalMedia').innerHTML=`<img src="${esc(s.thumbnail_url||'')}" class="auto-ratio-media" style="width:100%;height:auto;object-fit:contain;display:block" alt="" onload="applyAutoMediaRatio(this,this.closest('.modalmedia'))" onerror="handleImageError(this)">`;
   document.getElementById('modalContent').innerHTML=`
     <div class="eyebrow">${esc(s.category)}</div>
     <h2>${esc(s.title)}</h2>
@@ -661,6 +700,7 @@ function openService(id){
   `;
 
   document.getElementById('projectModal').classList.add('open');
+  bindAutoMediaRatios(document.getElementById('projectModal'));
 
   if(state.language==='ja' && m?.tos && !m.tos_ja){
     const status=document.getElementById('inquiryTosTranslationStatus');
@@ -1003,7 +1043,7 @@ async function openProject(id){
     modalMediaEl.innerHTML=`<div style="width:100%;height:100%;overflow:auto;background:#000;display:flex;align-items:center;justify-content:center;padding:14px"><blockquote class="twitter-tweet" data-theme="dark"><a href="${esc(xStatusUrl)}"></a></blockquote></div>`;
     loadTwitterWidgets().then(w=>{ if(w&&w.widgets)w.widgets.load(modalMediaEl); });
   }else{
-    modalMediaEl.innerHTML=playbackUrl?`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`:`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:contain;display:block" alt="" onerror="handleImageError(this)">`;
+    modalMediaEl.innerHTML=playbackUrl?`<iframe src="${esc(playbackUrl)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe>`:`<img src="${esc(p.image)}" class="auto-ratio-media" style="width:100%;height:auto;object-fit:contain;display:block" alt="" onload="applyAutoMediaRatio(this,this.closest('.modalmedia'))" onerror="handleImageError(this)">`;
   }
   
   document.getElementById('modalContent').innerHTML=`
@@ -1040,12 +1080,14 @@ async function openProject(id){
   `;
 
   document.getElementById('projectModal').classList.add('open');
+  bindAutoMediaRatios(document.getElementById('projectModal'));
   document.getElementById('likeBtn').onclick=()=>{p.likes++;track(p,'like');document.getElementById('likeBtn').textContent='♥ '+p.likes+' like';toast('Added to your interests')};
   document.getElementById('saveBtn').onclick=()=>toggleSaveProject(p.id);
   document.querySelector('[data-modal-member]').onclick=()=>{if(m){closeModal();goRoute('member:'+m.id)}};
   document.querySelectorAll('[data-open-service]').forEach(b=>b.onclick=()=>{closeModal();openService(b.dataset.openService)});
 }
 
+window.addEventListener('resize',()=>{const mm=document.getElementById('modalMedia');if(mm?.classList.contains('media-auto-ratio')){const media=mm.querySelector('img,video');if(media)applyAutoMediaRatio(media,mm);}});
 function closeModal(){document.getElementById('projectModal').classList.remove('open');document.getElementById('modalMedia').innerHTML='';updateSeoMeta('','','')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1800)}
 function openAuth(mode='signin'){
