@@ -1,0 +1,19 @@
+.project-card .thumb.youtube img,
+.project-thumb.youtube img,
+[data-media-type="youtube"] .project-thumb img,
+.project-thumb iframe + img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+.project-card .thumb.youtube,
+.project-thumb.youtube{
+  aspect-ratio:16/9;
+  overflow:hidden;
+  background:transparent;
+}
+@media (max-width:768px){
+  .project-card .thumb.youtube,
+  .project-thumb.youtube{aspect-ratio:16/9;}
+}
