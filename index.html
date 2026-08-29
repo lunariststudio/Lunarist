@@ -166,6 +166,52 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 }
 </style>
 
+
+<style id="lunarist-discover-youtube-card-fix">
+/* YouTube project cards are intentionally 16:9. Uploaded media keeps its real ratio. */
+.card .thumb.thumb-youtube,
+.card .thumb.auto-ratio.thumb-youtube{
+  aspect-ratio:16/9!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  background:#000!important;
+}
+.card .thumb.thumb-youtube img,
+.card .thumb.auto-ratio.thumb-youtube img{
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  display:block!important;
+  background:#000!important;
+}
+</style>
+
+
+<style id="discover-role-select-style">
+.discover-role-select-group{display:flex;align-items:center;gap:10px;margin:10px 0 18px}
+.discover-role-select-group .discover-filter-label{margin:0;min-width:max-content}
+.discover-role-select{
+  min-width:240px;
+  max-width:100%;
+  appearance:auto;
+  padding:10px 38px 10px 12px;
+  border:1px solid var(--line,rgba(255,255,255,.16));
+  border-radius:10px;
+  background:var(--panel,#17131d);
+  color:var(--text,#fff);
+  font:600 13px/1.2 inherit;
+  cursor:pointer;
+}
+@media(max-width:720px){
+  .discover-role-select-group{display:grid;grid-template-columns:1fr;gap:6px;margin:8px 0 14px}
+  .discover-role-select{width:100%;min-width:0;padding:11px 12px;font-size:13px}
+}
+</style>
+
 </head>
 <body>
 <div class="app" id="app">
@@ -360,6 +406,7 @@ function applyNaturalMediaRatio(el, img, opts={}){
 }
 function bindAutoRatioMedia(root=document){
   root.querySelectorAll('.thumb img').forEach(img=>applyNaturalMediaRatio(img.parentElement,img));
+  if(window.markYoutubeThumbnails) window.markYoutubeThumbnails(root);
 }
 function card(p,feature=false){
   const m=member(p.member);
@@ -374,7 +421,7 @@ function card(p,feature=false){
   const thumbClass=youtubeProject?'thumb thumb-youtube':'thumb';
   return `<article class="card ${feature?'feature':''}" data-project="${p.id}">
     <div class="${thumbClass} auto-ratio">
-      <img src="${esc(p.image||'')}" alt="${esc(p.title)}" loading="lazy" onload="applyNaturalMediaRatio(this.parentElement,this)" onerror="handleImageError(this)">
+      <img src="${esc(youtubeProject ? ('https://i.ytimg.com/vi/'+extractYoutubeId(p.media_url||p.mediaUrl||p.video||p.thumbnail_url||p.image||'')+'/maxresdefault.jpg') : (p.image||''))}" alt="${esc(p.title)}" loading="lazy" onload="applyNaturalMediaRatio(this.parentElement,this)" onerror="${youtubeProject ? "this.onerror=null;this.src='"+esc(p.image||'')+"';" : "handleImageError(this)"}">
       <div class="overlay"><span class="badge">${esc(p.category)}</span>${directBadge}</div>
     </div>
     <div class="cardbody">
@@ -892,12 +939,12 @@ function discover(){
       <div class="discover-filter-label">Browse</div>
       <div class="discoverbar">${cats.map(c=>`<button class="filter ${state.filter===c?'active':''}" data-filter="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     </div>
-    <div class="discover-filter-group">
-      <div class="discover-filter-label">Role</div>
-      <div class="discoverbar role-filter-bar">
-        <button class="filter ${state.roleFilter==='All Roles'?'active':''}" data-role-filter="All Roles">All Roles</button>
-        ${roleOptions.map(r=>`<button class="filter ${state.roleFilter===r?'active':''}" data-role-filter="${esc(r)}">${esc(r)}</button>`).join('')}
-      </div>
+    <div class="discover-filter-group discover-role-select-group">
+      <label class="discover-filter-label" for="discoverRoleFilter">Role</label>
+      <select id="discoverRoleFilter" class="discover-role-select" aria-label="Filter Discover by role">
+        <option value="All Roles" ${state.roleFilter==='All Roles'?'selected':''}>All Roles</option>
+        ${roleOptions.map(r=>`<option value="${esc(r)}" ${state.roleFilter===r?'selected':''}>${esc(r)}</option>`).join('')}
+      </select>
     </div>
     <div class="grid" id="discoverGrid">${list.length?list.map(p=>card(p)).join(''):emptyState('No work found.','Try another search or role filter.')}</div>
   </section></div>`;
@@ -988,7 +1035,7 @@ function bind(){
     if(conv) { openDashboard(); switchDashTab('messages'); selectConversation(conv.id); }
   });
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render(true)});
-  document.querySelectorAll('[data-role-filter]').forEach(b=>b.onclick=()=>{state.roleFilter=b.dataset.roleFilter||'All Roles';render(true)});
+  document.getElementById('discoverRoleFilter')?.addEventListener('change',e=>{state.roleFilter=e.target.value||'All Roles';render(true)});
   const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render(true)};
   document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render(true)});
   document.getElementById('retryBtn')?.addEventListener('click',()=>loadData());
