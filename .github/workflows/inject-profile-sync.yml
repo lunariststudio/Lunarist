@@ -34,6 +34,7 @@ jobs:
               '<script src="/client-space-mobile-polish.js?v=1"></script>',
               '<script src="/public-member-profile.js?v=1"></script>',
               '<script src="/client-space-nav-fix.js?v=1"></script>',
+              '<script src="/eugene-lunarist-integration.js?v=1"></script>',
           ]
           for marker in markers:
               if marker not in s:
@@ -49,5 +50,5 @@ jobs:
           git config user.name 'lunariststudio-bot'
           git config user.email '41898282+lunaristudio[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'chore: inject client navigation fix [lunarist-inject]'
+          git diff --cached --quiet || git commit -m 'chore: inject Eugene Card integration [lunarist-inject]'
           git push
