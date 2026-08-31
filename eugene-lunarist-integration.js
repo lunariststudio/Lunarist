@@ -1,6 +1,6 @@
 // Lunarist ↔ Eugene Card integration.
-// Reciprocal, user-controlled profile linking. Lunarist stores only the public Eugene Card URL.
-// No Eugene Card passwords, access tokens, or service-role secrets are handled here.
+// Lunarist-side, user-controlled account/profile linking.
+// Lunarist stores the public Eugene Card profile URL only; no passwords, tokens, or service-role secrets.
 (function(){
   if(typeof window==='undefined'||window.__lunaristEugeneIntegration)return;
   const EUGENE='https://eugene-card-1.vercel.app';
@@ -37,7 +37,7 @@
     try{
       await saveCardUrl(incoming);
       const clean=new URL(location.href);
-      ['eugene_card_url','eugeneCardUrl','eugene_username','eugeneUsername'].forEach(k=>clean.searchParams.delete(k));
+      ['eugene_card_url','eugeneCardUrl','eugene_username','eugeneUsername','eugene_user_id','eugeneUserId'].forEach(k=>clean.searchParams.delete(k));
       history.replaceState({},'',clean.pathname+clean.search+clean.hash);
       toastMsg('Eugene Card connected.');
       return true;
@@ -48,7 +48,7 @@
     if(document.getElementById('eugeneLinkModal'))return;
     const modal=document.createElement('div');modal.id='eugeneLinkModal';
     const connected=!!cardUrl;const existingUsername=usernameFromCardUrl(cardUrl);
-    modal.innerHTML=`<div class="panel" style="width:min(680px,94vw);position:relative;padding:24px"><button id="eugeneLinkClose" class="btn" style="position:absolute;right:14px;top:14px">×</button><div class="eyebrow">LUNARIST × EUGENE CARD</div><h2 style="margin:5px 0 8px">${connected?'Eugene Card connected':'Connect your Eugene Card'}</h2><p class="meta">Link your public Eugene Card profile to this Lunarist account. Only the public profile URL is stored here; passwords and authentication tokens never leave Eugene Card.</p><div class="field" style="margin-top:16px"><label>Eugene Card username</label><input id="eugeneCardUsernameInput" type="text" autocomplete="off" placeholder="your-eugene-username" value="${esc(existingUsername)}"><div class="meta" style="margin-top:6px">You can enter your Eugene Card username manually, or paste the public profile URL below.</div></div><div class="field" style="margin-top:12px"><label>Eugene Card public URL</label><input id="eugeneCardUrlInput" type="url" autocomplete="url" placeholder="https://eugene-card-1.vercel.app/username" value="${esc(cardUrl)}"></div><div class="heroactions"><button class="btn primary" id="eugeneLinkSave">${connected?'Update connection':'Connect'}</button>${connected?'<button class="btn" id="eugeneLinkOpen">Open Eugene Card</button><button class="btn" id="eugeneLinkCopy">Copy Eugene Card link</button><button class="btn" id="eugeneLinkRemove">Disconnect</button>':''}<button class="btn" id="eugeneLunaristOpen">Open my Lunarist profile</button></div><div class="meta" id="eugeneLinkStatus" style="margin-top:10px"></div></div>`;
+    modal.innerHTML=`<div class="panel" style="width:min(680px,94vw);position:relative;padding:24px"><button id="eugeneLinkClose" class="btn" style="position:absolute;right:14px;top:14px">×</button><div class="eyebrow">LUNARIST × EUGENE CARD</div><h2 style="margin:5px 0 8px">${connected?'Eugene Card connected':'Connect your Eugene Card'}</h2><p class="meta">Link your Eugene Card identity to this Lunarist account. You can enter your Eugene Card username or public profile URL. Lunarist stores only the public profile URL; Eugene Card authentication remains separate.</p><div class="field" style="margin-top:16px"><label>Eugene Card username</label><input id="eugeneCardUsernameInput" type="text" autocomplete="off" placeholder="your-eugene-username" value="${esc(existingUsername)}"><div class="meta" style="margin-top:6px">Enter the same username you use on Eugene Card.</div></div><div class="field" style="margin-top:12px"><label>Eugene Card public profile URL</label><input id="eugeneCardUrlInput" type="url" autocomplete="url" placeholder="https://eugene-card-1.vercel.app/username" value="${esc(cardUrl)}"></div><div class="field" style="margin-top:12px"><label>Lunarist profile</label><input type="text" readonly value="${esc(lunaristUrl())}"></div><div class="heroactions"><button class="btn primary" id="eugeneLinkSave">${connected?'Update connection':'Connect account'}</button>${connected?'<button class="btn" id="eugeneLinkOpen">Open Eugene Card</button><button class="btn" id="eugeneLinkCopy">Copy Eugene Card link</button><button class="btn" id="eugeneLinkRemove">Disconnect</button>':''}<button class="btn" id="eugeneLunaristOpen">Open my Lunarist profile</button></div><div class="meta" id="eugeneLinkStatus" style="margin-top:10px"></div></div>`;
     Object.assign(modal.style,{position:'fixed',inset:'0',zIndex:'10050',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px',background:'rgba(2,1,6,.82)',backdropFilter:'blur(16px)'});
     document.body.appendChild(modal);
     const close=()=>modal.remove();document.getElementById('eugeneLinkClose').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
@@ -58,8 +58,9 @@
       const status=document.getElementById('eugeneLinkStatus');let value=normalizeCardUrl(urlInput.value);const u=usernameInput.value.trim().replace(/^@/,'');
       if(!value&&u)value=cardProfileUrl(u);
       if(urlInput.value.trim()&&!value){status.textContent='Use a public Eugene Card URL from eugene-card-1.vercel.app.';return}
-      const b=document.getElementById('eugeneLinkSave');b.disabled=true;status.textContent='Saving…';
-      try{await saveCardUrl(value);status.textContent=value?'Connected.':'Connection removed.';toastMsg(value?'Eugene Card connected.':'Eugene Card disconnected.');setTimeout(close,450)}catch(e){status.textContent=e.message||'Could not save the connection.';b.disabled=false}
+      if(!value){status.textContent='Enter your Eugene Card username or public profile URL.';return}
+      const b=document.getElementById('eugeneLinkSave');b.disabled=true;status.textContent='Saving connection…';
+      try{await saveCardUrl(value);status.textContent='Connected.';toastMsg('Eugene Card connected.');setTimeout(close,450)}catch(e){status.textContent=e.message||'Could not save the connection.';b.disabled=false}
     };
     document.getElementById('eugeneLinkOpen')?.addEventListener('click',()=>{if(cardUrl)window.open(cardUrl,'_blank','noopener,noreferrer')});
     document.getElementById('eugeneLinkCopy')?.addEventListener('click',async()=>{if(!cardUrl)return;try{await navigator.clipboard.writeText(cardUrl);toastMsg('Eugene Card link copied.')}catch{document.getElementById('eugeneLinkStatus').textContent='Copy failed. Please copy the URL manually.'}});
@@ -69,7 +70,7 @@
 
   function addNavButton(){
     const nav=document.getElementById('navlinks');if(!nav||document.getElementById('navEugeneCardBtn'))return;
-    const b=document.createElement('button');b.className='navbtn';b.id='navEugeneCardBtn';b.textContent=cardUrl?'Eugene Card ✓':'Eugene Card';b.title=cardUrl?'Manage Eugene Card connection':'Connect Eugene Card';b.onclick=async()=>{await loadCardUrl();openModal()};
+    const b=document.createElement('button');b.className='navbtn';b.id='navEugeneCardBtn';b.textContent=cardUrl?'Eugene Card ✓':'Eugene Card';b.title=cardUrl?'Manage Eugene Card account connection':'Connect Eugene Card account';b.onclick=async()=>{await loadCardUrl();openModal()};
     const client=document.getElementById('navClientSpaceBtn');nav.insertBefore(b,client||nav.firstChild);
   }
 
