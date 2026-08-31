@@ -26,6 +26,7 @@ jobs:
               '<script src="/client-space-ui.js?v=2"></script>',
               '<script src="/social-links.js?v=1"></script>',
               '<script src="/commission-command-center.js?v=1"></script>',
+              '<script src="/commission-filters.js?v=1"></script>',
           ]
           for marker in markers:
               if marker not in s:
@@ -41,5 +42,5 @@ jobs:
           git config user.name 'lunariststudio-bot'
           git config user.email '41898282+lunariststudio[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'chore: inject commission command center [lunarist-inject]'
+          git diff --cached --quiet || git commit -m 'chore: inject commission filters [lunarist-inject]'
           git push
