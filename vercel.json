@@ -23,7 +23,10 @@
     {
       "source": "/oauth/(.*)",
       "headers": [
-        {"key": "Cache-Control", "value": "no-store"}
+        {"key": "Cache-Control", "value": "no-store"},
+        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
+        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
+        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
       ]
     },
     {
@@ -37,13 +40,14 @@
     }
   ],
   "rewrites": [
-    {"source": "/oauth/authorize", "destination": "/api/oauth?action=authorize"},
-    {"source": "/oauth/token", "destination": "/api/oauth?action=token"},
-    {"source": "/oauth/userinfo", "destination": "/api/oauth?action=userinfo"},
-    {"source": "/oauth/revoke", "destination": "/api/oauth?action=revoke"},
-    {"source": "/oauth/session", "destination": "/api/oauth?action=session"},
-    {"source": "/.well-known/oauth-authorization-server", "destination": "/api/oauth?action=metadata"},
-    {"source": "/api/v1/me", "destination": "/api/v1?resource=me"},
+    {"source": "/oauth/authorize", "destination": "/api/lunarist?resource=oauth&action=authorize"},
+    {"source": "/oauth/token", "destination": "/api/lunarist?resource=oauth&action=token"},
+    {"source": "/oauth/userinfo", "destination": "/api/lunarist?resource=oauth&action=userinfo"},
+    {"source": "/oauth/revoke", "destination": "/api/lunarist?resource=oauth&action=revoke"},
+    {"source": "/oauth/session", "destination": "/api/lunarist?resource=oauth&action=session"},
+    {"source": "/.well-known/oauth-authorization-server", "destination": "/api/lunarist?resource=oauth&action=metadata"},
+    {"source": "/api/v1/me", "destination": "/api/lunarist?resource=oauth&action=userinfo"},
+    {"source": "/api/oauth-admin", "destination": "/api/lunarist?resource=oauth-admin"},
     {"source": "/api/eugene-card/authorize", "destination": "/api/lunarist?resource=eugene-authorize"},
     {"source": "/api/eugene-card/token", "destination": "/api/lunarist?resource=eugene-token"},
     {"source": "/api/eugene-card/revoke", "destination": "/api/lunarist?resource=eugene-revoke"},
