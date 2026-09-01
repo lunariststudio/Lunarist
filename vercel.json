@@ -17,7 +17,7 @@
     }
   ],
   "rewrites": [
-    {"source": "/oauth/authorize", "destination": "/api/oauth-authorize"},
+    {"source": "/oauth/authorize", "destination": "/api/lunarist?resource=oauth&action=authorize"},
     {"source": "/oauth/token", "destination": "/api/lunarist?resource=oauth&action=token"},
     {"source": "/oauth/userinfo", "destination": "/api/lunarist?resource=oauth&action=userinfo"},
     {"source": "/oauth/revoke", "destination": "/api/lunarist?resource=oauth&action=revoke"},
