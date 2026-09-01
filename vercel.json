@@ -1,6 +1,16 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
+  "headers": [
+    {
+      "source": "/api/eugene-connect",
+      "headers": [
+        {"key": "Access-Control-Allow-Origin", "value": "*"},
+        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
+        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
+      ]
+    }
+  ],
   "rewrites": [
     {"source": "/api/eugene-connect", "destination": "/api/lunarist?resource=eugene"},
     {"source": "/(.*)", "destination": "/index.html"}
