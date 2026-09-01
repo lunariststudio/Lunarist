@@ -19,9 +19,21 @@
         {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
         {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
       ]
+    },
+    {
+      "source": "/oauth/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"}
+      ]
     }
   ],
   "rewrites": [
+    {"source": "/oauth/authorize", "destination": "/api/oauth?action=authorize"},
+    {"source": "/oauth/token", "destination": "/api/oauth?action=token"},
+    {"source": "/oauth/userinfo", "destination": "/api/oauth?action=userinfo"},
+    {"source": "/oauth/revoke", "destination": "/api/oauth?action=revoke"},
+    {"source": "/oauth/session", "destination": "/api/oauth?action=session"},
+    {"source": "/.well-known/oauth-authorization-server", "destination": "/api/oauth?action=metadata"},
     {"source": "/api/eugene-card/authorize", "destination": "/api/lunarist?resource=eugene-authorize"},
     {"source": "/api/eugene-card/token", "destination": "/api/lunarist?resource=eugene-token"},
     {"source": "/api/eugene-card/revoke", "destination": "/api/lunarist?resource=eugene-revoke"},
