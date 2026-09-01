@@ -11,6 +11,14 @@ create table if not exists public.oauth_clients (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.oauth_authorization_sessions (
+  id uuid primary key default gen_random_uuid(),
+  session_hash text not null unique,
+  lunarist_user_id uuid not null references auth.users(id) on delete cascade,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.oauth_authorization_codes (
   id uuid primary key default gen_random_uuid(),
   code_hash text not null unique,
@@ -40,15 +48,18 @@ create table if not exists public.oauth_tokens (
   created_at timestamptz not null default now()
 );
 
+create index if not exists oauth_sessions_expiry_idx on public.oauth_authorization_sessions(expires_at);
 create index if not exists oauth_codes_client_idx on public.oauth_authorization_codes(client_id, expires_at);
 create index if not exists oauth_codes_user_idx on public.oauth_authorization_codes(lunarist_user_id, expires_at);
 create index if not exists oauth_tokens_client_idx on public.oauth_tokens(client_id, revoked_at);
 create index if not exists oauth_tokens_user_idx on public.oauth_tokens(lunarist_user_id, revoked_at);
 
 alter table public.oauth_clients enable row level security;
+alter table public.oauth_authorization_sessions enable row level security;
 alter table public.oauth_authorization_codes enable row level security;
 alter table public.oauth_tokens enable row level security;
 revoke all on public.oauth_clients from anon, authenticated;
+revoke all on public.oauth_authorization_sessions from anon, authenticated;
 revoke all on public.oauth_authorization_codes from anon, authenticated;
 revoke all on public.oauth_tokens from anon, authenticated;
 
