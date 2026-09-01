@@ -3,10 +3,10 @@
   if(window.__lunaristEugeneOAuthUI)return;
   window.__lunaristEugeneOAuthUI=true;
 
-  const LUNARIST='/oauth/authorize';
-  const STATUS='/api/eugene-connect';
-  const CLIENT_ID='eugene-card';
-  const EUGENE_ORIGIN='https://eugene-card-1.vercel.app';
+  const START='/api/eugene-card/start';
+  const STATUS='/api/eugene-card/status';
+  const CLIENT_ID='lunarist-studio';
+  const CALLBACK='https://lunaristudio.vercel.app/api/eugene-card/callback';
 
   async function session(){
     const sb=window.supabaseClient||window.supabase;
@@ -15,16 +15,12 @@
   async function startOAuth(){
     const s=await session();
     if(!s?.access_token){try{window.toast?.('Please sign in to Lunarist first.')}catch{};return}
-    const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
-    const verifier=btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
-    const challenge=btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    const state=crypto.randomUUID();
-    sessionStorage.setItem('lunarist_eugene_pkce_verifier',verifier);
-    sessionStorage.setItem('lunarist_eugene_oauth_state',state);
-    const u=new URL(LUNARIST,location.origin);
-    u.searchParams.set('response_type','code');u.searchParams.set('client_id',CLIENT_ID);u.searchParams.set('redirect_uri',`${EUGENE_ORIGIN}/?connect=lunarist`);u.searchParams.set('scope','identity profile offline_access');u.searchParams.set('code_challenge',challenge);u.searchParams.set('code_challenge_method','S256');u.searchParams.set('state',state);
-    location.href=u.toString();
+    try{
+      const r=await fetch(START,{headers:{Authorization:`Bearer ${s.access_token}`},cache:'no-store'});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok||!d.authorization_url)throw Error(d.error||'Unable to start Eugene Card authorization.');
+      location.href=d.authorization_url;
+    }catch(e){try{window.toast?.(e.message||'Eugene Card connection failed.')}catch{}}
   }
   async function refreshStatus(){
     const s=await session();if(!s?.access_token)return'not_connected';
@@ -32,14 +28,16 @@
   }
   async function disconnect(){
     const s=await session();if(!s?.access_token)return;
-    try{await fetch(STATUS,{method:'POST',headers:{Authorization:`Bearer ${s.access_token}`,'Content-Type':'application/json'}})}catch{}
+    try{await fetch('/api/eugene-card/revoke',{method:'POST',headers:{Authorization:`Bearer ${s.access_token}`,'Content-Type':'application/json'}})}catch{}
     try{window.dispatchEvent(new CustomEvent('lunarist:eugene-connection-changed',{detail:{connected:false}}))}catch{}
     render('not_connected');
   }
   function statusNodes(){return[...document.querySelectorAll('body *')].filter(el=>{if(el.children.length>2)return false;const t=(el.textContent||'').trim();return t==='Checking connection...'||t==='Connected'||t==='Not connected'})}
   function render(status){const text=status==='connected'?'Connected':'Not connected';statusNodes().forEach(el=>{el.textContent=text;el.dataset.eugeneStatusManaged='oauth'});document.querySelectorAll('[data-eugene-connection-status]').forEach(el=>{el.textContent=text;el.dataset.status=status})}
   function buttonText(el){return(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()}
+  window.startEugeneOAuth=startOAuth;
+  window.disconnectEugeneOAuth=disconnect;
   document.addEventListener('click',e=>{const b=e.target.closest?.('button,a');if(!b)return;const t=buttonText(b);if(t==='connect eugene card'||t==='connect account'||t.includes('connect your eugene card')){e.preventDefault();e.stopImmediatePropagation();startOAuth()}if(t==='disconnect eugene card'||t==='disconnect account'||t.includes('disconnect eugene')){e.preventDefault();e.stopImmediatePropagation();disconnect()}},true);
-  let busy=false;async function boot(){const tick=async()=>{if(busy)return;busy=true;try{render(await refreshStatus())}finally{busy=false}};await tick();setInterval(tick,5000)}
+  let busy=false;async function boot(){const p=new URLSearchParams(location.search);if(p.get('eugene_connected')==='1'||p.get('eugene_connected')==='0'){const clean=new URL(location.href);clean.searchParams.delete('eugene_connected');history.replaceState({},'',clean.pathname+clean.search+clean.hash)}const tick=async()=>{if(busy)return;busy=true;try{render(await refreshStatus())}finally{busy=false}};await tick();setInterval(tick,5000)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
