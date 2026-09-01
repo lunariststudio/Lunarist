@@ -2,6 +2,7 @@
   "version": 2,
   "buildCommand": "npm run build",
   "rewrites": [
+    {"source": "/api/eugene-connect", "destination": "/api/lunarist?resource=eugene"},
     {"source": "/(.*)", "destination": "/index.html"}
   ]
 }
