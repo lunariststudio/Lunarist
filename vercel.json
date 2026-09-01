@@ -25,6 +25,15 @@
       "headers": [
         {"key": "Cache-Control", "value": "no-store"}
       ]
+    },
+    {
+      "source": "/api/v1/(.*)",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"},
+        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
+        {"key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS"},
+        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
+      ]
     }
   ],
   "rewrites": [
@@ -34,6 +43,7 @@
     {"source": "/oauth/revoke", "destination": "/api/oauth?action=revoke"},
     {"source": "/oauth/session", "destination": "/api/oauth?action=session"},
     {"source": "/.well-known/oauth-authorization-server", "destination": "/api/oauth?action=metadata"},
+    {"source": "/api/v1/me", "destination": "/api/v1?resource=me"},
     {"source": "/api/eugene-card/authorize", "destination": "/api/lunarist?resource=eugene-authorize"},
     {"source": "/api/eugene-card/token", "destination": "/api/lunarist?resource=eugene-token"},
     {"source": "/api/eugene-card/revoke", "destination": "/api/lunarist?resource=eugene-revoke"},
