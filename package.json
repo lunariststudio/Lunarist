@@ -5,7 +5,7 @@
   "description": "Lunarist Studio creative network — Vercel + Supabase",
   "scripts": {
     "dev": "vercel dev",
-    "build": "node inject-enhancements.js",
+    "build": "node inject-public-profile-nav-fix.mjs && node inject-enhancements.js",
     "start": "vercel dev"
   },
   "engines": {
