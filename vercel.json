@@ -5,28 +5,7 @@
     {
       "source": "/api/eugene-card/(.*)",
       "headers": [
-        {"key": "Cache-Control", "value": "no-store"},
-        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"},
-        {"key": "Access-Control-Allow-Credentials", "value": "true"}
-      ]
-    },
-    {
-      "source": "/api/eugene-connect",
-      "headers": [
-        {"key": "Access-Control-Allow-Origin", "value": "*"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
-      ]
-    },
-    {
-      "source": "/oauth/(.*)",
-      "headers": [
-        {"key": "Cache-Control", "value": "no-store"},
-        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
+        {"key": "Cache-Control", "value": "no-store"}
       ]
     },
     {
@@ -52,10 +31,6 @@
     {"source": "/api/eugene-card/callback", "destination": "/api/lunarist?resource=eugene-callback"},
     {"source": "/api/eugene-card/revoke", "destination": "/api/lunarist?resource=eugene-revoke"},
     {"source": "/api/eugene-card/status", "destination": "/api/lunarist?resource=eugene"},
-    {"source": "/api/eugene-card/authorize", "destination": "/api/lunarist?resource=eugene-authorize"},
-    {"source": "/api/eugene-card/token", "destination": "/api/lunarist?resource=eugene-token"},
-    {"source": "/api/eugene-card/session", "destination": "/api/lunarist?resource=eugene-session"},
-    {"source": "/api/eugene-connect", "destination": "/api/lunarist?resource=eugene"},
     {"source": "/", "has": [{"type":"query","key":"eugene_authorize"}], "destination": "/eugene-authorize-entry.html"},
     {"source": "/(.*)", "destination": "/index.html"}
   ]
