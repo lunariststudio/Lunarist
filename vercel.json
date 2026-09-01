@@ -27,6 +27,7 @@
     {"source": "/api/eugene-card/revoke", "destination": "/api/lunarist?resource=eugene-revoke"},
     {"source": "/api/eugene-card/session", "destination": "/api/lunarist?resource=eugene-session"},
     {"source": "/api/eugene-connect", "destination": "/api/lunarist?resource=eugene"},
+    {"source": "/", "has": [{"type":"query","key":"eugene_authorize"}], "destination": "/eugene-authorize-entry.html"},
     {"source": "/(.*)", "destination": "/index.html"}
   ]
 }
