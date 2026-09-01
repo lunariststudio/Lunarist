@@ -36,8 +36,6 @@
       el.dataset.eugeneStatusManaged='1';
       el.textContent=text;
       el.setAttribute('aria-label',`Eugene Card: ${text}`);
-      const dot=el.querySelector?.('span');
-      if(dot)dot.textContent='●';
     });
     document.querySelectorAll('[data-eugene-connection-status]').forEach(el=>{
       el.textContent=text;
@@ -50,17 +48,16 @@
     const user=window.state?.currentUser;
     if(!sb||!user){
       attempts++;
-      if(attempts>=10){status='not_connected';render();return true;}
+      if(attempts>=10){status='not_connected';render();return false;}
       return false;
     }
-    if(lastUserId===user.id&&status!=='checking')return true;
     lastUserId=user.id;
     try{
       const result=await sb.from('profiles').select('eugene_card_url').eq('id',user.id).maybeSingle();
       if(result.error)throw result.error;
       status=normalize(result.data?.eugene_card_url)?'connected':'not_connected';
     }catch(e){
-      // A failed status check must not leave the UI spinning forever.
+      // Never leave the UI in an infinite loading state when the check fails.
       status='not_connected';
     }
     render();
@@ -78,13 +75,10 @@
   function start(){
     render();
     observer.observe(document.body,{childList:true,subtree:true});
-    const timer=setInterval(async()=>{
-      render();
-      if(await check()){
-        if(status!=='checking')clearInterval(timer);
-      }
-    },700);
-    setTimeout(()=>{if(status==='checking'){status='not_connected';render();clearInterval(timer)}},8000);
+    // Keep checking because the auth state and the connection can change after
+    // the page has already rendered (for example after OAuth/account linking).
+    setInterval(()=>{check();render()},2000);
+    setTimeout(()=>{if(status==='checking'){status='not_connected';render()}},8000);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
