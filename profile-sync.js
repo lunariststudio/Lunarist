@@ -42,7 +42,7 @@
   }
 
   async function renderEugeneConnection() {
-    const host = document.getElementById('dash-profile');
+    const host = document.getElementById('dash-eugene');
     const user = window.state?.currentUser;
     if (!host || !user) return;
     installEugeneStyles();
@@ -202,12 +202,12 @@
     if (window.__lunaristEugeneProfileWatcher) return;
     window.__lunaristEugeneProfileWatcher = true;
     const ensure = () => {
-      if (window.state?.currentUser && document.getElementById('drawer')?.classList.contains('open') && document.getElementById('dash-profile')?.classList.contains('active')) {
+      if (window.state?.currentUser && document.getElementById('drawer')?.classList.contains('open') && document.getElementById('dash-eugene')?.classList.contains('active')) {
         renderEugeneConnection();
       }
     };
     setInterval(ensure, 700);
-    document.addEventListener('click', e => { if (e.target.closest('[data-dash="profile"]')) setTimeout(ensure, 80); });
+    document.addEventListener('click', e => { if (e.target.closest('[data-dash="eugene"]')) setTimeout(ensure, 80); });
   }
 
   function installEditorModalPatch() {
