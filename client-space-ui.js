@@ -16,7 +16,7 @@
       #lunarist-client-space-root .client-subtitle{max-width:720px;color:var(--muted);font-size:15px}
       #lunarist-client-space-root .client-url{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;padding:13px 15px;border:1px solid var(--client-border);border-radius:15px;background:rgba(0,0,0,.14);min-width:0}
       #lunarist-client-space-root .client-url-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px}
-      #lunarist-client-space-root .client-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:18px 0}
+      #lunarist-client-space-root .client-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:18px 0}
       #lunarist-client-space-root .client-tab{border:1px solid var(--client-border);background:var(--client-glass-2);color:var(--muted);padding:12px 10px;border-radius:14px;font-weight:800;transition:.18s;min-width:0}
       #lunarist-client-space-root .client-tab:hover{transform:translateY(-1px);border-color:rgba(201,182,255,.4);color:var(--text)}
       #lunarist-client-space-root .client-tab.active{background:linear-gradient(180deg,rgba(201,182,255,.16),rgba(255,134,200,.08));border-color:rgba(201,182,255,.5);color:var(--text);box-shadow:0 8px 26px rgba(0,0,0,.18)}

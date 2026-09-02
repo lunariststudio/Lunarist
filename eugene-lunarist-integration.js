@@ -68,12 +68,6 @@
     document.getElementById('eugeneLunaristOpen')?.addEventListener('click',()=>window.open(lunaristUrl(),'_blank','noopener,noreferrer'));
   }
 
-  function addNavButton(){
-    const nav=document.getElementById('navlinks');if(!nav||document.getElementById('navEugeneCardBtn'))return;
-    const b=document.createElement('button');b.className='navbtn';b.id='navEugeneCardBtn';b.textContent=cardUrl?'Eugene Card ✓':'Eugene Card';b.title=cardUrl?'Manage Eugene Card account connection':'Connect Eugene Card account';b.onclick=async()=>{await loadCardUrl();openModal()};
-    const client=document.getElementById('navClientSpaceBtn');nav.insertBefore(b,client||nav.firstChild);
-  }
-
   function enhancePublicProfile(){
     const path=location.pathname.replace(/^\/+|\/+$/g,'');
     if(!path||path.includes('/')||/^(login|signup|discover|projects|profile|admin|settings|member-space|my-commission|clients)$/i.test(path))return;
@@ -86,12 +80,12 @@
     const p=new URLSearchParams(location.search);const from=p.get('eugene');if(from)sessionStorage.setItem('lunaristEugeneReturn',from)
   }
 
-  const style=document.createElement('style');style.textContent='#navEugeneCardBtn{color:var(--gold)}#navEugeneCardBtn:hover{color:var(--text)}#eugeneLinkModal .field label{display:block;margin-bottom:6px}';document.head.appendChild(style);
+  const style=document.createElement('style');style.textContent='#eugeneLinkModal .field label{display:block;margin-bottom:6px}';document.head.appendChild(style);
   offerEugeneLinkFromReturn();
   let bootstrapped=false;
   const timer=setInterval(async()=>{
-    addNavButton();enhancePublicProfile();
-    if(window.state?.currentUser&&!bootstrapped){bootstrapped=true;await loadCardUrl();addNavButton();await consumeEugeneLink()}
+    enhancePublicProfile();
+    if(window.state?.currentUser&&!bootstrapped){bootstrapped=true;await loadCardUrl();await consumeEugeneLink()}
   },800);
   window.addEventListener('beforeunload',()=>clearInterval(timer));
   window.__lunaristEugeneIntegration=true;
