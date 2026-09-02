@@ -1,0 +1,33 @@
+name: Fix OAuth REST headers
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-oauth-rest-headers.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch OAuth REST helper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/oauth-provider.js')
+          s = p.read_text()
+          old = "async function rest(url,key,path,options={}){const r=await fetch(`${url}/rest/v1/${path}`,{headers:{...sbHeaders(key),...(options.headers||{})},...options});const text=await r.text();"
+          new = "async function rest(url,key,path,options={}){const r=await fetch(`${url}/rest/v1/${path}`,{...options,headers:{...sbHeaders(key),...(options.headers||{})}});const text=await r.text();"
+          if old not in s:
+              raise SystemExit('Expected OAuth REST helper was not found; refusing to modify the file.')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Commit fix and remove patch workflow
+        run: |
+          git config user.name 'Lunarist Bot'
+          git config user.email 'lunariststudio@users.noreply.github.com'
+          git add lib/oauth-provider.js .github/workflows/fix-oauth-rest-headers.yml
+          git commit -m 'Fix OAuth Supabase REST request headers'
+          git rm .github/workflows/fix-oauth-rest-headers.yml
+          git commit -m 'Remove one-time OAuth patch workflow'
+          git push
