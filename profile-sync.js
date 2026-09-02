@@ -80,29 +80,21 @@
       }
     }
 
-    connectBtn.onclick = async () => {
+    connectBtn.onclick = () => {
       connectBtn.disabled = true;
-      connectBtn.textContent = 'Preparing connection…';
-      try {
-        const data = await eugeneRequest('POST', { action: 'create-code' });
-        if (data.connected) { await refreshStatus(); return; }
-        const url = `${EUGENE_CARD_URL}/?connect=lunarist&code=${encodeURIComponent(data.code)}`;
-        const opened = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!opened) window.location.href = url;
-        statusEl.textContent = 'Waiting for Eugene Card…';
-        copyEl.textContent = 'Eugene Card opened in a new tab. Sign in there if needed; this panel will update automatically when the connection is completed.';
-        clearInterval(eugenePollTimer);
-        const started = Date.now();
-        eugenePollTimer = setInterval(async () => {
-          if (Date.now() - started > 10 * 60 * 1000) { clearInterval(eugenePollTimer); connectBtn.disabled = false; connectBtn.textContent = 'Connect Eugene Card'; await refreshStatus(); return; }
-          const connected = await refreshStatus();
-          if (connected) clearInterval(eugenePollTimer);
-        }, 2000);
-      } catch (e) {
-        connectBtn.disabled = false;
-        connectBtn.textContent = 'Connect Eugene Card';
-        try { window.toast?.(e.message || 'Unable to connect Eugene Card.'); } catch (_) {}
-      }
+      connectBtn.textContent = 'Opening Eugene Card…';
+      const url = `${EUGENE_CARD_URL}/?connect=lunarist`;
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!opened) window.location.href = url;
+      statusEl.textContent = 'Waiting for Eugene Card…';
+      copyEl.textContent = 'Eugene Card opened in a new tab. Approve the connection there; this panel will update automatically once it completes.';
+      clearInterval(eugenePollTimer);
+      const started = Date.now();
+      eugenePollTimer = setInterval(async () => {
+        if (Date.now() - started > 10 * 60 * 1000) { clearInterval(eugenePollTimer); connectBtn.disabled = false; connectBtn.textContent = 'Connect Eugene Card'; await refreshStatus(); return; }
+        const connected = await refreshStatus();
+        if (connected) clearInterval(eugenePollTimer);
+      }, 2000);
     };
 
     disconnectBtn.onclick = async () => {
