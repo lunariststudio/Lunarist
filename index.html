@@ -212,11 +212,6 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 }
 </style>
 
-<style id="profile-eugene-card-styles">
-.eugene-profile-card{max-width:575px;padding:25px;border:1px solid rgba(155,132,220,.32);border-radius:24px;background:linear-gradient(145deg,rgba(31,27,43,.92),rgba(18,16,27,.96));box-shadow:0 12px 35px rgba(0,0,0,.16)}
-.eugene-profile-card-head{display:flex;align-items:center;gap:17px}.eugene-profile-icon{width:57px;height:57px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#7860ff,#8650e9);color:#fff;font-size:26px;font-weight:900;box-shadow:0 8px 20px rgba(115,82,255,.22)}.eugene-profile-card-title h3{margin:0;font-size:21px;line-height:1.2}.eugene-profile-card-status{margin-top:7px;font-size:15px;font-weight:800;color:var(--text)}.eugene-profile-card-copy{margin:27px 0 17px;color:var(--muted);font-size:15px;line-height:1.65}.eugene-profile-connect{min-width:230px;min-height:58px;border-radius:17px;font-size:16px;font-weight:800;background:#f6f3fb;color:#15121e;border:0}.eugene-profile-connect:hover{transform:translateY(-1px)}
-@media(max-width:600px){.eugene-profile-card{padding:20px;border-radius:20px}.eugene-profile-connect{width:100%}}
-</style>
 </head>
 <body>
 <div class="app" id="app">
@@ -226,7 +221,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div><div class="attachment-viewer" id="attachmentViewer" aria-hidden="true"><div class="attachment-viewer-box" role="dialog" aria-modal="true" aria-labelledby="attachmentViewerTitle"><div class="attachment-viewer-head"><div class="attachment-viewer-title" id="attachmentViewerTitle">Attachment</div><button class="iconbtn" type="button" id="attachmentViewerClose" title="Close">×</button></div><div class="attachment-viewer-body" id="attachmentViewerBody"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="saved" data-i18n="savedTab">Saved 🔖</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="eugene-card">Eugene Card</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-saved"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section><section class="dashsection" id="dash-eugene-card"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="saved" data-i18n="savedTab">Saved 🔖</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-saved"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Sign in securely with your Google account.</p><div class="formgrid" style="margin-top:18px"><div class="field full" id="authEmailWrap" style="display:none"><label>Google account email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"><div class="meta" style="margin-top:6px">Used only to reserve your one-time Member invitation before Google sign-in.</div></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once.</div></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="googleAuth" style="width:100%">Continue with Google</button><button class="btn" id="authToggle">Lunarist Member Register</button></div><div class="row" style="justify-content:center;margin-top:10px"><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <style>
@@ -1381,20 +1376,6 @@ async function openDashboard(initialTab='overview'){
   
   renderMessagesTab();
   renderSavedTab();
-
-  document.getElementById('dash-eugene-card').innerHTML=`
-    <div class="eugene-profile-card">
-      <div class="eugene-profile-card-head">
-        <div class="eugene-profile-icon" aria-hidden="true">✦</div>
-        <div class="eugene-profile-card-title">
-          <h3>Eugene Card</h3>
-          <div class="eugene-profile-card-status" data-eugene-connection-status>Not connected</div>
-        </div>
-      </div>
-      <p class="eugene-profile-card-copy">Connect your Lunarist account to your Eugene Card account. The connection is private to you and can be removed at any time.</p>
-      <button class="btn eugene-profile-connect" id="profileEugeneConnectBtn" type="button">Connect Eugene Card</button>
-    </div>
-  `;
 
   document.getElementById('dash-profile').innerHTML=`
     <div class="panel">
@@ -3013,7 +2994,6 @@ async function capturePaypalReturnIfPresent(){
 <script src="/oauth-admin-ui.js?v=3"></script>
 <script src="/oauth-browser-bridge.js"></script>
 <script src="/eugene-card-api-application-ui.js"></script>
-<script src="/social-links.js?v=1"></script>
-<script src="/oauth-browser-bridge.js?v=2"></script>
+<script src="/profile-eugene-card-tab.js"></script>
 </body>
 </html>
