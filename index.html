@@ -221,7 +221,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
 </div>
 <div class="modal" id="projectModal"><div class="modalbox"><button class="modalclose" id="modalClose">×</button><div class="modalmedia" id="modalMedia"></div><div class="modalcontent" id="modalContent"></div></div></div><div class="attachment-viewer" id="attachmentViewer" aria-hidden="true"><div class="attachment-viewer-box" role="dialog" aria-modal="true" aria-labelledby="attachmentViewerTitle"><div class="attachment-viewer-head"><div class="attachment-viewer-title" id="attachmentViewerTitle">Attachment</div><button class="iconbtn" type="button" id="attachmentViewerClose" title="Close">×</button></div><div class="attachment-viewer-body" id="attachmentViewerBody"></div></div></div>
-<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="saved" data-i18n="savedTab">Saved 🔖</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="eugene" data-i18n="eugeneCardTab">Eugene Card</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-saved"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section><section class="dashsection" id="dash-eugene"></section></aside></div>
+<div class="drawer" id="drawer"><aside class="drawerpanel"><div class="dashhead"><div><div class="eyebrow" data-i18n="memberSpace">Member space</div><h2 id="dashTitle" style="margin:4px 0">Your Lunarist</h2></div><button class="iconbtn" id="drawerClose">×</button></div><div class="dashnav"><button class="filter active" data-dash="overview" data-i18n="overview">Overview</button><button class="filter" data-dash="messages" data-i18n="messages">Messages 💬</button><button class="filter" data-dash="saved" data-i18n="savedTab">Saved 🔖</button><button class="filter" data-dash="projects" data-i18n="projects">My Projects</button><button class="filter" data-dash="profile" data-i18n="profile">Profile</button><button class="filter" data-dash="services" data-i18n="servicesTab">Services</button></div><section class="dashsection active" id="dash-overview"></section><section class="dashsection" id="dash-messages"></section><section class="dashsection" id="dash-saved"></section><section class="dashsection" id="dash-projects"></section><section class="dashsection" id="dash-services"></section><section class="dashsection" id="dash-profile"></section></aside></div>
 <div class="toast" id="toast"></div>
 <div class="modal" id="authModal"><div class="modalbox" style="max-width:520px;padding:26px"><button class="modalclose" id="authClose">×</button><div class="eyebrow">Lunarist account</div><h2 id="authTitle" style="font-size:34px;margin:6px 0 8px">Sign in</h2><p id="authSubtitle" style="color:var(--muted)">Sign in securely with your Google account.</p><div class="formgrid" style="margin-top:18px"><div class="field full" id="authEmailWrap" style="display:none"><label>Google account email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"><div class="meta" style="margin-top:6px">Used only to reserve your one-time Member invitation before Google sign-in.</div></div><div class="field full" id="authUsernameWrap" style="display:none"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="yourname"></div><div class="field full" id="authDisplayWrap" style="display:none"><label>Display name</label><input id="authDisplay" placeholder="Your name"></div><div class="field full" id="authInviteWrap" style="display:none"><label>Member invitation code</label><input id="authInvite" autocomplete="one-time-code" placeholder="Paste your one-time invitation code"><div class="meta" style="margin-top:6px">Invitation codes can only be redeemed once.</div></div></div><div class="heroactions" style="margin-top:18px"><button class="btn primary" id="googleAuth" style="width:100%">Continue with Google</button><button class="btn" id="authToggle">Lunarist Member Register</button></div><div class="row" style="justify-content:center;margin-top:10px"><span id="authModeHint" class="meta"></span></div><p id="authMessage" style="min-height:20px;margin:12px 0 0;color:var(--muted)"></p></div></div>
 <style>
@@ -1316,7 +1316,7 @@ function renderSavedTab(){
 }
 
 function switchDashTab(tabName) {
-  const valid = ['overview','messages','saved','projects','profile','eugene','services'];
+  const valid = ['overview','messages','saved','projects','profile','services'];
   if(!valid.includes(tabName)) tabName='overview';
   document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
   document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
@@ -2776,7 +2776,7 @@ function updateAccountButton(){
 const I18N={
   en:{
     home:'Home',discover:'Discover',services:'Services',artists:'Artists',myCommissions:'My Commissions',adminStudio:'Admin Studio',
-    overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',eugeneCardTab:'Eugene Card',servicesTab:'Services',savedTab:'Saved 🔖',
+    overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',servicesTab:'Services',savedTab:'Saved 🔖',
     memberSpace:'Member space',yourLunarist:'Your Lunarist',directMessaging:'Direct Messaging',activeCollaborations:'Active Collaborations',
     myServices:'My services',myProjects:'My projects',editProfile:'Edit profile',clientDashboard:'Client Dashboard',
     myCommissionsAndReviews:'My commissions & reviews',trackCommissions:'Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.',
@@ -2802,7 +2802,7 @@ const I18N={
   },
   ja:{
     home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',
-    overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',eugeneCardTab:'Eugene Card',servicesTab:'サービス',savedTab:'保存済み 🔖',
+    overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',servicesTab:'サービス',savedTab:'保存済み 🔖',
     memberSpace:'メンバースペース',yourLunarist:'あなたのLunarist',directMessaging:'ダイレクトメッセージ',activeCollaborations:'進行中のコラボレーション',
     myServices:'マイサービス',myProjects:'マイプロジェクト',editProfile:'プロフィールを編集',clientDashboard:'クライアントダッシュボード',
     myCommissionsAndReviews:'マイ・コミッションとレビュー',trackCommissions:'すべてのコミッションを確認し、納品を承認して、完了後にレビューを投稿できます。',
@@ -2994,6 +2994,5 @@ async function capturePaypalReturnIfPresent(){
 <script src="/oauth-admin-ui.js?v=3"></script>
 <script src="/oauth-browser-bridge.js"></script>
 <script src="/eugene-card-api-application-ui.js"></script>
-<script src="/social-links.js?v=1"></script>
 </body>
 </html>
