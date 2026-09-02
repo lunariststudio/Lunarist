@@ -1,157 +1,133 @@
-(function(){
+(function () {
   'use strict';
-  if(window.__lunaristEugeneOAuthUI)return;
-  window.__lunaristEugeneOAuthUI=true;
+  if (window.__lunaristEugeneOAuthUI) return;
+  window.__lunaristEugeneOAuthUI = true;
 
-  const API='/api/eugene-card';
-  const EUGENE='https://eugene-card-1.vercel.app';
-  const REDIRECT=`${EUGENE}/?connect=lunarist`;
-  let observer=null;
-  let starting=false;
+  const API = '/api/eugene-card';
+  const EUGENE = 'https://eugene-card-1.vercel.app';
+  const REDIRECT = `${EUGENE}/?connect=lunarist`;
+  let starting = false;
 
-  async function session(){
-    const sb=window.supabaseClient||window.supabase;
-    try{return (await sb?.auth?.getSession?.())?.data?.session||null}catch{return null}
+  async function getSession() {
+    try {
+      const client = window.supabaseClient || window.supabase;
+      if (!client || !client.auth || typeof client.auth.getSession !== 'function') return null;
+      const result = await client.auth.getSession();
+      return result && result.data && result.data.session ? result.data.session : null;
+    } catch (_) {
+      return null;
+    }
   }
 
-  async function startOAuth(){
-    if(starting)return;
-    starting=true;
-    const buttons=[...document.querySelectorAll('#eugeneConnectBtn')];
-    buttons.forEach(b=>{b.disabled=true;b.textContent='Opening Eugene Card…'});
-    try{
-      const s=await session();
-      if(!s?.access_token){
-        window.toast?.('Please sign in to Lunarist first.');
+  function showError(message) {
+    try {
+      if (typeof window.toast === 'function') window.toast(message);
+      else console.error('[Lunarist Eugene OAuth]', message);
+    } catch (_) {}
+  }
+
+  async function startOAuth() {
+    if (starting) return;
+    starting = true;
+    const button = document.getElementById('eugeneConnectBtn');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Opening Eugene Card…';
+    }
+    try {
+      const session = await getSession();
+      if (!session || !session.access_token) {
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Connect Eugene Card';
+        }
+        showError('Your Lunarist session could not be read. Please refresh Lunarist and try again.');
         return;
       }
 
-      const r=await fetch(`${API}/session`,{
-        method:'POST',
-        headers:{Authorization:`Bearer ${s.access_token}`},
-        credentials:'include',
-        cache:'no-store'
+      const response = await fetch(`${API}/session`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, Accept: 'application/json' },
+        credentials: 'include',
+        cache: 'no-store'
       });
-      if(!r.ok){
-        const d=await r.json().catch(()=>({}));
-        throw new Error(d.error||'Could not start the Eugene Card connection.');
+      if (!response.ok) {
+        let message = 'Could not start the Eugene Card connection.';
+        try {
+          const data = await response.json();
+          if (data && data.error) message = data.error;
+        } catch (_) {}
+        throw new Error(message);
       }
 
-      const u=new URL(`${API}/authorize`,location.origin);
-      u.searchParams.set('client_id','eugene-card');
-      u.searchParams.set('redirect_uri',REDIRECT);
-      u.searchParams.set('response_type','code');
-      u.searchParams.set('scope','identity profile offline_access');
-      u.searchParams.set('code_challenge_method','S256');
-      u.searchParams.set('state',crypto.randomUUID());
-      location.href=u.toString();
-    }catch(e){
-      window.toast?.(e.message||'Could not start the Eugene Card connection.');
-    }finally{
-      starting=false;
+      const url = new URL(`${API}/authorize`, window.location.origin);
+      url.searchParams.set('client_id', 'eugene-card');
+      url.searchParams.set('redirect_uri', REDIRECT);
+      url.searchParams.set('response_type', 'code');
+      url.searchParams.set('scope', 'identity profile offline_access');
+      url.searchParams.set('code_challenge_method', 'S256');
+      url.searchParams.set('state', crypto.randomUUID());
+      window.location.assign(url.toString());
+    } catch (error) {
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Connect Eugene Card';
+      }
+      showError(error && error.message ? error.message : 'Could not start the Eugene Card connection.');
+    } finally {
+      starting = false;
     }
   }
 
-  async function handleAuthorizeBridge(){
-    const p=new URLSearchParams(location.search);
-    if(p.get('eugene_authorize')!=='1'||window.__eugeneBridgeHandled)return;
-    window.__eugeneBridgeHandled=true;
-    try{
-      const s=await session();
-      if(!s?.access_token){window.toast?.('Please sign in to Lunarist first.');return;}
-      const r=await fetch(`${API}/session`,{method:'POST',headers:{Authorization:`Bearer ${s.access_token}`},credentials:'include',cache:'no-store'});
-      if(!r.ok)throw new Error('Could not authorize Eugene Card.');
-      const u=new URL(`${API}/authorize`,location.origin);
-      u.searchParams.set('client_id',p.get('client_id')||'eugene-card');
-      u.searchParams.set('redirect_uri',p.get('redirect_uri')||REDIRECT);
-      u.searchParams.set('response_type','code');
-      u.searchParams.set('scope',p.get('scope')||'identity profile offline_access');
-      u.searchParams.set('code_challenge_method','S256');
-      if(p.get('code_challenge'))u.searchParams.set('code_challenge',p.get('code_challenge'));
-      if(p.get('state'))u.searchParams.set('state',p.get('state'));
-      history.replaceState({},'',location.pathname);
-      location.href=u.toString();
-    }catch(e){window.toast?.(e.message||'Could not authorize Eugene Card.');}
-  }
-
-  async function refreshStatus(){
-    const s=await session();
-    if(!s?.access_token)return {connected:false};
-    try{
-      const r=await fetch('/api/eugene-connect',{headers:{Authorization:`Bearer ${s.access_token}`},credentials:'include',cache:'no-store'});
-      if(!r.ok)return {connected:false};
-      const d=await r.json();
-      return {connected:!!d.connected,data:d};
-    }catch{return {connected:false};}
-  }
-
-  function findStatus(){
-    const explicit=document.querySelector('[data-eugene-connection-status]');
-    if(explicit)return (explicit.textContent||'').trim();
-    const el=document.getElementById('eugeneConnectStatus');
-    return (el?.textContent||'').trim();
-  }
-
-  function syncButtonWithStatus(){
-    const card=document.getElementById('eugeneConnectCard');
-    const btn=document.getElementById('eugeneConnectBtn');
-    if(!card||!btn)return;
-    const status=findStatus().toLowerCase();
-    if(status.includes('not connected')||status.includes('unable to check')){
-      btn.disabled=false;
-      btn.textContent='Connect Eugene Card';
-      btn.removeAttribute('aria-disabled');
-    }
-  }
-
-  function bindConnectButton(){
-    const btn=document.getElementById('eugeneConnectBtn');
-    if(!btn)return;
-    if(btn.dataset.oauthBound==='1')return;
-    btn.dataset.oauthBound='1';
-    btn.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopImmediatePropagation();
+  // Delegate the click so dynamically-rendered profile buttons work without
+  // MutationObserver or DOM-wide status manipulation that can destabilize UI.
+  document.addEventListener('click', function (event) {
+    try {
+      const target = event.target && event.target.closest ? event.target.closest('#eugeneConnectBtn') : null;
+      if (!target || target.disabled) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
       startOAuth();
-    },true);
-    btn.title='Connect Eugene Card with Lunarist OAuth';
-  }
+    } catch (error) {
+      showError(error && error.message ? error.message : 'Could not start the Eugene Card connection.');
+    }
+  }, true);
 
-  async function tick(){
-    bindConnectButton();
-    syncButtonWithStatus();
-    const card=document.getElementById('eugeneConnectCard');
-    if(!card)return;
-    const result=await refreshStatus();
-    const statusEl=document.getElementById('eugeneConnectStatus');
-    const btn=document.getElementById('eugeneConnectBtn');
-    const disconnect=document.getElementById('eugeneDisconnectBtn');
-    const copy=document.getElementById('eugeneConnectCopy');
-    const email=document.getElementById('eugeneConnectEmail');
-    if(statusEl)statusEl.textContent=result.connected?'Connected':'Not connected';
-    if(result.connected){
-      card.classList.add('connected');
-      if(btn){btn.disabled=true;btn.textContent='Connected to Eugene Card';}
-      if(disconnect)disconnect.style.display='';
-      if(copy)copy.textContent='Your Lunarist account is linked to Eugene Card. You can disconnect it here at any time.';
-      if(email)email.textContent=result.data?.connection?.eugene_email||'';
-    }else{
-      card.classList.remove('connected');
-      if(btn){btn.disabled=false;btn.textContent='Connect Eugene Card';}
-      if(disconnect)disconnect.style.display='none';
-      if(copy)copy.textContent='Connect your Lunarist account to your Eugene Card account. The connection is private to you and can be removed at any time.';
-      if(email)email.textContent='';
+  async function handleAuthorizeBridge() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('eugene_authorize') !== '1' || window.__eugeneBridgeHandled) return;
+    window.__eugeneBridgeHandled = true;
+    try {
+      const session = await getSession();
+      if (!session || !session.access_token) {
+        showError('Your Lunarist session could not be read. Please refresh Lunarist and try again.');
+        return;
+      }
+      const response = await fetch(`${API}/session`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, Accept: 'application/json' },
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error('Could not authorize Eugene Card.');
+
+      const url = new URL(`${API}/authorize`, window.location.origin);
+      url.searchParams.set('client_id', params.get('client_id') || 'eugene-card');
+      url.searchParams.set('redirect_uri', params.get('redirect_uri') || REDIRECT);
+      url.searchParams.set('response_type', params.get('response_type') || 'code');
+      url.searchParams.set('scope', params.get('scope') || 'identity profile offline_access');
+      url.searchParams.set('code_challenge_method', params.get('code_challenge_method') || 'S256');
+      if (params.get('code_challenge')) url.searchParams.set('code_challenge', params.get('code_challenge'));
+      if (params.get('state')) url.searchParams.set('state', params.get('state'));
+      window.location.assign(url.toString());
+    } catch (error) {
+      showError(error && error.message ? error.message : 'Could not authorize Eugene Card.');
     }
   }
 
-  function boot(){
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', handleAuthorizeBridge, { once: true });
+  } else {
     handleAuthorizeBridge();
-    observer=new MutationObserver(()=>{bindConnectButton();syncButtonWithStatus();});
-    observer.observe(document.body,{childList:true,subtree:true});
-    tick();
-    setInterval(tick,3000);
   }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
-  else boot();
 })();
