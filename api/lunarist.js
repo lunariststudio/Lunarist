@@ -2,7 +2,8 @@ import crypto from 'node:crypto';
 import {authorize as eugeneAuthorize,exchange as eugeneToken,revoke as eugeneRevoke,bootstrap as eugeneBootstrap} from '../eugene-card-oauth.js';
 import {handleOAuth} from '../lib/oauth-provider.js';
 import {handleOAuthAdmin} from '../lib/oauth-admin.js';
-function config(){return{url:(process.env.SUPABASE_URL||"").replace(/\/$/,""),key:process.env.SUPABASE_SERVICE_ROLE_KEY||""}}
+import {handleLunaristApiV1} from '../lib/lunarist-api-v1.js';
+function config(){return{url:(process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL||"").replace(/\/$/,""),key:(process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY||process.env.SUPABASE_SECRET_KEY||"").trim()}}
 const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin,socials',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at,slides',order:'created_at.desc'},services:{select:'id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,published,featured,views,add_ons,created_at,service_projects(project_id)',order:'created_at.desc'}};
 const EVENT_TYPES=['view','like','save','share','open_artist','search'];
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,6 +28,7 @@ export default async function handler(req,res){const {url,key}=config();if(!url|
   const adminAction=params.get('admin_action')||params.get('action')||req.query?.admin_action||req.query?.action||body.admin_action||body.action||'';
   const oauthAdminActions=new Set(['list-clients','create-client','toggle-client','revoke-client','delete-client','update-client','grants','revoke','revoke-user']);
   if(resource==='oauth-admin'||oauthAdminActions.has(String(adminAction))) return await handleOAuthAdmin(req,res);
+if(resource==='oauth-api-v1') return await handleLunaristApiV1(req,res);
 
 if(resource==='oauth')return await handleOAuth(req,res);
 if(resource==='eugene-authorize')return await eugeneAuthorize(req,res,url,key);

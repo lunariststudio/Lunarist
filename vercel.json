@@ -5,55 +5,178 @@
     {
       "source": "/api/eugene-card/(.*)",
       "headers": [
-        {"key": "Cache-Control", "value": "no-store"},
-        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"},
-        {"key": "Access-Control-Allow-Credentials", "value": "true"}
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://eugene-card-1.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        }
       ]
     },
     {
       "source": "/api/eugene-connect",
       "headers": [
-        {"key": "Access-Control-Allow-Origin", "value": "*"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
       ]
     },
     {
       "source": "/oauth/(.*)",
       "headers": [
-        {"key": "Cache-Control", "value": "no-store"},
-        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://eugene-card-1.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
       ]
     },
     {
       "source": "/api/v1/(.*)",
       "headers": [
-        {"key": "Cache-Control", "value": "no-store"},
-        {"key": "Access-Control-Allow-Origin", "value": "https://eugene-card-1.vercel.app"},
-        {"key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS"},
-        {"key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization"}
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://eugene-card-1.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
       ]
     }
   ],
   "rewrites": [
-    {"source": "/oauth/authorize", "destination": "/api/lunarist?resource=oauth&action=authorize"},
-    {"source": "/oauth/token", "destination": "/api/lunarist?resource=oauth&action=token"},
-    {"source": "/oauth/userinfo", "destination": "/api/lunarist?resource=oauth&action=userinfo"},
-    {"source": "/oauth/revoke", "destination": "/api/lunarist?resource=oauth&action=revoke"},
-    {"source": "/oauth/session", "destination": "/api/lunarist?resource=oauth&action=session"},
-    {"source": "/.well-known/oauth-authorization-server", "destination": "/api/lunarist?resource=oauth&action=metadata"},
-    {"source": "/api/v1/me", "destination": "/api/lunarist?resource=oauth&action=userinfo"},
-    {"source": "/api/oauth-admin", "destination": "/api/lunarist?resource=oauth-admin"},
-    {"source": "/api/eugene-card/authorize", "destination": "/api/lunarist?resource=eugene-authorize"},
-    {"source": "/api/eugene-card/token", "destination": "/api/lunarist?resource=eugene-token"},
-    {"source": "/api/eugene-card/revoke", "destination": "/api/lunarist?resource=eugene-revoke"},
-    {"source": "/api/eugene-card/session", "destination": "/api/lunarist?resource=eugene-session"},
-    {"source": "/api/eugene-connect", "destination": "/api/lunarist?resource=eugene"},
-    {"source": "/", "has": [{"type":"query","key":"eugene_authorize"}], "destination": "/eugene-authorize-entry.html"},
-    {"source": "/(.*)", "destination": "/index.html"}
+    {
+      "source": "/api/v1/oauth/apps",
+      "destination": "/api/lunarist?resource=oauth-api-v1&v1_path=/oauth/apps"
+    },
+    {
+      "source": "/api/v1/oauth/apps/:client_id/status",
+      "destination": "/api/lunarist?resource=oauth-api-v1&v1_path=/oauth/apps/:client_id/status"
+    },
+    {
+      "source": "/api/v1/oauth/apps/:client_id/tokens",
+      "destination": "/api/lunarist?resource=oauth-api-v1&v1_path=/oauth/apps/:client_id/tokens"
+    },
+    {
+      "source": "/api/v1/oauth/apps/:client_id",
+      "destination": "/api/lunarist?resource=oauth-api-v1&v1_path=/oauth/apps/:client_id"
+    },
+    {
+      "source": "/api/v1/oauth/grants/:id",
+      "destination": "/api/lunarist?resource=oauth-api-v1&v1_path=/oauth/grants/:id"
+    },
+    {
+      "source": "/api/v1/oauth/grants",
+      "destination": "/api/lunarist?resource=oauth-api-v1&v1_path=/oauth/grants"
+    },
+    {
+      "source": "/oauth/authorize",
+      "destination": "/api/lunarist?resource=oauth&action=authorize"
+    },
+    {
+      "source": "/oauth/token",
+      "destination": "/api/lunarist?resource=oauth&action=token"
+    },
+    {
+      "source": "/oauth/userinfo",
+      "destination": "/api/lunarist?resource=oauth&action=userinfo"
+    },
+    {
+      "source": "/oauth/revoke",
+      "destination": "/api/lunarist?resource=oauth&action=revoke"
+    },
+    {
+      "source": "/oauth/session",
+      "destination": "/api/lunarist?resource=oauth&action=session"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server",
+      "destination": "/api/lunarist?resource=oauth&action=metadata"
+    },
+    {
+      "source": "/api/v1/me",
+      "destination": "/api/lunarist?resource=oauth&action=userinfo"
+    },
+    {
+      "source": "/api/oauth-admin",
+      "destination": "/api/lunarist?resource=oauth-admin"
+    },
+    {
+      "source": "/api/eugene-card/authorize",
+      "destination": "/api/lunarist?resource=eugene-authorize"
+    },
+    {
+      "source": "/api/eugene-card/token",
+      "destination": "/api/lunarist?resource=eugene-token"
+    },
+    {
+      "source": "/api/eugene-card/revoke",
+      "destination": "/api/lunarist?resource=eugene-revoke"
+    },
+    {
+      "source": "/api/eugene-card/session",
+      "destination": "/api/lunarist?resource=eugene-session"
+    },
+    {
+      "source": "/api/eugene-connect",
+      "destination": "/api/lunarist?resource=eugene"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "eugene_authorize"
+        }
+      ],
+      "destination": "/eugene-authorize-entry.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
