@@ -17,6 +17,7 @@
       .client-website-box{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-top:14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
       .client-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}.client-stat-card{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}.client-stat-card b{display:block;font-size:22px}.client-stat-card span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
       .client-action{border:1px solid rgba(255,134,200,.25);background:rgba(255,134,200,.06);border-radius:16px;padding:14px}.client-action strong{display:block}.client-action .meta{margin-top:4px}
+      .client-eugene-card{box-sizing:border-box;width:100%;max-width:575px;padding:25px;border:1px solid rgba(155,132,220,.32);border-radius:24px;background:linear-gradient(145deg,rgba(31,27,43,.92),rgba(18,16,27,.96));box-shadow:0 12px 35px rgba(0,0,0,.16)}.client-eugene-head{display:flex;align-items:center;gap:17px}.client-eugene-icon{width:57px;height:57px;flex:0 0 57px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#7860ff,#8650e9);color:#fff;font-size:26px;font-weight:900;box-shadow:0 8px 20px rgba(115,82,255,.22)}.client-eugene-title{margin:0;font-size:21px;line-height:1.2;font-weight:800}.client-eugene-status{margin-top:7px;font-size:15px;font-weight:800;color:var(--text,#fff)}.client-eugene-copy{margin:27px 0 17px;color:var(--muted,#a8a0b6);font-size:15px;line-height:1.65}.client-eugene-actions{display:flex;gap:10px;flex-wrap:wrap}.client-eugene-connect{min-width:230px;min-height:58px;border-radius:17px;font-size:16px;font-weight:800;background:#f6f3fb;color:#15121e;border:0}.client-eugene-disconnect{min-height:58px;border-radius:17px;font-weight:800}@media(max-width:600px){.client-eugene-card{padding:20px;border-radius:20px}.client-eugene-connect,.client-eugene-disconnect{width:100%}}
       .client-deadline{border:1px solid var(--line);border-radius:14px;padding:13px;background:rgba(255,255,255,.02)}.client-deadline.soon{border-color:rgba(232,207,145,.45)}.client-deadline.late{border-color:rgba(255,125,142,.45)}
       .client-progress{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;margin-top:12px}.client-progress span{height:5px;border-radius:99px;background:rgba(255,255,255,.08)}.client-progress span.active{background:var(--moon)}
       .client-recommend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.client-recommend-grid .card{min-width:0}
@@ -41,7 +42,7 @@
 
     function clientShell(){
       const m=state.currentMember||{},url=clientUrl(m);
-      return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Client Space</div><h1 style="font-size:48px;margin:4px 0">${esc(m.name||'Client')} · Client Space</h1><p>Your private portal for commissions, saved inspiration, reviews and your public client profile.</p></div></div>${url?`<div class="client-website-box"><span><b>Your Client Space website</b><br><span class="meta">${esc(url)}</span></span><button class="btn" id="copyClientUrl">Copy link</button></div>`:''}<div class="client-space-tabs" id="clientSpaceTabs"><button class="filter active" data-client-tab="overview">Overview</button><button class="filter" data-client-tab="saved">🔖 Saved</button><button class="filter" data-client-tab="commissions">My Commissions</button><button class="filter" data-client-tab="reviews">Client Reviews</button><button class="filter" data-client-tab="profile">Profile</button></div><section class="client-space-section active" id="client-space-overview"></section><section class="client-space-section" id="client-space-saved"></section><section class="client-space-section" id="client-space-commissions"></section><section class="client-space-section" id="client-space-reviews"></section><section class="client-space-section" id="client-space-profile"></section></section></div>`;
+      return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Client Space</div><h1 style="font-size:48px;margin:4px 0">${esc(m.name||'Client')} · Client Space</h1><p>Your private portal for commissions, saved inspiration, reviews and your public client profile.</p></div></div>${url?`<div class="client-website-box"><span><b>Your Client Space website</b><br><span class="meta">${esc(url)}</span></span><button class="btn" id="copyClientUrl">Copy link</button></div>`:''}<div class="client-space-tabs" id="clientSpaceTabs"><button class="filter active" data-client-tab="overview">Overview</button><button class="filter" data-client-tab="saved">🔖 Saved</button><button class="filter" data-client-tab="commissions">My Commissions</button><button class="filter" data-client-tab="reviews">Client Reviews</button><button class="filter" data-client-tab="profile">Profile</button><button class="filter" data-client-tab="eugene-card">Eugene Card</button></div><section class="client-space-section active" id="client-space-overview"></section><section class="client-space-section" id="client-space-saved"></section><section class="client-space-section" id="client-space-commissions"></section><section class="client-space-section" id="client-space-reviews"></section><section class="client-space-section" id="client-space-profile"></section><section class="client-space-section" id="client-space-eugene-card"></section></section></div>`;
     }
 
     async function getClientData(){
@@ -128,10 +129,38 @@
       document.getElementById('clientSignOut').onclick=async()=>{await supabaseClient.auth.signOut();state.currentUser=null;state.currentMember=null;state.savedIds=new Set();toast('Signed out');goRoute('home')};
     }
 
+    async function clientEugeneRequest(method='GET',body=null){
+      if(!state.currentUser)throw Error('Please sign in to Lunarist first.');
+      const session=(await supabaseClient.auth.getSession())?.data?.session;
+      if(!session?.access_token)throw Error('Please sign in to Lunarist first.');
+      const options={method,cache:'no-store',credentials:'include',headers:{Authorization:`Bearer ${session.access_token}`}};
+      if(body){options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
+      const r=await fetch('/api/eugene-connect',options);
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok)throw Error(data?.error||'Eugene Card connection failed.');
+      return data;
+    }
+
+    function renderEugeneCard(){
+      const host=document.getElementById('client-space-eugene-card');if(!host)return;
+      host.innerHTML=`<div class="client-eugene-card"><div class="client-eugene-head"><div class="client-eugene-icon" aria-hidden="true">✦</div><div><h2 class="client-eugene-title">Eugene Card</h2><div class="client-eugene-status" id="clientEugeneStatus">Not connected</div></div></div><p class="client-eugene-copy" id="clientEugeneCopy">Connect your Lunarist account to your Eugene Card account. The connection is private to you and can be removed at any time.</p><div class="client-eugene-actions"><button class="btn client-eugene-connect" id="clientEugeneConnectBtn" type="button">Connect Eugene Card</button><button class="btn client-eugene-disconnect" id="clientEugeneDisconnectBtn" type="button" style="display:none">Disconnect</button></div></div>`;
+      const connect=document.getElementById('clientEugeneConnectBtn'),disconnect=document.getElementById('clientEugeneDisconnectBtn');
+      if(connect&&!connect.dataset.bound){connect.dataset.bound='1';connect.addEventListener('click',()=>{connect.disabled=true;connect.textContent='Opening Eugene Card…'})}
+      if(disconnect&&!disconnect.dataset.bound){disconnect.dataset.bound='1';disconnect.addEventListener('click',async()=>{if(!confirm('Disconnect Eugene Card from this Lunarist account?'))return;disconnect.disabled=true;try{await clientEugeneRequest('POST',{action:'disconnect'});await refreshEugeneCard()}catch(e){try{toast(e.message||'Unable to disconnect Eugene Card.')}catch{}}finally{disconnect.disabled=false}})}
+      refreshEugeneCard();
+    }
+
+    async function refreshEugeneCard(){
+      const status=document.getElementById('clientEugeneStatus'),connect=document.getElementById('clientEugeneConnectBtn'),disconnect=document.getElementById('clientEugeneDisconnectBtn'),copy=document.getElementById('clientEugeneCopy');
+      if(!status||!connect||!disconnect||!copy)return;
+      try{const data=await clientEugeneRequest('GET'),connected=!!data.connected;status.textContent=connected?'Connected':'Not connected';connect.textContent=connected?'Connected to Eugene Card':'Connect Eugene Card';connect.disabled=connected;disconnect.style.display=connected?'':'none';copy.textContent=connected?'Your Lunarist account is linked to Eugene Card. You can disconnect it here at any time.':'Connect your Lunarist account to your Eugene Card account. The connection is private to you and can be removed at any time.'}
+      catch{status.textContent='Not connected';connect.disabled=false;connect.textContent='Connect Eugene Card';disconnect.style.display='none'}
+    }
+
     function tab(name){
-      const valid=['overview','saved','commissions','reviews','profile'];if(!valid.includes(name))name='overview';
+      const valid=['overview','saved','commissions','reviews','profile','eugene-card'];if(!valid.includes(name))name='overview';
       document.querySelectorAll('[data-client-tab]').forEach(b=>b.classList.toggle('active',b.dataset.clientTab===name));document.querySelectorAll('.client-space-section').forEach(s=>s.classList.toggle('active',s.id==='client-space-'+name));window.__lunaristClientTab=name;
-      if(name==='overview')renderOverview();if(name==='saved')renderSaved();if(name==='commissions')renderCommissions();if(name==='reviews')renderReviews();if(name==='profile')renderProfile();
+      if(name==='overview')renderOverview();if(name==='saved')renderSaved();if(name==='commissions')renderCommissions();if(name==='reviews')renderReviews();if(name==='profile')renderProfile();if(name==='eugene-card')renderEugeneCard();
     }
 
     async function refreshClientSpace(active='overview'){if(!state.currentUser){openAuth('signin');return}await refreshUser();if(!isClient()){toast('Client Space is available for User/Client accounts.');return}await loadSavedIds();window.__lunaristClientData=await getClientData();renderClientSpacePage();tab(active)}
