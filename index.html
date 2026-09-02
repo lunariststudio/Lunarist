@@ -274,7 +274,7 @@ window.addEventListener('error', (e) => {
 
 let supabaseClient=null;
 const state={route:'home',filter:'All',roleFilter:'All Roles',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',inviteCode:'',loadError:null,conversations:[],activeConversation:null,notifications:[],myCommissions:[],myCommissionError:null,myReviews:[],savedIds:new Set()};
-const data={members:[],projects:[],services:[],recommendations:[]};window.state=state;window.data=data;
+const data={members:[],projects:[],services:[],recommendations:[]};
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
 
@@ -2655,7 +2655,7 @@ async function apiAuthHeaders(){
   try{const {data}=await supabaseClient.auth.getSession(); if(data?.session?.access_token)headers.Authorization=`Bearer ${data.session.access_token}`;}catch{}
   return headers;
 }
-async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabaseClient=window.supabase.createClient(c.url,c.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});window.supabaseClient=supabaseClient;window.lunaristSupabaseClient=supabaseClient;supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{try{await refreshUser();updateAccountButton();if(session&&pendingInvitationReservation())try{await redeemPendingInvitation()}catch(e){console.warn('Invitation redemption after auth:',e?.message||e)}}catch(e){console.error('Auth state refresh failed:',e)}},0)});await refreshUser()}
+async function loadConfig(){const r=await fetch('/api/config');if(!r.ok)throw new Error('Lunarist configuration is missing on Vercel.');const c=await r.json();if(!c.url||!c.anonKey)throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY are required.');supabaseClient=window.supabase.createClient(c.url,c.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{try{await refreshUser();updateAccountButton();if(session&&pendingInvitationReservation())try{await redeemPendingInvitation()}catch(e){console.warn('Invitation redemption after auth:',e?.message||e)}}catch(e){console.error('Auth state refresh failed:',e)}},0)});await refreshUser()}
 async function loadData(){
   state.loadError=null;
   try{
@@ -2966,6 +2966,7 @@ async function capturePaypalReturnIfPresent(){
 <script src="/lunarist-enhancements.js?v=2"></script>
 <script src="/client-space.js?v=2"></script>
 <script src="/client-space-ui.js?v=2"></script>
+<script src="/social-links.js?v=1"></script>
 <script src="/client-chat-and-artist-join.js?v=5"></script>
 <script src="/commission-command-center.js?v=1"></script>
 <script src="/commission-filters.js?v=1"></script>
@@ -2977,23 +2978,5 @@ async function capturePaypalReturnIfPresent(){
 <script src="/public-member-profile.js?v=1"></script>
 <script src="/client-space-nav-fix.js?v=1"></script>
 <script src="/eugene-lunarist-integration.js?v=1"></script>
-<script src="/client-messaging.js"></script>
-<script src="/x-project-player.js"></script>
-<script src="/social-project-fix.js"></script>
-<script src="/services-drag-drop.js"></script>
-<script src="/x-discovery-likes.js"></script>
-<script src="/discover-role-filter.js"></script>
-<script src="/discover-filters-fix.js"></script>
-<script src="/project-media-manager.js"></script>
-<script src="/slides-addon-logic.js"></script>
-<script src="/slides-addon-logic-fix.js"></script>
-<script src="/profile-role-dropdown.js"></script>
-<script src="/eugene-connection-status-fix.js"></script>
-<script src="/eugene-status-render-fix.js"></script>
-<script src="/eugene-card-oauth-ui.js"></script>
-<script src="/oauth-admin-ui.js"></script>
-<script src="/oauth-admin-route-fix.js"></script>
-<script src="/oauth-browser-bridge.js"></script>
-<script src="/social-links.js?v=1"></script>
 </body>
 </html>
