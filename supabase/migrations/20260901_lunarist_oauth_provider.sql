@@ -64,7 +64,7 @@ revoke all on public.oauth_authorization_codes from anon, authenticated;
 revoke all on public.oauth_tokens from anon, authenticated;
 
 insert into public.oauth_clients(client_id,name,client_type,redirect_uris,allowed_scopes,active)
-values('eugene-card','Eugene Card','public',array['https://eugene-card-1.vercel.app/?connect=lunarist'],array['identity','profile','offline_access'],true)
+values('eugene-card','Eugene Card','public',array['https://eugene-card-1.vercel.app/?connect=lunarist'],array['openid','profile','email','offline_access','identity'],true)
 on conflict (client_id) do update set
   name=excluded.name,
   client_type=excluded.client_type,
