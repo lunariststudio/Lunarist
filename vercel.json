@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node patch-ui.js",
+  "buildCommand": "node patch-ui.js && node runtime-inject.js",
   "headers": [
     {"source":"/api/eugene-card/(.*)","headers":[{"key":"Cache-Control","value":"no-store"},{"key":"Access-Control-Allow-Origin","value":"https://eugene-card-1.vercel.app"},{"key":"Access-Control-Allow-Methods","value":"GET,POST,OPTIONS"},{"key":"Access-Control-Allow-Headers","value":"Content-Type, Authorization"},{"key":"Access-Control-Allow-Credentials","value":"true"}]},
     {"source":"/api/eugene-connect","headers":[{"key":"Access-Control-Allow-Origin","value":"*"},{"key":"Access-Control-Allow-Methods","value":"GET,POST,OPTIONS"},{"key":"Access-Control-Allow-Headers","value":"Content-Type, Authorization"}]},
