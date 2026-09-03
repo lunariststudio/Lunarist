@@ -46,5 +46,21 @@ if(!s.includes('@media(max-width:720px){.navin{height:62px;padding:0 15px;positi
   );
 }
 
+// Remove references to scripts that are not present in the repository. A missing
+// JS asset is rewritten to index.html by the SPA fallback, which then executes
+// as JavaScript and produces "Unexpected token <" in the browser.
+s=s.replace(/\n?<script src="\/social-links\.js(?:\?[^\"]*)?"><\/script>/g,'');
+
+// Replace the old global toast-producing error handler. Runtime errors should
+// stay visible in DevTools without creating a misleading user-facing toast.
+s=s.replace(
+  /window\.addEventListener\('error',\s*\(e\)\s*=>\s*\{\s*console\.error\('\[Lunarist Error Handler\]',\s*e\.error \|\| e\.message\);\s*if\(typeof toast === 'function'\) toast\('Something went wrong\. Please try again\.'\);\s*\}\);/,
+  "window.addEventListener('error', (e) => { console.error('[Lunarist Error Handler]', e.error || e.message); });"
+);
+
+// Use a real manifest file instead of a data: URL. Chromium can reject the data
+// manifest URL with ERR_INVALID_URL in production.
+s=s.replace(/<link rel="manifest" href="data:application\/manifest\+json;base64,[^"]+">/, '<link rel="manifest" href="/manifest.json">');
+
 fs.writeFileSync('index.html',s);
-console.log('Lunarist UI animation + mobile menu patch applied');
+console.log('Lunarist UI animation + mobile menu + runtime asset patch applied');
