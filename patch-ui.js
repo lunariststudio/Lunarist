@@ -15,7 +15,7 @@ replaceOnce(
 
 replaceOnce(
   '.navlinks.open{display:flex;position:absolute;left:10px;right:10px;top:62px;background:#0d0b13;border:1px solid var(--line);border-radius:15px;padding:8px;flex-direction:column}',
-  '.navlinks.open{display:flex;position:absolute;left:10px;right:10px;top:calc(100% + 8px);z-index:70;background:#0d0b13;border:1px solid var(--line);border-radius:15px;padding:8px;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);backdrop-filter:blur(18px);max-height:calc(100vh - 78px);overflow-y:auto}',
+  '.navlinks.open{display:flex;position:fixed;left:10px;right:10px;top:62px;z-index:99999;background:#0d0b13;border:1px solid var(--line);border-radius:15px;padding:8px;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);backdrop-filter:blur(18px);max-height:calc(100dvh - 72px);overflow-y:auto;overflow-x:hidden}',
   'mobile menu'
 );
 
