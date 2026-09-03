@@ -1,0 +1,15 @@
+{
+  "name": "Lunarist Studio",
+  "short_name": "Lunarist",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08070d",
+  "theme_color": "#08070d",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/3kW22y1/lunarist-og.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
