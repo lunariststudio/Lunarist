@@ -1,7 +1,7 @@
 const fs=require('fs');
 const p='index.html';
 let s=fs.readFileSync(p,'utf8');
-const tag='<script src="/runtime-fix.js?v=2"></script>';
+const tag='<script src="/runtime-fix.js?v=3"></script>';
 // The OAuth bridge was present twice in production. Keep the versioned bridge only.
 s=s.replace(/\n?<script src="\/oauth-browser-bridge\.js"><\/script>/g,'');
 if(!s.includes('/runtime-fix.js')) s=s.replace('</head>',tag+'\n</head>');
