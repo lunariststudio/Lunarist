@@ -2,9 +2,8 @@
   const init = () => {
     document.documentElement.classList.add('ux-ready');
 
-    // Add a subtle pointer-aware lift to interactive cards without hijacking clicks.
-    const cards = document.querySelectorAll('.card, .artistcard, .panel');
-    cards.forEach((card) => {
+    // Subtle pointer-aware depth for cards.
+    document.querySelectorAll('.card, .artistcard, .panel').forEach((card) => {
       card.addEventListener('pointermove', (event) => {
         if (event.pointerType === 'touch') return;
         const r = card.getBoundingClientRect();
@@ -18,6 +17,22 @@
         card.style.removeProperty('--ux-ry');
       });
     });
+
+    // Add a tiny stagger to modal children when a modal opens.
+    const modalObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') return;
+        const modal = mutation.target;
+        if (!modal.classList.contains('modal') || !modal.classList.contains('open')) return;
+        const box = modal.querySelector('.modalbox');
+        if (!box) return;
+        box.querySelectorAll(':scope > *').forEach((child, index) => {
+          child.style.setProperty('--ux-delay', `${Math.min(index * 45, 225)}ms`);
+          child.classList.add('ux-modal-child');
+        });
+      });
+    });
+    document.querySelectorAll('.modal').forEach((modal) => modalObserver.observe(modal, { attributes: true }));
 
     // Keep keyboard users visually supported.
     document.addEventListener('keydown', (event) => {
