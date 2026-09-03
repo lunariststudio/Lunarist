@@ -23,10 +23,13 @@ body{transition:background-color var(--ux-med) var(--ux-ease)}
 .artistcard:hover .avatar,.userchip:hover .avatar{transform:scale(1.06);box-shadow:0 0 0 4px rgba(201,182,255,.08)}
 .panel:hover{border-color:rgba(255,255,255,.16);box-shadow:0 20px 50px rgba(0,0,0,.16)}
 .search:focus,.field input:focus,.field textarea:focus,.field select:focus{transform:translateY(-1px);border-color:var(--moon);box-shadow:0 0 0 4px rgba(201,182,255,.08),0 12px 30px rgba(0,0,0,.18)}
-.modal{opacity:0;visibility:hidden;transition:opacity .28s var(--ux-ease),visibility .28s}
+
+/* Modal opening + modal content hover polish */
+.modal{opacity:0;visibility:hidden;transition:opacity .32s var(--ux-ease),visibility .32s ease}
 .modal.open{opacity:1;visibility:visible}
-.modalbox{transform:translateY(16px) scale(.985);opacity:.92;transition:transform .42s var(--ux-ease),opacity .32s ease}
-.modal.open .modalbox{transform:translateY(0) scale(1);opacity:1}
+.modalbox{transform:translateY(22px) scale(.965);opacity:0;filter:blur(3px);transition:transform .48s var(--ux-ease),opacity .32s ease,filter .48s var(--ux-ease),box-shadow .4s ease}
+.modal.open .modalbox{transform:translateY(0) scale(1);opacity:1;filter:blur(0);box-shadow:0 30px 90px rgba(0,0,0,.42)}
+.modal.open .modalbox:hover{transform:translateY(-2px) scale(1.002);box-shadow:0 36px 100px rgba(0,0,0,.48)}
 .modalclose:hover{transform:rotate(8deg) scale(1.06);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24)}
 .drawer{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s}
 .drawer.open{opacity:1;visibility:visible}
@@ -41,4 +44,4 @@ body{transition:background-color var(--ux-med) var(--ux-ease)}
 .section{animation:ux-fade .7s ease both}
 @keyframes ux-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ux-fade{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;filter:none!important}}
