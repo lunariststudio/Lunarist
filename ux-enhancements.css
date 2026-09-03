@@ -1,0 +1,44 @@
+/* Lunarist UI/UX polish — motion, hover, focus, depth */
+:root{--ux-ease:cubic-bezier(.22,1,.36,1);--ux-fast:180ms;--ux-med:420ms}
+html{scroll-behavior:smooth}
+body{transition:background-color var(--ux-med) var(--ux-ease)}
+.nav{transition:background-color var(--ux-med) var(--ux-ease),box-shadow var(--ux-med) var(--ux-ease),border-color var(--ux-med) var(--ux-ease)}
+.nav:hover{background:rgba(8,7,13,.84)}
+.navbtn,.iconbtn,.pill,.filter,.userchip,.btn,.tag,.artistcard,.card,.panel,.search,.field input,.field textarea,.field select,.modalclose{transition:transform var(--ux-fast) var(--ux-ease),background-color var(--ux-fast) ease,border-color var(--ux-fast) ease,color var(--ux-fast) ease,box-shadow var(--ux-med) var(--ux-ease),opacity var(--ux-fast) ease}
+.navbtn:hover,.iconbtn:hover,.pill:hover,.filter:hover{transform:translateY(-2px);border-color:rgba(201,182,255,.55);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.btn{position:relative;overflow:hidden;will-change:transform}
+.btn:before{content:"";position:absolute;inset:-60% auto -60% -20%;width:28%;transform:translateX(-180%) rotate(18deg);background:rgba(255,255,255,.16);filter:blur(12px);transition:transform .65s var(--ux-ease);pointer-events:none}
+.btn:hover:before{transform:translateX(600%) rotate(18deg)}
+.btn:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.24)}
+.btn:active,.navbtn:active,.filter:active{transform:translateY(0) scale(.97)}
+.card{will-change:transform;transform:translateZ(0)}
+.card:hover{transform:translateY(-7px) scale(1.008);box-shadow:0 28px 70px rgba(0,0,0,.38)}
+.card .thumb{transition:filter var(--ux-med) var(--ux-ease)}
+.card:hover .thumb{filter:saturate(1.08) brightness(1.05)}
+.card:hover .thumb img{transform:scale(1.065)}
+.cardbody{transition:background-color var(--ux-fast) ease}
+.artistcard{will-change:transform}
+.artistcard:hover{transform:translateY(-5px);box-shadow:0 18px 42px rgba(0,0,0,.24);background:rgba(255,255,255,.045)}
+.artistcard .avatar{transition:transform .5s var(--ux-ease),box-shadow .5s var(--ux-ease)}
+.artistcard:hover .avatar,.userchip:hover .avatar{transform:scale(1.06);box-shadow:0 0 0 4px rgba(201,182,255,.08)}
+.panel:hover{border-color:rgba(255,255,255,.16);box-shadow:0 20px 50px rgba(0,0,0,.16)}
+.search:focus,.field input:focus,.field textarea:focus,.field select:focus{transform:translateY(-1px);border-color:var(--moon);box-shadow:0 0 0 4px rgba(201,182,255,.08),0 12px 30px rgba(0,0,0,.18)}
+.modal{opacity:0;visibility:hidden;transition:opacity .28s var(--ux-ease),visibility .28s}
+.modal.open{opacity:1;visibility:visible}
+.modalbox{transform:translateY(16px) scale(.985);opacity:.92;transition:transform .42s var(--ux-ease),opacity .32s ease}
+.modal.open .modalbox{transform:translateY(0) scale(1);opacity:1}
+.modalclose:hover{transform:rotate(8deg) scale(1.06);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24)}
+.drawer{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s}
+.drawer.open{opacity:1;visibility:visible}
+.drawerpanel{transform:translateX(24px);transition:transform .42s var(--ux-ease)}
+.drawer.open .drawerpanel{transform:translateX(0)}
+.toast{transition:opacity .28s var(--ux-ease),transform .42s var(--ux-ease),box-shadow .28s ease}
+.toast.show{box-shadow:0 16px 45px rgba(0,0,0,.3)}
+.hero h1{animation:ux-rise .8s var(--ux-ease) both}
+.hero .eyebrow{animation:ux-fade .55s ease both}
+.hero p{animation:ux-rise .8s .08s var(--ux-ease) both}
+.heroactions{animation:ux-rise .8s .14s var(--ux-ease) both}
+.section{animation:ux-fade .7s ease both}
+@keyframes ux-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ux-fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
