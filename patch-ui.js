@@ -7,6 +7,16 @@ function replaceOnce(from,to,label){
   s=s.replace(from,to);
 }
 
+// Admin member-role changes must send the currently signed-in Supabase access token.
+// Without Authorization: Bearer <token>, /api/lunarist treats the request as an
+// anonymous request and returns "Sign-in first" even when the Admin Studio UI is
+// already authenticated.
+replaceOnce(
+  "headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })",
+  "headers: await apiAuthHeaders(),\n        body: JSON.stringify({ action: 'toggle-member', targetId: id, nextType: next })",
+  'admin member-role authorization'
+);
+
 replaceOnce(
   '.navin{height:72px;max-width:1280px;margin:auto;padding:0 24px;display:flex;align-items:center;gap:26px}',
   '.navin{height:72px;max-width:1280px;margin:auto;padding:0 24px;display:flex;align-items:center;gap:26px;position:relative}',
