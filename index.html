@@ -3425,5 +3425,27 @@ async function capturePaypalReturnIfPresent(){
 .brand-clouds{margin-left:0!important;margin-right:0!important;transform-origin:center bottom!important}
 </style>
 <script>/* LUNARIST DYNAMIC BRAND INTERACTION */(()=>{const o=document.querySelector('.brand-guideline-overlay');if(!o)return;const fine=matchMedia('(pointer:fine)').matches;let tx=0,cx=0,raf=0;const stars=[...o.querySelectorAll('.brand-star')];function loop(){cx+=(tx-cx)*.055;stars.forEach((s,i)=>{s.style.marginLeft=(cx*((i%4+1)*.16))+'px'});raf=requestAnimationFrame(loop)}if(fine){addEventListener('pointermove',e=>{tx=(e.clientX-innerWidth/2)/24},{passive:true});addEventListener('pointerleave',()=>{tx=0},{passive:true});loop()}document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelAnimationFrame(raf);else if(fine)loop()})})();</script>
-</body>
+<script id="lunarist-cloud-motion-engine-v4">
+(()=> {
+  const clouds=document.querySelector('.brand-clouds');
+  if(!clouds || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let t=0, last=performance.now();
+  const parts=[...clouds.querySelectorAll('span')];
+  function frame(now){
+    const dt=Math.min(40,now-last); last=now; t+=dt*0.001;
+    const x=Math.sin(t*0.42)*1.7 + Math.sin(t*0.19)*0.8;
+    const y=Math.sin(t*0.55)*3.2;
+    clouds.style.transform='translate3d('+x+'%,'+y+'px,0)';
+    parts.forEach((p,i)=>{
+      const phase=i*0.9;
+      const px=Math.sin(t*(0.55+i*.035)+phase)*5.5;
+      const py=Math.sin(t*(0.7+i*.045)+phase)*5.5;
+      const scale=0.985+Math.sin(t*(0.42+i*.025)+phase)*0.018;
+      p.style.transform='translate3d('+px+'px,'+py+'px,0) scale('+scale+')';
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script></body>
 </html>
