@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<meta name="theme-color" content="#1677ff">
+<meta name="theme-color" content="#400FA5">
 <meta name="description" content="Lunarist Studio — a living creative network where artists share work and clients discover talent.">
 
 <!-- Dynamic SEO & OpenGraph Meta Tags -->
@@ -440,6 +440,184 @@ h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-b
 }
 @media(prefers-reduced-motion:reduce){
   .brand-clouds,.brand-clouds span,.brand-star,.brand-top .sparkle{animation:none!important}
+}
+</style>
+<style id="lunarist-member-guideline-theme">
+/* LUNARIST MEMBER GUIDELINE — current master visual system */
+:root{
+  --bg:#f8f7fc;
+  --panel:rgba(255,255,255,.86);
+  --panel2:#f0edf8;
+  --line:rgba(64,15,165,.16);
+  --text:#170937;
+  --muted:#655e78;
+  --moon:#400FA5;
+  --pink:#190A98;
+  --gold:#51DC9C;
+  --green:#51DC9C;
+  --danger:#c94a63;
+  --shadow:0 24px 70px rgba(25,10,72,.14);
+  --brand-purple:#400FA5;
+  --brand-deep:#190A98;
+  --brand-dark:#170937;
+  --brand-green:#51DC9C;
+  --brand-lilac:#F0EDF8;
+}
+html{background:#f8f7fc}
+body{
+  background:
+    radial-gradient(circle at 86% 4%,rgba(64,15,165,.17),transparent 25%),
+    radial-gradient(circle at 18% 22%,rgba(81,220,156,.08),transparent 23%),
+    linear-gradient(180deg,#ffffff 0%,#f8f7fc 44%,#eeeaf8 100%);
+  color:var(--text);
+  font-family:"Red Hat Display","Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;
+}
+body:before{
+  content:"✦";
+  position:fixed;z-index:-1;pointer-events:none;
+  left:5vw;top:18vh;font-family:"Space Grotesk",sans-serif;
+  font-size:70px;color:rgba(64,15,165,.13);transform:rotate(-8deg);
+}
+body:after{
+  content:"✦";
+  position:fixed;z-index:-1;pointer-events:none;
+  right:7vw;top:30vh;font-family:"Space Grotesk",sans-serif;
+  font-size:48px;color:rgba(64,15,165,.10);transform:rotate(12deg);
+}
+.nav{
+  background:rgba(255,255,255,.82);
+  border-bottom:1px solid rgba(64,15,165,.14);
+  box-shadow:0 8px 30px rgba(25,10,72,.08);
+}
+.brand,h1,h2,h3,h4,.sectionhead h2,.modalcontent h2{
+  font-family:"Space Grotesk","Red Hat Display",sans-serif;
+  color:var(--brand-dark);
+}
+.brand{font-weight:700;letter-spacing:.12em}
+.brand span{color:var(--brand-purple)}
+.navbtn,.iconbtn,.pill{color:#655e78}
+.navbtn:hover,.navbtn.active{
+  color:var(--brand-dark);
+  background:rgba(64,15,165,.07);
+  border-color:rgba(64,15,165,.20);
+}
+.navbtn:after{
+  background:linear-gradient(90deg,var(--brand-purple),var(--brand-green));
+}
+.nav-commission{color:var(--brand-purple)}
+.navbtn.nav-commission.active{
+  background:rgba(64,15,165,.09);
+  border-color:rgba(64,15,165,.28);
+  color:var(--brand-purple);
+}
+.userchip{
+  border-color:rgba(64,15,165,.16);
+  background:rgba(255,255,255,.78);
+  color:var(--brand-dark);
+}
+.userchip #accountName{color:var(--brand-dark)}
+.eyebrow,.badge,.field label,.profile-tos-badge{
+  font-family:"DM Mono",monospace;
+}
+.eyebrow{color:var(--brand-purple)}
+h1{font-weight:700;letter-spacing:-.055em}
+h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
+.hero:after{
+  background:radial-gradient(circle,rgba(64,15,165,.17),transparent 66%);
+}
+.hero p,.sectionhead p,.meta,.role,.empty,.modalcontent p{color:var(--muted)}
+.btn{
+  border-color:rgba(64,15,165,.18);
+  background:rgba(255,255,255,.76);
+  color:var(--brand-dark);
+  box-shadow:0 8px 24px rgba(25,10,72,.07);
+}
+.btn:hover{border-color:var(--brand-purple);box-shadow:0 12px 30px rgba(25,10,72,.12)}
+.btn.primary{background:var(--brand-purple);color:#fff;border-color:var(--brand-purple)}
+.btn.pink{
+  background:rgba(64,15,165,.08);
+  color:var(--brand-purple);
+  border-color:rgba(64,15,165,.22);
+}
+.card,.panel,.artistcard{
+  border-color:rgba(64,15,165,.14);
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(240,237,248,.72));
+  box-shadow:0 12px 36px rgba(25,10,72,.07);
+}
+.card:hover,.artistcard:hover{
+  border-color:rgba(64,15,165,.40);
+  box-shadow:0 22px 52px rgba(25,10,72,.13);
+}
+.tag{
+  color:var(--brand-purple);
+  background:rgba(64,15,165,.06);
+  border-color:rgba(64,15,165,.14);
+}
+.filter{
+  border-color:rgba(64,15,165,.16);
+  color:#655e78;
+  background:rgba(255,255,255,.60);
+}
+.filter.active{
+  color:var(--brand-dark);
+  background:rgba(64,15,165,.09);
+  border-color:rgba(64,15,165,.30);
+}
+.search,.field input,.field textarea,.field select{
+  border-color:rgba(64,15,165,.17);
+  background:rgba(255,255,255,.84);
+  color:var(--brand-dark);
+}
+.search:focus,.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:var(--brand-purple);
+  box-shadow:0 0 0 3px rgba(64,15,165,.09);
+}
+.modal{background:rgba(23,9,55,.38)}
+.modalbox{
+  background:rgba(250,249,253,.97);
+  border-color:rgba(64,15,165,.18);
+  box-shadow:0 30px 90px rgba(23,9,55,.22);
+}
+.modalclose{
+  background:rgba(64,15,165,.07);
+  color:var(--brand-dark);
+  border-color:rgba(64,15,165,.16);
+}
+.drawer{background:rgba(23,9,55,.30)}
+.drawerpanel{
+  background:rgba(250,249,253,.98);
+  border-left-color:rgba(64,15,165,.15);
+}
+.stat,.listitem{
+  border-color:rgba(64,15,165,.13);
+  background:rgba(255,255,255,.50);
+}
+.badge{
+  color:var(--brand-dark);
+  background:rgba(255,255,255,.84);
+  border-color:rgba(64,15,165,.17);
+}
+.toast{background:var(--brand-purple);color:#fff}
+.footer{border-top-color:rgba(64,15,165,.14)}
+.chat-bubble.mine{background:var(--brand-purple);color:#fff}
+.chat-input-wrap:focus-within{border-color:var(--brand-purple);box-shadow:0 0 0 3px rgba(64,15,165,.08)}
+.chat-dropzone.dragover{border-color:var(--brand-purple);background:rgba(64,15,165,.06)}
+.notif-badge,.unread-badge{background:var(--brand-green);color:var(--brand-dark)}
+.notif-item.unread{background:rgba(64,15,165,.05);border-left-color:var(--brand-purple)}
+.profile-tos-badge{background:rgba(64,15,165,.08);border-color:rgba(64,15,165,.20);color:var(--brand-purple)}
+.theme-option:hover,.theme-option.selected{border-color:var(--brand-purple);background:rgba(64,15,165,.05)}
+.theme-swatch{border:1px solid rgba(64,15,165,.10)}
+/* Member-guideline atmosphere: restrained purple field + white editorial space. */
+.brand-guideline-overlay{
+  background:linear-gradient(180deg,rgba(64,15,165,.045),rgba(64,15,165,0) 48%);
+}
+.brand-guideline-overlay::after{
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.30),transparent 24%);
+}
+.brand-star,.sparkle{filter:drop-shadow(0 4px 10px rgba(64,15,165,.16))}
+.brand-top .sparkle{color:var(--brand-purple)!important}
+@media(prefers-reduced-motion:reduce){
+  body:before,body:after{display:none}
 }
 </style>
 </head>
