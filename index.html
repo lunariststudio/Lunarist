@@ -267,7 +267,19 @@ h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-b
 <link rel="stylesheet" href="/ux-enhancements.css">
 <script src="/ux-enhancements.js" defer></script>
 </head>
-<body>
+<body>\n<!-- LUNARIST BRAND GUIDELINE DECOR -->
+<div class="brand-guideline-overlay" aria-hidden="true">
+  <div class="brand-frame"></div>
+  <div class="brand-top brand-top-left"><span class="brand-line"></span><span class="sparkle outline">✧</span><span class="sparkle outline">✧</span><span class="sparkle outline">✧</span></div>
+  <div class="brand-top brand-top-right"><span class="brand-line"></span><span class="sparkle solid">✦</span><span class="sparkle solid">✦</span><span class="sparkle solid">✦</span></div>
+  <span class="brand-star s1 outline">✧</span><span class="brand-star s2 outline">✧</span><span class="brand-star s3 outline">✧</span>
+  <span class="brand-star s4 outline">✧</span><span class="brand-star s5 outline">✧</span><span class="brand-star s6 outline">✧</span>
+  <span class="brand-star s7 solid">✦</span><span class="brand-star s8 solid">✦</span>
+  <div class="brand-side left"><span class="circle"></span><span class="diamond"></span><span class="circle"></span></div>
+  <div class="brand-side right"><span class="circle"></span><span class="diamond"></span><span class="circle"></span></div>
+  <div class="brand-clouds"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+
 <div class="app" id="app">
 <header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
 <div class="notif-popover" id="notifPopover"><div class="notif-header"><b style="font-size:13px">Notifications</b><button id="markNotifsReadBtn" style="background:none;border:none;color:var(--moon);font-size:11px;cursor:pointer">Mark all read</button></div><div class="notif-list" id="notifList"></div></div>
@@ -318,7 +330,187 @@ h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-b
 .addon-add-btn{margin-top:2px!important;border-style:dashed!important;background:rgba(255,255,255,.025)!important;color:var(--moon)!important}
 .addon-add-btn:hover{background:rgba(201,182,255,.07)!important}
 @media(max-width:760px){.addon-count-badge{font-size:10px}}
-</style>
+
+/* LUNARIST BRAND GUIDELINE — DECORATIVE SYSTEM */
+/* The supplied guideline is not just a palette: it is a framed sky composition.
+   Keep the content usable while carrying the same visual grammar through the site. */
+:root{
+  --brand-blue:#1677ff;
+  --brand-blue-deep:#0d62df;
+  --brand-sky:#eef6ff;
+  --brand-sky-2:#c9e0ff;
+  --brand-ink:#073a86;
+  --brand-white:rgba(255,255,255,.92);
+}
+html,body{background:#eaf4ff!important}
+body{
+  color:#082e68!important;
+  font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif!important;
+  background:
+    radial-gradient(ellipse at 50% 9%,rgba(255,255,255,.98) 0 15%,rgba(255,255,255,.5) 29%,transparent 53%),
+    linear-gradient(180deg,#fbfdff 0%,#edf6ff 17%,#cce3ff 43%,#8cc2ff 69%,#1677ff 100%)!important;
+  min-height:100vh;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:9990;
+  background:
+    radial-gradient(circle at 16% 31%,rgba(255,255,255,.22),transparent 18%),
+    radial-gradient(circle at 82% 42%,rgba(255,255,255,.18),transparent 20%);
+  mix-blend-mode:screen;
+}
+.app{position:relative;isolation:isolate;z-index:1}
+.app>*{position:relative;z-index:2}
+.brand-guideline-overlay{
+  position:fixed;inset:0;pointer-events:none;z-index:9995;overflow:hidden;
+  color:var(--brand-blue);
+}
+.brand-frame{
+  position:absolute;
+  left:6.9vw;right:6.9vw;top:76px;bottom:0;
+  border-left:1.5px solid rgba(255,255,255,.9);
+  border-right:1.5px solid rgba(255,255,255,.9);
+  opacity:.9;
+}
+.brand-frame::before,.brand-frame::after{
+  content:"";position:absolute;top:-8px;width:31vw;height:1.5px;background:rgba(255,255,255,.9);
+}
+.brand-frame::before{left:-1px;transform:translateY(0)}
+.brand-frame::after{right:-1px}
+.brand-top{
+  position:absolute;top:30px;height:50px;display:flex;align-items:center;gap:12px;
+}
+.brand-top-left{left:4.2vw}
+.brand-top-right{right:4.2vw}
+.brand-top .brand-line{
+  display:block;width:195px;height:1.5px;background:var(--brand-blue);opacity:.95;
+}
+.brand-top-left .brand-line{order:4;margin-left:4px}
+.brand-top-right .brand-line{order:-1;margin-right:4px}
+.sparkle{
+  display:grid;place-items:center;
+  font-family:Georgia,serif;font-size:50px;line-height:1;
+  filter:drop-shadow(0 2px 3px rgba(22,119,255,.12));
+}
+.sparkle.outline{color:transparent;-webkit-text-stroke:1.5px var(--brand-blue)}
+.sparkle.solid{color:var(--brand-blue);font-size:42px}
+.brand-star{
+  position:absolute;font-family:Georgia,serif;line-height:1;
+  user-select:none;filter:drop-shadow(0 2px 5px rgba(22,119,255,.14));
+}
+.brand-star.outline{color:transparent;-webkit-text-stroke:1.8px #72b2ff}
+.brand-star.solid{color:var(--brand-blue)}
+.brand-star.s1{left:34%;top:14%}.brand-star.s2{left:53%;top:11%}.brand-star.s3{left:72%;top:15%}
+.brand-star.s4{left:21%;top:23%}.brand-star.s5{right:1.2%;top:22%}.brand-star.s6{left:12%;top:36%}
+.brand-star.s7{left:82%;top:31%;font-size:29px}.brand-star.s8{left:45%;top:69%;font-size:22px}
+.brand-star.s1,.brand-star.s2,.brand-star.s3,.brand-star.s4,.brand-star.s5,.brand-star.s6{font-size:52px}
+.brand-side{
+  position:absolute;top:39%;display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.brand-side.left{left:5.5vw}.brand-side.right{right:5.5vw}
+.brand-side .circle{
+  width:31px;height:31px;border:2px solid rgba(255,255,255,.92);border-radius:50%;
+}
+.brand-side .diamond{
+  width:24px;height:24px;background:rgba(255,255,255,.94);transform:rotate(45deg);margin:1px 0;
+}
+.brand-clouds{
+  position:absolute;left:-6vw;right:-6vw;bottom:-70px;height:285px;
+  filter:drop-shadow(0 -8px 24px rgba(255,255,255,.18));
+}
+.brand-clouds span{
+  position:absolute;bottom:-85px;background:rgba(250,253,255,.97);
+  border-radius:50% 50% 42% 42%/55% 55% 45% 45%;
+  box-shadow:inset 0 -18px 40px rgba(192,224,255,.18);
+}
+.brand-clouds span:nth-child(1){left:-3%;width:230px;height:210px}
+.brand-clouds span:nth-child(2){left:8%;width:310px;height:155px;bottom:-35px}
+.brand-clouds span:nth-child(3){left:26%;width:270px;height:145px;bottom:-48px}
+.brand-clouds span:nth-child(4){left:52%;width:300px;height:180px;bottom:-44px}
+.brand-clouds span:nth-child(5){right:8%;width:360px;height:250px;bottom:-65px}
+.brand-clouds span:nth-child(6){right:-5%;width:270px;height:195px;bottom:-35px}
+.brand-clouds::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:100px;
+  background:linear-gradient(180deg,rgba(248,252,255,.84),#f5faff);
+}
+nav,.nav{
+  background:rgba(248,252,255,.72)!important;
+  border-bottom:1px solid rgba(7,58,134,.14)!important;
+  backdrop-filter:blur(22px)!important;
+}
+.navin{position:relative}
+.brand{font-family:'Space Grotesk',sans-serif!important;color:#083d8f!important}
+.brand span{color:var(--brand-blue)!important}
+.navbtn,.iconbtn,.pill{color:#2c5b94!important}
+.navbtn:hover,.navbtn.active{color:#073a86!important;background:rgba(255,255,255,.72)!important;border-color:rgba(22,119,255,.22)!important}
+.userchip{color:#073a86!important;background:rgba(255,255,255,.68)!important;border-color:rgba(22,119,255,.2)!important}
+.userchip #accountName{color:#073a86!important;text-shadow:none!important}
+.hero{padding-top:112px!important;min-height:720px;position:relative;overflow:visible!important}
+.hero h1,h1,h2,h3,h4,.sectionhead h2,.title,.artistname,.modalcontent h2{
+  font-family:'Space Grotesk',sans-serif!important;color:#073a86!important;
+}
+h1{letter-spacing:-.055em!important}
+h1 em{font-family:'Space Grotesk',sans-serif!important;color:var(--brand-blue)!important}
+.eyebrow,.field label,.badge,.profile-tos-badge{
+  font-family:'DM Mono',monospace!important;color:#1664c7!important;
+}
+.hero p,.sectionhead p,.meta,.role,.footer,.muted{color:#356394!important}
+.heroactions{position:relative;z-index:5}
+.btn{border-color:rgba(7,58,134,.16)!important;background:rgba(255,255,255,.62)!important;color:#073a86!important;box-shadow:0 8px 28px rgba(22,119,255,.08)}
+.btn:hover{border-color:rgba(22,119,255,.45)!important;box-shadow:0 12px 32px rgba(22,119,255,.14)}
+.btn.primary{background:var(--brand-blue)!important;color:#fff!important;border-color:var(--brand-blue)!important}
+.btn.pink{background:rgba(255,255,255,.55)!important;color:#073a86!important;border-color:rgba(22,119,255,.24)!important}
+.section{position:relative}
+.card,.panel,.artistcard,.profile-tos-card,.theme-option,.stat,.listitem,.addon-box{
+  border-color:rgba(7,58,134,.18)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(210,231,255,.52))!important;
+  box-shadow:0 18px 45px rgba(20,92,190,.10)!important;
+}
+.card:hover,.artistcard:hover,.theme-option:hover,.theme-option.selected{
+  border-color:rgba(22,119,255,.65)!important;
+  box-shadow:0 22px 55px rgba(22,119,255,.16)!important;
+}
+.thumb{background:rgba(210,231,255,.55)!important}
+.overlay{background:linear-gradient(180deg,rgba(7,58,134,0),rgba(7,58,134,.5))!important}
+.badge,.tag,.filter{
+  border-color:rgba(22,119,255,.2)!important;
+  background:rgba(255,255,255,.58)!important;
+  color:#1256aa!important;
+}
+.filter.active{background:rgba(22,119,255,.1)!important;border-color:rgba(22,119,255,.5)!important;color:#073a86!important}
+.search,.field input,.field textarea,.field select{
+  background:rgba(255,255,255,.78)!important;color:#073a86!important;
+  border-color:rgba(7,58,134,.16)!important;
+}
+.field input::placeholder,.field textarea::placeholder,.search::placeholder{color:#7192b9!important}
+.modal{background:rgba(7,42,94,.32)!important}
+.modalbox,.drawerpanel{
+  background:linear-gradient(160deg,rgba(248,252,255,.96),rgba(218,237,255,.96))!important;
+  border-color:rgba(7,58,134,.18)!important;
+  box-shadow:0 30px 90px rgba(7,58,134,.22)!important;
+}
+.modalcontent p,.tos-box,.profile-tos-body{color:#356394!important}
+.drawer{background:rgba(7,42,94,.28)!important}
+.chat-thread-container{background:rgba(239,247,255,.92)!important;border-color:rgba(7,58,134,.18)!important}
+.chat-messages-list{background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(196,224,255,.25))}
+.chat-bubble.mine{background:var(--brand-blue)!important;color:#fff!important}
+.chat-bubble.other{background:rgba(255,255,255,.78)!important;color:#073a86!important;border-color:rgba(7,58,134,.14)!important}
+.chat-input-wrap{background:rgba(255,255,255,.78)!important;border-color:rgba(7,58,134,.16)!important}
+.footer{border-top-color:rgba(255,255,255,.6)!important;position:relative}
+@media(max-width:720px){
+  .brand-frame{left:15px;right:15px}
+  .brand-top{top:70px;transform:scale(.68);transform-origin:top left}
+  .brand-top-right{transform-origin:top right}
+  .brand-top .brand-line{width:120px}
+  .brand-star.s1,.brand-star.s2,.brand-star.s3,.brand-star.s4,.brand-star.s5,.brand-star.s6{font-size:36px}
+  .brand-side{display:none}
+  .hero{min-height:620px!important;padding-top:92px!important}
+  .brand-clouds{height:220px}
+}
+\n</style>
 <script>
 // Global Error Boundary & Graceful Handling
 window.addEventListener('error', (e) => {
