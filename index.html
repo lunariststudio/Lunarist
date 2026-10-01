@@ -2840,7 +2840,12 @@ async function renderAdminStudioPage(activeTab='members'){
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
 
-  const analytics=await loadAdvancedAnalytics(projects||[],servicesArr||[]);
+  // Analytics must never block the Admin Studio shell from rendering.
+  // Some Supabase count/analytics queries can stall when a table's RLS or network is slow.
+  const analytics=await Promise.race([
+    loadAdvancedAnalytics(projects||[],servicesArr||[]),
+    new Promise(resolve=>setTimeout(()=>resolve({error:'Analytics took too long to respond. The rest of Admin Studio is available; reopen Analytics or refresh to retry.'}),7000))
+  ]);
 
   if(pErr || sErr){
     sec.innerHTML='<div class="panel"><h3>Studio unavailable</h3><p style="color:var(--muted)">'+esc((pErr||sErr).message)+'</p></div>';
