@@ -2821,7 +2821,7 @@ async function loadAdminInvitations(sec){
   try{const r=await fetch('/api/invitations?action=list',{headers:await apiAuthHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load invitations');renderRows(Array.isArray(d)?d:[])}catch(e){list.innerHTML='<div class="meta">'+esc(e.message||'Unable to load invitations.')+'</div>'}
 }
 
-async function renderAdminStudioPage(activeTab='members'){
+async function renderAdminStudioPage(activeTab='members', analyticsOverride=null){
   if(!state.currentUser||!state.currentMember?.is_admin){
     document.getElementById('adminPageView').innerHTML='<div class="panel"><h3>Access Restricted</h3><p style="color:var(--muted)">You must be an administrator to view this page.</p></div>';
     return;
@@ -2840,12 +2840,30 @@ async function renderAdminStudioPage(activeTab='members'){
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
 
-  // Analytics must never block the Admin Studio shell from rendering.
-  // Some Supabase count/analytics queries can stall when a table's RLS or network is slow.
-  const analytics=await Promise.race([
-    loadAdvancedAnalytics(projects||[],servicesArr||[]),
-    new Promise(resolve=>setTimeout(()=>resolve({error:'Analytics took too long to respond. The rest of Admin Studio is available; reopen Analytics or refresh to retry.'}),7000))
-  ]);
+  // Analytics is deliberately decoupled from the Admin Studio shell.
+  // Never await it here: a slow/stalled analytics query must not keep the entire
+  // dashboard in "Loading Moderation Dashboard…".
+  const analyticsFallback={
+    loading:true,error:null,totalEvents:0,totalVisitors:0,totalVisits:0,
+    totalRevenue:0,pendingRevenue:0,avgOrderValue:0,conversionRate:0,
+    depositCount:0,fullCount:0,topServices:[],topCategories:[],
+    trendDays:[],trend:{},funnel:{}
+  };
+  let analytics=analyticsOverride||analyticsFallback;
+  if(!analyticsOverride){
+    Promise.race([
+      loadAdvancedAnalytics(projects||[],servicesArr||[]),
+      new Promise(resolve=>setTimeout(()=>resolve({
+        error:'Analytics took too long to respond. The rest of Admin Studio is available; switch away from Analytics and back to retry.',
+        loading:false
+      }),7000))
+    ]).then(result=>{
+      if(!result || typeof result!=='object')result={error:'Unable to load analytics.',loading:false};
+      renderAdminStudioPage(activeTab,result);
+    }).catch(error=>{
+      renderAdminStudioPage(activeTab,{...analyticsFallback,loading:false,error:error?.message||'Unable to load analytics.'});
+    });
+  }
 
   if(pErr || sErr){
     sec.innerHTML='<div class="panel"><h3>Studio unavailable</h3><p style="color:var(--muted)">'+esc((pErr||sErr).message)+'</p></div>';
@@ -2985,7 +3003,7 @@ async function renderAdminStudioPage(activeTab='members'){
     </div>
 
     <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
-      ${analytics.error?`<div class="panel"><h3>Analytics unavailable</h3><p style="color:var(--muted)">${esc(analytics.error)}</p></div>`:`
+      ${analytics.loading?`<div class="panel"><h3>Loading Analytics…</h3><p style="color:var(--muted)">Analytics is loading separately. The rest of Admin Studio is ready to use.</p></div>`:analytics.error?`<div class="panel"><h3>Analytics unavailable</h3><p style="color:var(--muted)">${esc(analytics.error)}</p></div>`:`
       <div class="panel" style="margin-bottom:16px">
         <div class="eyebrow">Audience</div>
         <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:10px">
