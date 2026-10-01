@@ -268,6 +268,45 @@ h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-b
 <!-- LUNARIST_UX_POLISH -->
 <link rel="stylesheet" href="/ux-enhancements.css">
 <script src="/ux-enhancements.js" defer></script>
+<style id="lunarist-cloud-motion-v2">
+/* Smaller, clearly animated cloud layer */
+.brand-clouds{
+  height:260px!important;
+  bottom:0!important;
+  animation:lun-cloud-sway-v2 14s ease-in-out infinite alternate!important;
+  will-change:transform!important;
+}
+.brand-clouds span{
+  transform-origin:center bottom!important;
+  animation:lun-cloud-float-v2 8s ease-in-out infinite alternate!important;
+  will-change:transform!important;
+}
+.brand-clouds span:nth-child(1){width:175px!important;height:150px!important;bottom:-16px!important;animation-delay:-1s!important}
+.brand-clouds span:nth-child(2){width:235px!important;height:112px!important;bottom:-6px!important;animation-delay:-3s!important}
+.brand-clouds span:nth-child(3){width:205px!important;height:105px!important;bottom:-10px!important;animation-delay:-5s!important}
+.brand-clouds span:nth-child(4){width:225px!important;height:130px!important;bottom:-8px!important;animation-delay:-2s!important}
+.brand-clouds span:nth-child(5){width:270px!important;height:180px!important;bottom:-18px!important;animation-delay:-4s!important}
+.brand-clouds span:nth-child(6){width:205px!important;height:140px!important;bottom:-7px!important;animation-delay:-6s!important}
+@keyframes lun-cloud-sway-v2{
+  0%{transform:translate3d(-2.2%,0,0)}
+  50%{transform:translate3d(1%, -5px,0)}
+  100%{transform:translate3d(2.2%,0,0)}
+}
+@keyframes lun-cloud-float-v2{
+  0%{transform:translate3d(-7px,4px,0) scale(.98)}
+  50%{transform:translate3d(4px,-8px,0) scale(1)}
+  100%{transform:translate3d(8px,2px,0) scale(.98)}
+}
+@media(max-width:720px){
+  .brand-clouds{height:190px!important}
+  .brand-clouds span:nth-child(1){width:125px!important;height:108px!important}
+  .brand-clouds span:nth-child(2){width:165px!important;height:78px!important}
+  .brand-clouds span:nth-child(3){width:145px!important;height:75px!important}
+  .brand-clouds span:nth-child(4){width:155px!important;height:92px!important}
+  .brand-clouds span:nth-child(5){width:195px!important;height:130px!important}
+  .brand-clouds span:nth-child(6){width:145px!important;height:100px!important}
+}
+</style>
 </head>
 <body>
 <!-- LUNARIST BRAND GUIDELINE DECOR -->
