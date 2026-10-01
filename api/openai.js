@@ -9,6 +9,25 @@ function json(res, status, body) {
   return res.end(JSON.stringify(body));
 }
 
+async function requireUser(req) {
+  const url = String(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SECRET_KEY || '').trim();
+  const authorization = String(req.headers.authorization || '');
+  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+
+  if (!url || !key || !token) return null;
+
+  const response = await fetch(`${url}/auth/v1/user`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return null;
+  return response.json();
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -20,6 +39,11 @@ export default async function handler(req, res) {
   }
 
   try {
+    const user = await requireUser(req);
+    if (!user?.id) {
+      return json(res, 401, { error: 'Sign in to Lunarist to use AI.' });
+    }
+
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const input = typeof body.input === 'string' ? body.input.trim() : '';
 
