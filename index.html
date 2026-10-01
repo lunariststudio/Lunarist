@@ -2745,11 +2745,13 @@ function showProjectForm(existing=null){
 
 async function loadAdvancedAnalytics(allProjects,allServices){
   const since=new Date(Date.now()-14*86400000).toISOString();
-  const [{data:events,error:evErr},{data:commissions,error:coErr}]=await Promise.all([
+  const [{data:events,error:evErr},{data:commissions,error:coErr},{count:visitorCount,error:visitorErr},{count:visitCount,error:visitErr}]=await Promise.all([
     supabaseClient.from('discovery_events').select('event_type,created_at,category,project_id').order('created_at',{ascending:true}).limit(5000),
-    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000)
+    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000),
+    supabaseClient.from('site_visitors').select('visitor_id',{count:'exact',head:true}),
+    supabaseClient.from('site_visits').select('id',{count:'exact',head:true})
   ]);
-  if(evErr||coErr)return {error:(evErr||coErr).message};
+  if(evErr||coErr||visitorErr||visitErr)return {error:(evErr||coErr||visitorErr||visitErr).message};
 
   const days=[];
   for(let i=13;i>=0;i--){const d=new Date(Date.now()-i*86400000);days.push(d.toISOString().slice(0,10))}
@@ -2792,6 +2794,7 @@ async function loadAdvancedAnalytics(allProjects,allServices){
     trendDays:days,trend,
     totalRevenue,pendingRevenue,depositCount,fullCount,conversionRate,avgOrderValue,
     funnel,topServices,topCategories,
+    totalVisitors:visitorCount||0,totalVisits:visitCount||0,
     totalEvents:(events||[]).length,totalCommissions:rows.length
   };
 }
@@ -2978,6 +2981,16 @@ async function renderAdminStudioPage(activeTab='members'){
 
     <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
       ${analytics.error?`<div class="panel"><h3>Analytics unavailable</h3><p style="color:var(--muted)">${esc(analytics.error)}</p></div>`:`
+      <div class="panel" style="margin-bottom:16px">
+        <div class="eyebrow">Audience</div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:10px">
+          <div class="stat"><b>${analytics.totalVisitors.toLocaleString()}</b><span>Total Visitors</span></div>
+          <div class="stat"><b>${analytics.totalVisits.toLocaleString()}</b><span>Total Visits</span></div>
+          <div class="stat"><b>${analytics.totalEvents.toLocaleString()}</b><span>Project Engagement Events</span></div>
+        </div>
+        <div class="meta" style="margin-top:10px">Visitors use a random first-party browser ID; no IP address or fingerprint is stored.</div>
+      </div>
+
       <div class="panel" style="margin-bottom:16px">
         <div class="eyebrow">Revenue</div>
         <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:10px">
@@ -3603,6 +3616,7 @@ async function capturePaypalReturnIfPresent(){
 <script src="/client-space-eugene-card-tab.js"></script>
 <script src="/social-links.js?v=1"></script>
 <script src="/oauth-browser-bridge.js?v=2"></script>
+<script src="/visitor-analytics.js?v=1"></script>
 <style id="lunarist-cloud-viewport-fix">
 .brand-guideline-overlay{overflow:visible!important;transform:none!important}
 .brand-clouds{margin-left:0!important;margin-right:0!important;transform-origin:center bottom!important}
