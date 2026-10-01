@@ -2821,7 +2821,7 @@ async function loadAdminInvitations(sec){
   try{const r=await fetch('/api/invitations?action=list',{headers:await apiAuthHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load invitations');renderRows(Array.isArray(d)?d:[])}catch(e){list.innerHTML='<div class="meta">'+esc(e.message||'Unable to load invitations.')+'</div>'}
 }
 
-async function renderAdminStudioPage(activeTab='members', analyticsOverride=null){
+async function renderAdminStudioPage(activeTab='members', analyticsOverride=null, adminDataOverride=null){
   if(!state.currentUser||!state.currentMember?.is_admin){
     document.getElementById('adminPageView').innerHTML='<div class="panel"><h3>Access Restricted</h3><p style="color:var(--muted)">You must be an administrator to view this page.</p></div>';
     return;
@@ -2829,16 +2829,43 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
   const sec = document.getElementById('adminPageView'); if(!sec) return;
   sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
 
-  const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
-    supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
-    supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
-    supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
-    supabaseClient.from('projects').select('*',{count:'exact',head:true}),
-    supabaseClient.from('services').select('*',{count:'exact',head:true}),
-    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
-    supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
-    supabaseClient.from('studio_settings').select('key,value').order('key')
-  ]);
+  // The Admin Studio shell must render immediately. Load its database data after
+  // the shell is visible so a slow Supabase request can never look like a frozen page.
+  if(!adminDataOverride){
+    const loadAdminData=async()=>{
+      const result=await Promise.race([
+        Promise.all([
+          supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
+          supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
+          supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
+          supabaseClient.from('projects').select('*',{count:'exact',head:true}),
+          supabaseClient.from('services').select('*',{count:'exact',head:true}),
+          supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
+          supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
+          supabaseClient.from('studio_settings').select('key,value').order('key')
+        ]).then(r=>({ok:true,r})),
+        new Promise(resolve=>setTimeout(()=>resolve({ok:false,error:'Admin data is taking too long to respond. The dashboard shell is available; refresh to retry.'}),5000))
+      ]);
+      if(!result.ok){
+        const errData={projects:[],servicesArr:[],memberCount:0,projectCount:0,serviceCount:0,members:[],featured:[],settings:[],pErr:{message:result.error},sErr:null};
+        sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Admin Studio is ready</h3><p style="color:var(--muted)">'+esc(result.error)+'</p><button class="btn primary" id="retryAdminStudio" style="margin-top:12px">Retry</button></div>';
+        document.getElementById('retryAdminStudio')?.addEventListener('click',()=>renderAdminStudioPage(activeTab));
+        return;
+      }
+      const [p,s,m,pc,sc,mem,f,settings]=result.r;
+      renderAdminStudioPage(activeTab,null,{
+        projects:p.data||[],servicesArr:s.data||[],memberCount:m.count||0,projectCount:pc.count||0,serviceCount:sc.count||0,
+        members:mem.data||[],featured:f.data||[],settings:settings.data||[],pErr:p.error,sErr:s.error
+      });
+    };
+    loadAdminData().catch(e=>{
+      sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Admin Studio is ready</h3><p style="color:var(--muted)">'+esc(e?.message||'Unable to load admin data.')+'</p><button class="btn primary" id="retryAdminStudio" style="margin-top:12px">Retry</button></div>';
+      document.getElementById('retryAdminStudio')?.addEventListener('click',()=>renderAdminStudioPage(activeTab));
+    });
+    return;
+  }
+
+  const {projects,servicesArr,memberCount,projectCount,serviceCount,members,featured,settings,pErr,sErr}=adminDataOverride;
 
   // Analytics is deliberately decoupled from the Admin Studio shell.
   // Never await it here: a slow/stalled analytics query must not keep the entire
