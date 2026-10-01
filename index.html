@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#08070d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#1677ff">
 <meta name="description" content="Lunarist Studio — a living creative network where artists share work and clients discover talent.">
 
 <!-- Dynamic SEO & OpenGraph Meta Tags -->
@@ -92,6 +95,53 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 ::selection{background:rgba(255,134,200,.3);color:#fff}
 @media(max-width:720px){.navin{gap:8px}.nav-tools{margin-left:auto}.userchip{max-width:140px}.userchip span:last-child{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lang-switch{padding:6px 8px}.navlinks.open{box-shadow:0 20px 60px rgba(0,0,0,.4);backdrop-filter:blur(18px)}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.reveal{opacity:1;transform:none}}
+
+/* Lunarist Brand Guideline — blue gradient / sparkle system */
+:root{--bg:#f7fbff;--panel:rgba(255,255,255,.78);--panel2:rgba(235,245,255,.9);--line:rgba(15,72,150,.18);--text:#0b2857;--muted:#54709a;--moon:#1677ff;--pink:#4d9cff;--gold:#8bbcff;--green:#159b70;--danger:#d94a61;--shadow:0 24px 70px rgba(24,92,180,.18);--radius:22px;--brand-blue:#1677ff;--brand-deep:#145bc4;--brand-ink:#0b2857;--brand-sky:#eaf4ff}
+html{background:#f7fbff}
+body{background:radial-gradient(circle at 12% 8%,rgba(112,181,255,.20),transparent 25%),radial-gradient(circle at 88% 14%,rgba(22,119,255,.14),transparent 27%),linear-gradient(180deg,#fbfdff 0%,#edf6ff 38%,#d8eaff 68%,#b7d7ff 100%);color:var(--text);font-family:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+body:before,body:after{position:fixed;z-index:-1;pointer-events:none;content:"✦";color:rgba(22,119,255,.16);font-family:"Space Grotesk",sans-serif}
+body:before{font-size:72px;left:5vw;top:18vh;transform:rotate(-8deg)}
+body:after{font-size:54px;right:7vw;top:29vh;transform:rotate(12deg)}
+.nav{background:rgba(247,251,255,.78);border-bottom:1px solid rgba(15,72,150,.14);box-shadow:0 8px 30px rgba(24,92,180,.08)}
+.brand{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:.12em;color:var(--brand-ink)}
+.brand span{color:var(--brand-blue)}
+.navbtn,.iconbtn,.pill{color:#54709a}
+.navbtn:hover,.navbtn.active{color:var(--brand-ink);background:rgba(22,119,255,.08);border-color:rgba(22,119,255,.22)}
+.userchip{border-color:rgba(22,119,255,.18);background:rgba(255,255,255,.72);color:var(--brand-ink)}
+.userchip #accountName{color:var(--brand-ink);text-shadow:none}
+.hero{padding:100px 0 64px}
+.hero:after{width:620px;height:620px;right:-210px;top:-170px;background:radial-gradient(circle,rgba(22,119,255,.20),transparent 66%)}
+.eyebrow,.badge,.field label{font-family:"DM Mono",monospace}
+.eyebrow{color:var(--brand-blue)}
+h1,h2,h3,h4,.sectionhead h2,.modalcontent h2{font-family:"Space Grotesk",sans-serif;color:var(--brand-ink)}
+h1{font-weight:700;letter-spacing:-.055em}
+h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-blue)}
+.hero p,.sectionhead p,.meta,.role,.empty,.modalcontent p{color:var(--muted)}
+.hero p{font-family:"Plus Jakarta Sans",sans-serif;font-size:18px;line-height:1.7}
+.btn{border-color:rgba(22,119,255,.20);background:rgba(255,255,255,.68);color:var(--brand-ink);box-shadow:0 8px 24px rgba(24,92,180,.08)}
+.btn:hover{border-color:var(--brand-blue);box-shadow:0 12px 30px rgba(24,92,180,.14)}
+.btn.primary{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+.btn.pink{background:rgba(22,119,255,.09);color:var(--brand-blue);border-color:rgba(22,119,255,.24)}
+.section{padding:34px 0 78px}
+.card,.panel,.artistcard{border-color:rgba(22,119,255,.16);background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(238,247,255,.68));box-shadow:0 12px 36px rgba(24,92,180,.08)}
+.card:hover,.artistcard:hover{border-color:rgba(22,119,255,.45);box-shadow:0 22px 52px rgba(24,92,180,.16)}
+.title,.artistname{font-family:"Plus Jakarta Sans",sans-serif;color:var(--brand-ink)}
+.tag{color:var(--brand-blue);background:rgba(22,119,255,.07);border-color:rgba(22,119,255,.16)}
+.filter{border-color:rgba(22,119,255,.18);color:#54709a;background:rgba(255,255,255,.52)}
+.filter.active{color:var(--brand-ink);background:rgba(22,119,255,.10);border-color:rgba(22,119,255,.32)}
+.search,.field input,.field textarea,.field select{border-color:rgba(22,119,255,.18);background:rgba(255,255,255,.78);color:var(--brand-ink)}
+.search:focus,.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--brand-blue);box-shadow:0 0 0 3px rgba(22,119,255,.10)}
+.modal{background:rgba(8,35,78,.36)}
+.modalbox{background:rgba(248,252,255,.96);border-color:rgba(22,119,255,.20);box-shadow:0 30px 90px rgba(10,65,140,.22)}
+.modalclose{background:rgba(11,40,87,.08);color:var(--brand-ink);border-color:rgba(22,119,255,.18)}
+.drawer{background:rgba(8,35,78,.30)}
+.drawerpanel{background:rgba(248,252,255,.98);border-left-color:rgba(22,119,255,.16)}
+.stat,.listitem{border-color:rgba(22,119,255,.14);background:rgba(255,255,255,.42)}
+.badge{color:var(--brand-ink);background:rgba(255,255,255,.82);border-color:rgba(22,119,255,.18)}
+.toast{background:var(--brand-blue);color:#fff}
+.footer{border-top-color:rgba(22,119,255,.14)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
