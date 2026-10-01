@@ -344,6 +344,104 @@ h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-b
   .brand-star,.brand-top .sparkle{animation:none!important}
 }
 </style>
+<style id="lunarist-cloud-star-design-v3">
+/* V3 atmospheric motion + redesigned cloud silhouettes */
+.brand-clouds{
+  height:230px!important;
+  left:-3vw!important;right:-3vw!important;
+  bottom:0!important;
+  filter:drop-shadow(0 -10px 26px rgba(255,255,255,.20))!important;
+  animation:lun-clouds-pan-v3 16s ease-in-out infinite alternate!important;
+  will-change:transform!important;
+}
+.brand-clouds::after{
+  height:58px!important;
+  bottom:0!important;
+  background:linear-gradient(180deg,rgba(248,252,255,.48),rgba(248,252,255,.92))!important;
+  border-radius:50% 50% 0 0/100% 100% 0 0!important;
+  filter:blur(.2px)!important;
+}
+.brand-clouds span{
+  overflow:visible!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(239,248,255,.96))!important;
+  border-radius:999px!important;
+  box-shadow:0 -2px 0 rgba(255,255,255,.7),inset 0 -12px 24px rgba(182,218,255,.22)!important;
+  animation:lun-cloud-body-v3 7s ease-in-out infinite!important;
+  will-change:transform!important;
+}
+.brand-clouds span::before,
+.brand-clouds span::after{
+  content:"";
+  position:absolute;
+  display:block;
+  background:inherit;
+  border-radius:50%;
+  box-shadow:inherit;
+}
+.brand-clouds span::before{
+  width:48%;height:112%;
+  left:14%;bottom:30%;
+}
+.brand-clouds span::after{
+  width:38%;height:92%;
+  right:10%;bottom:25%;
+}
+.brand-clouds span:nth-child(1){left:-2%!important;width:205px!important;height:74px!important;bottom:8px!important;animation-delay:-1s!important}
+.brand-clouds span:nth-child(2){left:10%!important;width:275px!important;height:88px!important;bottom:-1px!important;animation-delay:-3.2s!important}
+.brand-clouds span:nth-child(3){left:29%!important;width:235px!important;height:70px!important;bottom:4px!important;animation-delay:-5.5s!important}
+.brand-clouds span:nth-child(4){left:50%!important;width:285px!important;height:92px!important;bottom:-2px!important;animation-delay:-2.1s!important}
+.brand-clouds span:nth-child(5){right:9%!important;width:315px!important;height:104px!important;bottom:-4px!important;animation-delay:-4.3s!important}
+.brand-clouds span:nth-child(6){right:-4%!important;width:230px!important;height:78px!important;bottom:4px!important;animation-delay:-6.4s!important}
+@keyframes lun-clouds-pan-v3{
+  0%{transform:translate3d(-2.5%,3px,0)}
+  50%{transform:translate3d(.5%,-5px,0)}
+  100%{transform:translate3d(2.5%,1px,0)}
+}
+@keyframes lun-cloud-body-v3{
+  0%,100%{transform:translate3d(-4px,3px,0) scale(.97)}
+  35%{transform:translate3d(5px,-7px,0) scale(1.015)}
+  70%{transform:translate3d(-2px,-11px,0) scale(1.035)}
+}
+.brand-star{
+  animation:lun-star-dance-v3 5.5s cubic-bezier(.45,.05,.55,.95) infinite!important;
+}
+.brand-star.s1{animation-duration:5.2s!important}
+.brand-star.s2{animation-duration:7.1s!important}
+.brand-star.s3{animation-duration:4.7s!important}
+.brand-star.s4{animation-duration:6.4s!important}
+.brand-star.s5{animation-duration:8.2s!important}
+.brand-star.s6{animation-duration:5.9s!important}
+.brand-star.s7{animation-duration:4.2s!important}
+.brand-star.s8{animation-duration:7.6s!important}
+@keyframes lun-star-dance-v3{
+  0%{transform:translate3d(0,3px,0) rotate(-8deg) scale(.82);opacity:.52;filter:drop-shadow(0 2px 4px rgba(22,119,255,.08))}
+  20%{transform:translate3d(10px,-8px,0) rotate(5deg) scale(1.08);opacity:.95;filter:drop-shadow(0 4px 10px rgba(22,119,255,.22))}
+  42%{transform:translate3d(-4px,-18px,0) rotate(15deg) scale(.92);opacity:.68;filter:drop-shadow(0 2px 6px rgba(22,119,255,.12))}
+  66%{transform:translate3d(-13px,-6px,0) rotate(-4deg) scale(1.14);opacity:1;filter:drop-shadow(0 5px 14px rgba(22,119,255,.28))}
+  84%{transform:translate3d(5px,1px,0) rotate(8deg) scale(.9);opacity:.62}
+  100%{transform:translate3d(0,3px,0) rotate(-8deg) scale(.82);opacity:.52}
+}
+.brand-top .sparkle{
+  animation:lun-sparkle-dance-v3 3.8s ease-in-out infinite!important;
+}
+@keyframes lun-sparkle-dance-v3{
+  0%,100%{transform:translate3d(0,0,0) rotate(-4deg) scale(.84);opacity:.55}
+  35%{transform:translate3d(3px,-9px,0) rotate(8deg) scale(1.12);opacity:1}
+  70%{transform:translate3d(-4px,3px,0) rotate(-10deg) scale(.9);opacity:.72}
+}
+@media(max-width:720px){
+  .brand-clouds{height:170px!important}
+  .brand-clouds span:nth-child(1){width:135px!important;height:55px!important}
+  .brand-clouds span:nth-child(2){width:180px!important;height:65px!important}
+  .brand-clouds span:nth-child(3){width:155px!important;height:52px!important}
+  .brand-clouds span:nth-child(4){width:185px!important;height:68px!important}
+  .brand-clouds span:nth-child(5){width:205px!important;height:75px!important}
+  .brand-clouds span:nth-child(6){width:145px!important;height:58px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .brand-clouds,.brand-clouds span,.brand-star,.brand-top .sparkle{animation:none!important}
+}
+</style>
 </head>
 <body>
 <!-- LUNARIST BRAND GUIDELINE DECOR -->
