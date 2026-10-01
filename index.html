@@ -2746,7 +2746,7 @@ function showProjectForm(existing=null){
 async function loadAdvancedAnalytics(allProjects,allServices){
   const since=new Date(Date.now()-14*86400000).toISOString();
   const [{data:events,error:evErr},{data:commissions,error:coErr}]=await Promise.all([
-    supabaseClient.from('discovery_events').select('event_type,created_at').gte('created_at',since).order('created_at',{ascending:true}).limit(5000),
+    supabaseClient.from('discovery_events').select('event_type,created_at,category,project_id').order('created_at',{ascending:true}).limit(5000),
     supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000)
   ]);
   if(evErr||coErr)return {error:(evErr||coErr).message};
@@ -2779,8 +2779,13 @@ async function loadAdvancedAnalytics(allProjects,allServices){
   paid.forEach(c=>{const key=c.service_id||'unknown';byService[key]=(byService[key]||0)+collected(c)});
   const topServices=Object.entries(byService).map(([id,revenue])=>({title:serviceTitle(id),revenue})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
 
+  const projectCategory=Object.fromEntries((allProjects||[]).map(p=>[p.id,p.category||'Uncategorized']));
   const byCategory={};
-  (allProjects||[]).forEach(p=>{const cat=p.category||'Uncategorized';byCategory[cat]=(byCategory[cat]||0)+Number(p.views||0)});
+  (events||[]).forEach(e=>{
+    if(e.event_type!=='view')return;
+    const cat=e.category||projectCategory[e.project_id]||'Uncategorized';
+    byCategory[cat]=(byCategory[cat]||0)+1;
+  });
   const topCategories=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
   return {
@@ -3001,8 +3006,8 @@ async function renderAdminStudioPage(activeTab='members'){
           <div style="height:220px;margin-top:10px">${analytics.topServices.length?`<canvas id="chartRevenueByService"></canvas>`:'<div class="meta" style="padding:16px 0">No paid commissions yet.</div>'}</div>
         </div>
         <div class="panel">
-          <div class="eyebrow">Views by category</div>
-          <div style="height:220px;margin-top:10px">${analytics.topCategories.length?`<canvas id="chartCategoryViews"></canvas>`:'<div class="meta" style="padding:16px 0">No published projects yet.</div>'}</div>
+          <div class="eyebrow">Clicks by category</div>
+          <div style="height:220px;margin-top:10px">${analytics.topCategories.length?`<canvas id="chartCategoryViews"></canvas>`:'<div class="meta" style="padding:16px 0">No website clicks yet.</div>'}</div>
         </div>
       </div>
       `}
@@ -3048,7 +3053,7 @@ async function renderAdminStudioPage(activeTab='members'){
 
     const catCtx=document.getElementById('chartCategoryViews');
     if(catCtx){
-      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Views',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Clicks',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
     }
   }
   if(activeTab==='analytics')initAnalyticsCharts();
