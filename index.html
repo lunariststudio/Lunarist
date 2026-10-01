@@ -307,6 +307,43 @@ h1 em{font-family:"Space Grotesk",sans-serif;font-weight:500;color:var(--brand-b
   .brand-clouds span:nth-child(6){width:145px!important;height:100px!important}
 }
 </style>
+<style id="lunarist-star-motion-v2">
+/* Organic star motion: varied drift, rotation, scale, and timing */
+.brand-star{
+  animation:lun-star-orbit-v2 8s ease-in-out infinite!important;
+  transform-origin:center!important;
+  will-change:transform,opacity!important;
+}
+.brand-star.s1{animation-duration:9s!important;animation-delay:-1s!important}
+.brand-star.s2{animation-duration:11s!important;animation-delay:-5s!important}
+.brand-star.s3{animation-duration:8.5s!important;animation-delay:-3s!important}
+.brand-star.s4{animation-duration:10s!important;animation-delay:-7s!important}
+.brand-star.s5{animation-duration:12s!important;animation-delay:-2s!important}
+.brand-star.s6{animation-duration:9.5s!important;animation-delay:-6s!important}
+.brand-star.s7{animation-duration:7s!important;animation-delay:-4s!important}
+.brand-star.s8{animation-duration:10.5s!important;animation-delay:-8s!important}
+@keyframes lun-star-orbit-v2{
+  0%,100%{transform:translate3d(0,2px,0) rotate(-3deg) scale(.94);opacity:.72}
+  25%{transform:translate3d(8px,-5px,0) rotate(3deg) scale(1.02);opacity:.9}
+  50%{transform:translate3d(-3px,-13px,0) rotate(8deg) scale(1.08);opacity:1}
+  75%{transform:translate3d(-9px,-4px,0) rotate(2deg) scale(1);opacity:.84}
+}
+.brand-top .sparkle{
+  animation:lun-top-star-v2 5.5s ease-in-out infinite!important;
+  will-change:transform,opacity!important;
+}
+.brand-top-left .sparkle:nth-of-type(2){animation-delay:-1.4s!important}
+.brand-top-left .sparkle:nth-of-type(3){animation-delay:-3.1s!important}
+.brand-top-right .sparkle:nth-of-type(2){animation-delay:-2.2s!important}
+.brand-top-right .sparkle:nth-of-type(3){animation-delay:-4s!important}
+@keyframes lun-top-star-v2{
+  0%,100%{transform:translate3d(0,0,0) rotate(0) scale(.9);opacity:.68}
+  50%{transform:translate3d(0,-8px,0) rotate(10deg) scale(1.08);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .brand-star,.brand-top .sparkle{animation:none!important}
+}
+</style>
 </head>
 <body>
 <!-- LUNARIST BRAND GUIDELINE DECOR -->
