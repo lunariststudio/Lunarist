@@ -1,0 +1,20 @@
+name: Package Lunarist Member Guideline
+on:
+  push:
+    branches: [main]
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create ZIP
+        run: |
+          mkdir -p package/Lunarist
+          cp -R . package/Lunarist/
+          rm -rf package/Lunarist/.git package/Lunarist/package
+          cd package
+          zip -qr ../Lunarist-Member-Guideline-Website.zip Lunarist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lunarist-Member-Guideline-Website
+          path: Lunarist-Member-Guideline-Website.zip
