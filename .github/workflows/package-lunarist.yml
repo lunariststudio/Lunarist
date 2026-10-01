@@ -9,12 +9,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create ZIP
         run: |
-          mkdir -p package/Lunarist
-          cp -R . package/Lunarist/
-          rm -rf package/Lunarist/.git package/Lunarist/package
-          cd package
-          zip -qr ../Lunarist-Member-Guideline-Website.zip Lunarist
+          cd "$GITHUB_WORKSPACE"
+          zip -qr /tmp/Lunarist-Member-Guideline-Website.zip . -x ".git/*"
       - uses: actions/upload-artifact@v4
         with:
           name: Lunarist-Member-Guideline-Website
-          path: Lunarist-Member-Guideline-Website.zip
+          path: /tmp/Lunarist-Member-Guideline-Website.zip
