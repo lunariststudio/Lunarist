@@ -641,7 +641,47 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
   .navin{gap:10px}
   .navbtn{padding:8px}
 }
-</style></head>
+</style><style id="readable-input-contrast">
+/* Readable form/chat inputs on the light Lunarist theme */
+.field input,.field textarea,.field select{
+  background:rgba(255,255,255,.94)!important;
+  color:#0b2857!important;
+  -webkit-text-fill-color:#0b2857!important;
+  caret-color:#1677ff!important;
+  border-color:rgba(15,72,150,.22)!important;
+}
+.field input::placeholder,.field textarea::placeholder{
+  color:#54709a!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#54709a!important;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  background:#fff!important;
+  color:#0b2857!important;
+  -webkit-text-fill-color:#0b2857!important;
+  border-color:#1677ff!important;
+  box-shadow:0 0 0 3px rgba(22,119,255,.10)!important;
+}
+.chat-input-wrap{
+  background:rgba(255,255,255,.94)!important;
+  border-color:rgba(15,72,150,.22)!important;
+}
+.chat-input-row textarea,
+.chat-input-row textarea:focus{
+  background:transparent!important;
+  color:#0b2857!important;
+  -webkit-text-fill-color:#0b2857!important;
+  caret-color:#1677ff!important;
+}
+.chat-input-row textarea::placeholder{
+  color:#54709a!important;
+  -webkit-text-fill-color:#54709a!important;
+  opacity:1!important;
+}
+.chat-attach-btn{color:#54709a!important}
+.chat-attach-btn:hover{color:#0b2857!important;background:rgba(22,119,255,.08)!important}
+</style>
+</head>
 <body>
 <!-- LUNARIST BRAND GUIDELINE DECOR -->
 <div class="brand-guideline-overlay" aria-hidden="true">
