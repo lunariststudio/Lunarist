@@ -3121,8 +3121,8 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
       </div>
     </div>
 
-    <div data-studio-panel="analytics" style="\${activeTab==='analytics'?'':'display:none'}">
-      \${analytics.loading?'<div class="panel"><h3>Loading Analytics…</h3><p class="meta">Building your traffic and business picture.</p></div>':analytics.error?'<div class="panel"><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p></div>':'
+    <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
+      ${analytics.loading?'<div class="panel"><h3>Loading Analytics…</h3><p class="meta">Building your traffic and business picture.</p></div>':analytics.error?'<div class="panel"><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p></div>':'
       <div class="panel" style="margin-bottom:16px">
         <div class="row" style="justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
           <div><div class="eyebrow">Lunarist Intelligence</div><h2 style="margin:4px 0;font-size:34px">Analytics</h2><p class="meta">First-party traffic, discovery, services and commission intelligence.</p></div>
@@ -3130,30 +3130,30 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
         </div>
       </div>
       <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px">
-        <div class="stat"><b>\${Number(analytics.totalVisitors||0).toLocaleString()}</b><span>Unique visitors</span></div>
-        <div class="stat"><b>\${Number(analytics.totalVisits||0).toLocaleString()}</b><span>Sessions</span></div>
-        <div class="stat"><b>\${Number(analytics.pageViews||0).toLocaleString()}</b><span>Page views</span></div>
-        <div class="stat"><b>\${(Number(analytics.projectClicks||0)+Number(analytics.serviceClicks||0)).toLocaleString()}</b><span>Discovery clicks</span></div>
-        <div class="stat"><b>\${Number(analytics.engagementRate||0)}%</b><span>Engagement rate</span></div>
-        <div class="stat"><b>$\${Number(analytics.revenue||0).toFixed(2)}</b><span>Revenue</span></div>
-        <div class="stat"><b>\${Number(analytics.inquiryToPaid||0)}%</b><span>Inquiry → paid</span></div>
-        <div class="stat"><b>$\${Number(analytics.avgOrderValue||0).toFixed(2)}</b><span>Avg. order</span></div>
+        <div class="stat"><b>${Number(analytics.totalVisitors||0).toLocaleString()}</b><span>Unique visitors</span></div>
+        <div class="stat"><b>${Number(analytics.totalVisits||0).toLocaleString()}</b><span>Sessions</span></div>
+        <div class="stat"><b>${Number(analytics.pageViews||0).toLocaleString()}</b><span>Page views</span></div>
+        <div class="stat"><b>${(Number(analytics.projectClicks||0)+Number(analytics.serviceClicks||0)).toLocaleString()}</b><span>Discovery clicks</span></div>
+        <div class="stat"><b>${Number(analytics.engagementRate||0)}%</b><span>Engagement rate</span></div>
+        <div class="stat"><b>$${Number(analytics.revenue||0).toFixed(2)}</b><span>Revenue</span></div>
+        <div class="stat"><b>${Number(analytics.inquiryToPaid||0)}%</b><span>Inquiry → paid</span></div>
+        <div class="stat"><b>$${Number(analytics.avgOrderValue||0).toFixed(2)}</b><span>Avg. order</span></div>
       </div>
       <div class="split" style="margin-bottom:16px">
         <div class="panel"><div class="eyebrow">Traffic & engagement</div><div style="height:280px;margin-top:12px"><canvas id="chartAnalyticsTraffic"></canvas></div></div>
         <div class="panel"><div class="eyebrow">Commission funnel</div><div style="height:280px;margin-top:12px"><canvas id="chartAnalyticsFunnel"></canvas></div></div>
       </div>
       <div class="split" style="margin-bottom:16px">
-        <div class="panel"><div class="eyebrow">Top projects</div><div style="margin-top:12px">\${analytics.projectRows?.length?analytics.projectRows.slice(0,8).map(p=>'<div class="listitem"><div class="grow"><b>'+esc(p.title||'Untitled')+'</b><div class="meta">'+esc(p.category||'Uncategorized')+' · '+Number(p.unique_visitors||0).toLocaleString()+' visitors</div></div><span class="meta">'+Number(p.views||0)+' views · '+Number(p.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No project activity in this period.</div>'}</div></div>
-        <div class="panel"><div class="eyebrow">Top services</div><div style="margin-top:12px">\${analytics.serviceRows?.length?analytics.serviceRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.title||'Untitled')+'</b><div class="meta">'+esc(x.category||'Uncategorized')+' · '+Number(x.unique_visitors||0).toLocaleString()+' visitors</div></div><span class="meta">'+Number(x.views||0)+' views · '+Number(x.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No service activity in this period.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Top projects</div><div style="margin-top:12px">${analytics.projectRows?.length?analytics.projectRows.slice(0,8).map(p=>'<div class="listitem"><div class="grow"><b>'+esc(p.title||'Untitled')+'</b><div class="meta">'+esc(p.category||'Uncategorized')+' · '+Number(p.unique_visitors||0).toLocaleString()+' visitors</div></div><span class="meta">'+Number(p.views||0)+' views · '+Number(p.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No project activity in this period.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Top services</div><div style="margin-top:12px">${analytics.serviceRows?.length?analytics.serviceRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.title||'Untitled')+'</b><div class="meta">'+esc(x.category||'Uncategorized')+' · '+Number(x.unique_visitors||0).toLocaleString()+' visitors</div></div><span class="meta">'+Number(x.views||0)+' views · '+Number(x.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No service activity in this period.</div>'}</div></div>
       </div>
       <div class="split" style="margin-bottom:16px">
-        <div class="panel"><div class="eyebrow">Where people come from</div><div style="margin-top:12px">\${analytics.sourceRows?.length?analytics.sourceRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.source)+'</b></div><span class="meta">'+Number(x.visits||0)+' visits · '+Number(x.visitors||0)+' visitors</span></div>').join(''):'<div class="meta">No source data yet.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Where people come from</div><div style="margin-top:12px">${analytics.sourceRows?.length?analytics.sourceRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.source)+'</b></div><span class="meta">'+Number(x.visits||0)+' visits · '+Number(x.visitors||0)+' visitors</span></div>').join(''):'<div class="meta">No source data yet.</div>'}</div></div>
         <div class="panel"><div class="eyebrow">Devices</div><div style="height:240px;margin-top:12px"><canvas id="chartAnalyticsDevices"></canvas></div></div>
       </div>
       <div class="split" style="margin-bottom:16px">
         <div class="panel"><div class="eyebrow">Categories</div><div style="height:260px;margin-top:12px"><canvas id="chartAnalyticsCategories"></canvas></div></div>
-        <div class="panel"><div class="eyebrow">Audience pages</div><div style="margin-top:12px">\${analytics.pageRows?.length?analytics.pageRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.route||'/')+'</b></div><span class="meta">'+Number(x.views||0)+' views · '+Number(x.visitors||0)+' visitors</span></div>').join(''):'<div class="meta">No page views yet.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Audience pages</div><div style="margin-top:12px">${analytics.pageRows?.length?analytics.pageRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.route||'/')+'</b></div><span class="meta">'+Number(x.views||0)+' views · '+Number(x.visitors||0)+' visitors</span></div>').join(''):'<div class="meta">No page views yet.</div>'}</div></div>
       </div>
       <div class="panel">
         <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="eyebrow">AI analysis</div><h3 style="margin:4px 0">What should we improve?</h3><p class="meta">OpenAI analyzes aggregate analytics only and turns patterns into practical next actions.</p></div><button class="btn pink" id="runAnalyticsAI">✨ Analyze with OpenAI</button></div>
