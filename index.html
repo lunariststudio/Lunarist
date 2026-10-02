@@ -3149,16 +3149,16 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
         <div class="panel"><div class="eyebrow">Commission funnel</div><div style="height:280px;margin-top:12px"><canvas id="chartAnalyticsFunnel"></canvas></div></div>
       </div>
       <div class="split" style="margin-bottom:16px">
-        <div class="panel"><div class="eyebrow">Top projects</div><div style="margin-top:12px">${analyticsProjectHtml}><span class="meta">'+Number(p.views||0)+' views · '+Number(p.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No project activity in this period.</div>'}</div></div>
-        <div class="panel"><div class="eyebrow">Top services</div><div style="margin-top:12px">${analyticsServiceHtml}><span class="meta">'+Number(x.views||0)+' views · '+Number(x.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No service activity in this period.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Top projects</div><div style="margin-top:12px">${analyticsProjectHtml}</div></div>
+        <div class="panel"><div class="eyebrow">Top services</div><div style="margin-top:12px">${analyticsServiceHtml}</div></div>
       </div>
       <div class="split" style="margin-bottom:16px">
-        <div class="panel"><div class="eyebrow">Where people come from</div><div style="margin-top:12px">${analyticsSourceHtml}>
+        <div class="panel"><div class="eyebrow">Where people come from</div><div style="margin-top:12px">${analyticsSourceHtml}</div></div>
         <div class="panel"><div class="eyebrow">Devices</div><div style="height:240px;margin-top:12px"><canvas id="chartAnalyticsDevices"></canvas></div></div>
       </div>
       <div class="split" style="margin-bottom:16px">
         <div class="panel"><div class="eyebrow">Categories</div><div style="height:260px;margin-top:12px"><canvas id="chartAnalyticsCategories"></canvas></div></div>
-        <div class="panel"><div class="eyebrow">Audience pages</div><div style="margin-top:12px">${analyticsPageHtml}>
+        <div class="panel"><div class="eyebrow">Audience pages</div><div style="margin-top:12px">${analyticsPageHtml}</div></div>
       </div>
       <div class="panel">
         <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="eyebrow">AI analysis</div><h3 style="margin:4px 0">What should we improve?</h3><p class="meta">OpenAI analyzes aggregate analytics only and turns patterns into practical next actions.</p></div><button class="btn pink" id="runAnalyticsAI">✨ Analyze with OpenAI</button></div>
