@@ -3126,8 +3126,8 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
       </div>
     </div>
 
-    <div data-studio-panel="analytics" style="\${activeTab==='analytics'?'':'display:none'}">
-      \${analytics.loading?'<div class="panel"><h3>Loading Analytics…</h3><p class="meta">Building your traffic and business picture.</p></div>':analytics.error?'<div class="panel"><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p></div>':'
+    <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
+      ${analytics.loading?'<div class="panel"><h3>Loading Analytics…</h3><p class="meta">Building your traffic and business picture.</p></div>':analytics.error?'<div class="panel"><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p></div>':'
       <div class="panel" style="margin-bottom:16px">
         <div class="row" style="justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
           <div><div class="eyebrow">Lunarist Intelligence</div><h2 style="margin:4px 0;font-size:34px">Analytics</h2><p class="meta">First-party traffic, discovery, services and commission intelligence.</p></div>
@@ -3135,14 +3135,14 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
         </div>
       </div>
       <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px">
-        <div class="stat"><b>\${Number(analytics.totalVisitors||0).toLocaleString()}</b><span>Unique visitors</span></div>
-        <div class="stat"><b>\${Number(analytics.totalVisits||0).toLocaleString()}</b><span>Sessions</span></div>
-        <div class="stat"><b>\${Number(analytics.pageViews||0).toLocaleString()}</b><span>Page views</span></div>
-        <div class="stat"><b>\${(Number(analytics.projectClicks||0)+Number(analytics.serviceClicks||0)).toLocaleString()}</b><span>Discovery clicks</span></div>
-        <div class="stat"><b>\${Number(analytics.engagementRate||0)}%</b><span>Engagement rate</span></div>
-        <div class="stat"><b>$\${Number(analytics.revenue||0).toFixed(2)}</b><span>Revenue</span></div>
-        <div class="stat"><b>\${Number(analytics.inquiryToPaid||0)}%</b><span>Inquiry → paid</span></div>
-        <div class="stat"><b>$\${Number(analytics.avgOrderValue||0).toFixed(2)}</b><span>Avg. order</span></div>
+        <div class="stat"><b>${Number(analytics.totalVisitors||0).toLocaleString()}</b><span>Unique visitors</span></div>
+        <div class="stat"><b>${Number(analytics.totalVisits||0).toLocaleString()}</b><span>Sessions</span></div>
+        <div class="stat"><b>${Number(analytics.pageViews||0).toLocaleString()}</b><span>Page views</span></div>
+        <div class="stat"><b>${(Number(analytics.projectClicks||0)+Number(analytics.serviceClicks||0)).toLocaleString()}</b><span>Discovery clicks</span></div>
+        <div class="stat"><b>${Number(analytics.engagementRate||0)}%</b><span>Engagement rate</span></div>
+        <div class="stat"><b>${Number(analytics.revenue||0).toFixed(2)}</b><span>Revenue</span></div>
+        <div class="stat"><b>${Number(analytics.inquiryToPaid||0)}%</b><span>Inquiry → paid</span></div>
+        <div class="stat"><b>${Number(analytics.avgOrderValue||0).toFixed(2)}</b><span>Avg. order</span></div>
       </div>
       <div class="split" style="margin-bottom:16px">
         <div class="panel"><div class="eyebrow">Traffic & engagement</div><div style="height:280px;margin-top:12px"><canvas id="chartAnalyticsTraffic"></canvas></div></div>
