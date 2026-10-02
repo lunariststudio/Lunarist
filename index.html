@@ -1055,7 +1055,38 @@ async function refreshAIRecommendations(){
     state.aiRanking={homeProjectIds:[],discoverProjectIds:[],serviceIds:[]};
   }
 }
-async function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);(p.tags||[]).forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{});}
+const siteAnalyticsState={visitorId:null,sessionId:null,pageRoutes:new Set()};
+function analyticsId(prefix){try{if(crypto?.randomUUID)return crypto.randomUUID()}catch{}return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)}
+function initSiteAnalytics(){
+  if(siteAnalyticsState.visitorId)return;
+  try{siteAnalyticsState.visitorId=localStorage.getItem('lunarist_analytics_visitor_v2')||analyticsId('v');localStorage.setItem('lunarist_analytics_visitor_v2',siteAnalyticsState.visitorId)}catch{siteAnalyticsState.visitorId=analyticsId('v')}
+  try{siteAnalyticsState.sessionId=sessionStorage.getItem('lunarist_analytics_session_v2')||analyticsId('s');sessionStorage.setItem('lunarist_analytics_session_v2',siteAnalyticsState.sessionId)}catch{siteAnalyticsState.sessionId=analyticsId('s')}
+}
+function analyticsDevice(){const w=window.innerWidth||0;return w<640?'mobile':w<1024?'tablet':'desktop'}
+function trackSiteEvent(eventName,opts={}){
+  initSiteAnalytics();
+  if(!state.backendReady||!supabaseClient)return;
+  const payload={p_visitor_id:siteAnalyticsState.visitorId,p_session_id:siteAnalyticsState.sessionId,p_event_name:eventName,p_route:String(opts.route||location.pathname||'/').slice(0,160),p_entity_type:opts.entityType||null,p_entity_id:opts.entityId||null,p_category:opts.category||null,p_referrer:document.referrer||null,p_device_type:analyticsDevice(),p_user_id:state.currentUser?.id||null,p_metadata:opts.metadata||{}};
+  supabaseClient.rpc('record_site_analytics_event',payload).catch(()=>{});
+}
+function trackSitePageView(){
+  initSiteAnalytics();
+  const route=state.route||'home';
+  if(route==='admin'||route.startsWith('member:')===false&&route==='')return;
+  const key=route+'|'+siteAnalyticsState.sessionId;
+  if(siteAnalyticsState.pageRoutes.has(key))return;
+  siteAnalyticsState.pageRoutes.add(key);
+  trackSiteEvent('page_view',{route});
+}
+async function track(p,type='view'){
+  state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);
+  (p.tags||[]).forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));
+  if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);
+  state.session.viewed=state.session.viewed.slice(0,30);saveSession();
+  if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{});
+  trackSiteEvent(type==='like'?'like':type==='save'?'save':'project_view',{entityType:'project',entityId:p.id,category:p.category,metadata:{tags:p.tags||[]}});
+}
+
 function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.pravatar.cc/160?u=unknown')}" alt="${esc(m?.name||'Artist')}" loading="lazy" onerror="handleImageError(this)">`}
 function applyNaturalMediaRatio(el, img, opts={}){
   if(!el || !img) return;
@@ -1271,6 +1302,7 @@ async function translateServiceDescription(text){const key=String(text||'').trim
 
 function openService(id){
   state.openServiceId=id;
+  trackSiteEvent('service_view',{entityType:'service',entityId:id,category:data.services.find(x=>x.id===id)?.category||null});
   const s=data.services.find(x=>x.id===id);if(!s)return;
   const m=member(s.member);
   const examples=(s.projectIds||[]).map(pid=>data.projects.find(p=>p.id===pid)).filter(Boolean);
@@ -1695,6 +1727,7 @@ function render(preserveScroll){
     if(pm && pm.account_type!=='member' && !pm.is_admin && (state.currentUser?.id===pm.id || !!state.currentMember?.is_admin)) renderPublicClientDashboard(pm.id);
   }
   if(state.route==='commissions') renderClientCommissionsTab();
+  if(state.route!=='admin') trackSitePageView();
   if(state.route==='admin') renderAdminStudioPage();
   applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
   window.scrollTo({top:preserveScroll?_scrollY:0,behavior:'instant'})
@@ -1702,8 +1735,8 @@ function render(preserveScroll){
 
 function bind(){
   document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{document.getElementById('navlinks').classList.remove('open');goRoute(b.dataset.route)});
-  document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>openProject(c.dataset.project));
-  document.querySelectorAll('[data-service]').forEach(c=>c.onclick=()=>openService(c.dataset.service));
+  document.querySelectorAll('[data-project]').forEach(c=>c.onclick=()=>{const p=data.projects.find(x=>x.id===c.dataset.project);if(p)trackSiteEvent('project_click',{entityType:'project',entityId:p.id,category:p.category});openProject(c.dataset.project)});
+  document.querySelectorAll('[data-service]').forEach(c=>c.onclick=()=>{const sv=data.services.find(x=>x.id===c.dataset.service);if(sv)trackSiteEvent('service_click',{entityType:'service',entityId:sv.id,category:sv.category});openService(c.dataset.service)});
   document.querySelectorAll('[data-member]').forEach(c=>c.onclick=()=>goRoute('member:'+c.dataset.member));
   document.getElementById('copyProfileLink')?.addEventListener('click',(e)=>{const url=location.origin+'/'+e.currentTarget.dataset.username;navigator.clipboard?.writeText(url).then(()=>toast('Profile link copied')).catch(()=>toast(url))});
   document.getElementById('profDirectChatBtn')?.addEventListener('click', async()=>{
@@ -2827,61 +2860,32 @@ function showProjectForm(existing=null){
 }
 
 async function loadAdvancedAnalytics(allProjects,allServices){
-  const since=new Date(Date.now()-14*86400000).toISOString();
-  const [{data:events,error:evErr},{data:commissions,error:coErr},{count:visitorCount,error:visitorErr},{count:visitCount,error:visitErr}]=await Promise.all([
-    supabaseClient.from('discovery_events').select('event_type,created_at,category,project_id').order('created_at',{ascending:true}).limit(5000),
-    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000),
-    supabaseClient.from('site_visitors').select('visitor_id',{count:'exact',head:true}),
-    supabaseClient.from('site_visits').select('id',{count:'exact',head:true})
-  ]);
-  if(evErr||coErr||visitorErr||visitErr)return {error:(evErr||coErr||visitorErr||visitErr).message};
-
-  const days=[];
-  for(let i=13;i>=0;i--){const d=new Date(Date.now()-i*86400000);days.push(d.toISOString().slice(0,10))}
-  const trend=Object.fromEntries(days.map(d=>[d,{view:0,like:0,save:0}]));
-  (events||[]).forEach(e=>{
-    const day=String(e.created_at||'').slice(0,10);
-    if(trend[day]&&trend[day][e.event_type]!==undefined)trend[day][e.event_type]++;
-  });
-
-  const collected=c=>c.payment_type==='deposit'?Number(c.deposit_amount||0):Number(c.total_amount||0);
-  const rows=commissions||[];
-  const paid=rows.filter(c=>c.status==='paid'||c.status==='completed');
-  const pending=rows.filter(c=>['new','contacted','accepted'].includes(c.status));
-  const totalRevenue=paid.reduce((n,c)=>n+collected(c),0);
-  const pendingRevenue=pending.reduce((n,c)=>n+collected(c),0);
-  const depositCount=paid.filter(c=>c.payment_type==='deposit').length;
-  const fullCount=paid.filter(c=>c.payment_type!=='deposit').length;
-  const conversionRate=rows.length?Math.round((paid.length/rows.length)*100):0;
-  const avgOrderValue=paid.length?(totalRevenue/paid.length):0;
-
-  const funnelOrder=['new','contacted','accepted','paid','completed','declined','archived'];
-  const funnel=Object.fromEntries(funnelOrder.map(s=>[s,0]));
-  rows.forEach(c=>{if(funnel[c.status]!==undefined)funnel[c.status]++});
-
-  const serviceTitle=id=>(allServices||[]).find(s=>s.id===id)?.title||'Unknown service';
-  const byService={};
-  paid.forEach(c=>{const key=c.service_id||'unknown';byService[key]=(byService[key]||0)+collected(c)});
-  const topServices=Object.entries(byService).map(([id,revenue])=>({title:serviceTitle(id),revenue})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
-
-  const projectCategory=Object.fromEntries((allProjects||[]).map(p=>[p.id,p.category||'Uncategorized']));
-  const byCategory={};
-  (events||[]).forEach(e=>{
-    if(e.event_type!=='view')return;
-    const cat=e.category||projectCategory[e.project_id]||'Uncategorized';
-    byCategory[cat]=(byCategory[cat]||0)+1;
-  });
-  const topCategories=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).slice(0,6);
-
+  const {data,error}=await supabaseClient.rpc('admin_analytics',{p_days:state.analyticsDays||30});
+  if(error)return {error:error.message};
+  const d=data&&typeof data==='object'?data:{};
+  const t=d.totals||{}, c=d.commission||{};
+  const daily=Array.isArray(d.daily)?d.daily:[];
+  const projectRows=Array.isArray(d.projects)?d.projects:[];
+  const serviceRows=Array.isArray(d.services)?d.services:[];
+  const categoryRows=Array.isArray(d.categories)?d.categories:[];
+  const pageRows=Array.isArray(d.pages)?d.pages:[];
+  const sourceRows=Array.isArray(d.sources)?d.sources:[];
+  const deviceRows=Array.isArray(d.devices)?d.devices:[];
+  const artistRows=Array.isArray(d.top_artists)?d.top_artists:[];
+  const sessions=Number(t.sessions||0),visitors=Number(t.visitors||0);
   return {
-    trendDays:days,trend,
-    totalRevenue,pendingRevenue,depositCount,fullCount,conversionRate,avgOrderValue,
-    funnel,topServices,topCategories,
-    totalVisitors:visitorCount||0,totalVisits:visitCount||0,
-    totalEvents:(events||[]).length,totalCommissions:rows.length
+    ...d, totalVisitors:visitors,totalVisits:sessions,totalEvents:Number(t.project_views||0)+Number(t.service_views||0)+Number(t.project_clicks||0)+Number(t.service_clicks||0),
+    pageViews:Number(t.page_views||0),projectViews:Number(t.project_views||0),serviceViews:Number(t.service_views||0),
+    projectClicks:Number(t.project_clicks||0),serviceClicks:Number(t.service_clicks||0),likes:Number(t.likes||0),saves:Number(t.saves||0),
+    engagementRate:sessions?Math.round(((Number(t.project_clicks||0)+Number(t.service_clicks||0)+Number(t.likes||0)+Number(t.saves||0))/sessions)*100):0,
+    avgVisitsPerVisitor:visitors?(sessions/visitors):0,
+    revenue:Number(c.revenue||0),pipeline:Number(c.pipeline||0),inquiries:Number(c.inquiries||0),qualified:Number(c.qualified||0),paid:Number(c.paid||0),
+    inquiryToPaid:Number(c.inquiries||0)?Math.round((Number(c.paid||0)/Number(c.inquiries||0))*100):0,
+    qualifiedToPaid:Number(c.qualified||0)?Math.round((Number(c.paid||0)/Number(c.qualified||0))*100):0,
+    avgOrderValue:Number(c.paid||0)?Number(c.revenue||0)/Number(c.paid||0):0,
+    daily,projectRows,serviceRows,categoryRows,pageRows,sourceRows,deviceRows,artistRows
   };
 }
-
 async function loadAdminInvitations(sec){
   const list=document.getElementById('memberInviteList');
   const create=document.getElementById('createMemberInvite');
