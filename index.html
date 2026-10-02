@@ -1563,7 +1563,7 @@ function profilePage(m){
   const canViewClientDashboard = isClientProfile && (state.currentUser?.id === m.id || !!state.currentMember?.is_admin);
   const clientDash = canViewClientDashboard ? `<div class="panel" id="publicClientDashboard" style="margin-top:42px"><div class="eyebrow">Client Dashboard</div><h2 style="margin:4px 0">My commissions &amp; reviews</h2><p class="meta">Your completed commissions, current orders, and reviews are all collected here.</p><div id="publicClientCommissions" style="margin-top:16px"><div class="meta">Loading your commissions…</div></div></div>` : '';
 
-  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div><div id="profileSocialLinks" data-social-profile-id="${esc(m.id)}"></div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body" id="profileTosBody">${formatDescription(formattedTos)}</div></div>`:''}${clientDash}</section></div>`
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div><div id="profileSocialLinks" data-social-profile-id="${esc(m.id)}"></div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No website clicks yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body" id="profileTosBody">${formatDescription(formattedTos)}</div></div>`:''}${clientDash}</section></div>`
 }
 
 async function ensureProfileTosJapanese(m){
@@ -2752,52 +2752,32 @@ function showProjectForm(existing=null){
 
 async function loadAdvancedAnalytics(allProjects,allServices){
   const since=new Date(Date.now()-14*86400000).toISOString();
-  const [{data:events,error:evErr},{data:commissions,error:coErr}]=await Promise.all([
-    supabaseClient.from('discovery_events').select('event_type,created_at').gte('created_at',since).order('created_at',{ascending:true}).limit(5000),
-    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000)
+  const [{data:events,error:evErr},{data:commissions,error:coErr},{count:visitorCount,error:visitorErr},{count:visitCount,error:visitErr}]=await Promise.all([
+    supabaseClient.from('discovery_events').select('event_type,category,created_at').gte('created_at',since).order('created_at',{ascending:true}).limit(5000),
+    supabaseClient.from('commissions').select('service_id,status,payment_type,deposit_amount,total_amount,created_at').order('created_at',{ascending:false}).limit(2000),
+    supabaseClient.from('site_visitors').select('visitor_id',{count:'exact',head:true}),
+    supabaseClient.from('site_visits').select('id',{count:'exact',head:true})
   ]);
-  if(evErr||coErr)return {error:(evErr||coErr).message};
-
+  if(evErr||coErr||visitorErr||visitErr)return {error:(evErr||coErr||visitorErr||visitErr).message};
   const days=[];
   for(let i=13;i>=0;i--){const d=new Date(Date.now()-i*86400000);days.push(d.toISOString().slice(0,10))}
-  const trend=Object.fromEntries(days.map(d=>[d,{view:0,like:0,save:0}]));
-  (events||[]).forEach(e=>{
-    const day=String(e.created_at||'').slice(0,10);
-    if(trend[day]&&trend[day][e.event_type]!==undefined)trend[day][e.event_type]++;
-  });
-
+  const trend=Object.fromEntries(days.map(d=>[d,{view:0,like:0,save:0,click:0}]));
+  (events||[]).forEach(e=>{const day=String(e.created_at||'').slice(0,10);if(trend[day]&&trend[day][e.event_type]!==undefined)trend[day][e.event_type]++;});
   const collected=c=>c.payment_type==='deposit'?Number(c.deposit_amount||0):Number(c.total_amount||0);
-  const rows=commissions||[];
-  const paid=rows.filter(c=>c.status==='paid'||c.status==='completed');
-  const pending=rows.filter(c=>['new','contacted','accepted'].includes(c.status));
-  const totalRevenue=paid.reduce((n,c)=>n+collected(c),0);
-  const pendingRevenue=pending.reduce((n,c)=>n+collected(c),0);
-  const depositCount=paid.filter(c=>c.payment_type==='deposit').length;
-  const fullCount=paid.filter(c=>c.payment_type!=='deposit').length;
-  const conversionRate=rows.length?Math.round((paid.length/rows.length)*100):0;
-  const avgOrderValue=paid.length?(totalRevenue/paid.length):0;
-
-  const funnelOrder=['new','contacted','accepted','paid','completed','declined','archived'];
-  const funnel=Object.fromEntries(funnelOrder.map(s=>[s,0]));
+  const rows=commissions||[],paid=rows.filter(c=>c.status==='paid'||c.status==='completed'),pending=rows.filter(c=>['new','contacted','accepted'].includes(c.status));
+  const totalRevenue=paid.reduce((n,c)=>n+collected(c),0),pendingRevenue=pending.reduce((n,c)=>n+collected(c),0);
+  const depositCount=paid.filter(c=>c.payment_type==='deposit').length,fullCount=paid.filter(c=>c.payment_type!=='deposit').length;
+  const conversionRate=rows.length?Math.round((paid.length/rows.length)*100):0,avgOrderValue=paid.length?(totalRevenue/paid.length):0;
+  const funnelOrder=['new','contacted','accepted','paid','completed','declined','archived'],funnel=Object.fromEntries(funnelOrder.map(s=>[s,0]));
   rows.forEach(c=>{if(funnel[c.status]!==undefined)funnel[c.status]++});
-
-  const serviceTitle=id=>(allServices||[]).find(s=>s.id===id)?.title||'Unknown service';
-  const byService={};
+  const serviceTitle=id=>(allServices||[]).find(s=>s.id===id)?.title||'Unknown service',byService={};
   paid.forEach(c=>{const key=c.service_id||'unknown';byService[key]=(byService[key]||0)+collected(c)});
   const topServices=Object.entries(byService).map(([id,revenue])=>({title:serviceTitle(id),revenue})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
-
   const byCategory={};
-  (allProjects||[]).forEach(p=>{const cat=p.category||'Uncategorized';byCategory[cat]=(byCategory[cat]||0)+Number(p.views||0)});
+  (events||[]).filter(e=>e.event_type==='click').forEach(e=>{const cat=e.category||'Uncategorized';byCategory[cat]=(byCategory[cat]||0)+1});
   const topCategories=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).slice(0,6);
-
-  return {
-    trendDays:days,trend,
-    totalRevenue,pendingRevenue,depositCount,fullCount,conversionRate,avgOrderValue,
-    funnel,topServices,topCategories,
-    totalEvents:(events||[]).length,totalCommissions:rows.length
-  };
+  return {trendDays:days,trend,totalRevenue,pendingRevenue,depositCount,fullCount,conversionRate,avgOrderValue,funnel,topServices,topCategories,totalEvents:(events||[]).length,totalCommissions:rows.length,totalVisitors:Number(visitorCount||0),totalVisits:Number(visitCount||0)};
 }
-
 async function loadAdminInvitations(sec){
   const list=document.getElementById('memberInviteList');
   const create=document.getElementById('createMemberInvite');
@@ -2920,6 +2900,8 @@ async function renderAdminStudioPage(activeTab='members'){
         <div class="stat"><b>${Number(memberCount||0)}</b><span>Members</span></div>
         <div class="stat"><b>${Number(projectCount||0)}</b><span>Projects</span></div>
         <div class="stat"><b>${Number(serviceCount||0)}</b><span>Services</span></div>
+        <div class="stat"><b>${Number(analytics.totalVisitors||0)}</b><span>Total Visitors</span></div>
+        <div class="stat"><b>${Number(analytics.totalVisits||0)}</b><span>Total Visits</span></div>
         <div class="stat"><b>${Number(analytics.totalEvents||0)}</b><span>Events (14d)</span></div>
       </div>
     </div>
@@ -3008,7 +2990,7 @@ async function renderAdminStudioPage(activeTab='members'){
           <div style="height:220px;margin-top:10px">${analytics.topServices.length?`<canvas id="chartRevenueByService"></canvas>`:'<div class="meta" style="padding:16px 0">No paid commissions yet.</div>'}</div>
         </div>
         <div class="panel">
-          <div class="eyebrow">Views by category</div>
+          <div class="eyebrow">Clicks by category</div>
           <div style="height:220px;margin-top:10px">${analytics.topCategories.length?`<canvas id="chartCategoryViews"></canvas>`:'<div class="meta" style="padding:16px 0">No published projects yet.</div>'}</div>
         </div>
       </div>
@@ -3055,7 +3037,7 @@ async function renderAdminStudioPage(activeTab='members'){
 
     const catCtx=document.getElementById('chartCategoryViews');
     if(catCtx){
-      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Views',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
+      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Website clicks',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
     }
   }
   if(activeTab==='analytics')initAnalyticsCharts();
@@ -3546,6 +3528,24 @@ async function capturePaypalReturnIfPresent(){
     history.replaceState({},'',clean);
   }
 }
+function initLunaristSiteAnalytics(){
+  if(window.__lunaristSiteAnalyticsInitialized)return;
+  window.__lunaristSiteAnalyticsInitialized=true;
+  const visitorKey='lunarist_analytics_visitor_id_v1',visitKey='lunarist_analytics_session_recorded_v1',clickSessionKey='lunarist_analytics_click_session_v1';
+  const makeId=()=>{try{if(crypto?.randomUUID)return crypto.randomUUID()}catch{}return 'v_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)};
+  let visitorId=localStorage.getItem(visitorKey); if(!visitorId){visitorId=makeId();localStorage.setItem(visitorKey,visitorId);}
+  if(!sessionStorage.getItem(visitKey)){sessionStorage.setItem(visitKey,'1');supabaseClient.rpc('record_site_visit',{p_visitor_id:visitorId}).catch(()=>{});}
+  let clickSession=sessionStorage.getItem(clickSessionKey); if(!clickSession){clickSession=makeId();sessionStorage.setItem(clickSessionKey,clickSession);}
+  document.addEventListener('click',async e=>{
+    if(e.target.closest('#adminPageView,[data-studio-panel]'))return;
+    const card=e.target.closest('[data-project]'); if(!card)return;
+    const projectId=card.getAttribute('data-project'); if(!projectId)return;
+    const projects=Array.isArray(window.data?.projects)?window.data.projects:[],project=projects.find(p=>String(p.id)===String(projectId)); if(!project)return;
+    try{await supabaseClient.from('discovery_events').insert({session_id:clickSession,user_id:state.currentUser?.id||null,project_id:project.id,event_type:'click',category:project.category||'Uncategorized',metadata:{source:'website',interaction:'project_card_click'}});}catch(_){}
+  },true);
+}
+initLunaristSiteAnalytics();
+
 (async()=>{
   const params=new URLSearchParams(location.search);
   const invite=(params.get('invite')||'').trim().toUpperCase();
