@@ -82,11 +82,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    const user = await requireUser(req);
-    if (!user?.id) {
-      return json(res, 401, { error: 'Sign in to Lunarist to use AI.' });
-    }
-
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     if (body.action === 'recommendations') {
       try {
@@ -96,6 +91,11 @@ export default async function handler(req, res) {
         console.error('AI recommendation request failed:', error);
         return json(res, 500, { error: error?.message || 'AI recommendation request failed.' });
       }
+    }
+
+    const user = await requireUser(req);
+    if (!user?.id) {
+      return json(res, 401, { error: 'Sign in to Lunarist to use AI.' });
     }
     const input = typeof body.input === 'string' ? body.input.trim() : '';
 
