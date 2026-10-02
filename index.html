@@ -1772,7 +1772,7 @@ function bind(){
   });
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render(true)});
   document.getElementById('discoverRoleFilter')?.addEventListener('change',e=>{state.roleFilter=e.target.value||'All Roles';render(true)});
-  const s=document.getElementById('searchInput');if(s)s.oninput=e=>{state.query=e.target.value;render(true)};
+  const s=document.getElementById('searchInput');if(s)s.oninput=e=>{const value=e.target.value;const caret=e.target.selectionStart??value.length;state.query=value;render(true);requestAnimationFrame(()=>{const next=document.getElementById('searchInput');if(next){next.focus({preventScroll:true});const pos=Math.min(caret,next.value.length);try{next.setSelectionRange(pos,pos)}catch(_){}}})};
   document.querySelector('[data-action="reset-interest"]')?.addEventListener('click',async()=>{state.session.interests={};state.session.viewed=[];data.recommendations=[];saveSession();await refreshRecommendations();toast('Your discovery profile was reset');render(true)});
   document.getElementById('retryBtn')?.addEventListener('click',()=>loadData());
 
