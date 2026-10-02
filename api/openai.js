@@ -52,6 +52,20 @@ async function recommendationResponse(req,body){
   return {status:200,body:{homeProjectIds:valid(parsed.homeProjectIds,projectSet),discoverProjectIds:valid(parsed.discoverProjectIds,projectSet),serviceIds:valid(parsed.serviceIds,serviceSet)}};
 }
 
+async function analyticsInsights(req,body){
+  const user=await requireUser(req);
+  if(!user?.id)return {status:401,body:{error:'Sign in to Lunarist.'}};
+  const input=JSON.stringify(body.analytics||{}).slice(0,24000);
+  const response=await openai.responses.create({
+    model:'gpt-6-astra',reasoning:{effort:'low'},store:false,
+    input:['You are the analytics strategist for Lunarist Studio. Analyze only the supplied aggregate analytics. Do not invent facts. Identify concrete patterns, anomalies, opportunities, and next actions. Keep recommendations operational and concise.',input].join('
+'),
+    text:{format:{type:'json_schema',name:'lunarist_analytics_insights',strict:true,schema:{type:'object',additionalProperties:false,properties:{
+      summary:{type:'string'},insights:{type:'array',items:{type:'object',additionalProperties:false,properties:{title:{type:'string'},detail:{type:'string'},priority:{type:'string',enum:['high','medium','low']}},required:['title','detail','priority']}},actions:{type:'array',items:{type:'string'}}
+    },required:['summary','insights','actions']}}}
+  });
+  return {status:200,body:JSON.parse(response.output_text||'{"summary":"","insights":[],"actions":[]}')};
+}
 async function requireUser(req) {
   const url = String(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
   const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SECRET_KEY || '').trim();
@@ -93,6 +107,15 @@ export default async function handler(req, res) {
       }
     }
 
+    if (body.action === 'analytics_insights') {
+      try {
+        const result = await analyticsInsights(req, body);
+        return json(res, result.status, result.body);
+      } catch (error) {
+        console.error('Analytics AI request failed:', error);
+        return json(res, 500, { error: error?.message || 'Analytics AI request failed.' });
+      }
+    }
     const user = await requireUser(req);
     if (!user?.id) {
       return json(res, 401, { error: 'Sign in to Lunarist to use AI.' });
