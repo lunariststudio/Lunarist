@@ -2819,7 +2819,7 @@ async function renderAdminStudioPage(activeTab='members'){
     supabaseClient.from('studio_settings').select('key,value').order('key')
   ]);
 
-  const analytics=await loadAdvancedAnalytics(projects||[],servicesArr||[]);
+  const analytics=activeTab==='analytics' ? await loadAdvancedAnalytics(projects||[],servicesArr||[]) : {totalVisitors:0,totalVisits:0,totalEvents:0,totalRevenue:0,pendingRevenue:0,avgOrderValue:0,conversionRate:0,depositCount:0,fullCount:0,funnel:{},topServices:[],topCategories:[],trendDays:[],trend:{}};
 
   if(pErr || sErr){
     sec.innerHTML='<div class="panel"><h3>Studio unavailable</h3><p style="color:var(--muted)">'+esc((pErr||sErr).message)+'</p></div>';
@@ -2900,9 +2900,7 @@ async function renderAdminStudioPage(activeTab='members'){
         <div class="stat"><b>${Number(memberCount||0)}</b><span>Members</span></div>
         <div class="stat"><b>${Number(projectCount||0)}</b><span>Projects</span></div>
         <div class="stat"><b>${Number(serviceCount||0)}</b><span>Services</span></div>
-        <div class="stat"><b>${Number(analytics.totalVisitors||0)}</b><span>Total Visitors</span></div>
-        <div class="stat"><b>${Number(analytics.totalVisits||0)}</b><span>Total Visits</span></div>
-        <div class="stat"><b>${Number(analytics.totalEvents||0)}</b><span>Events (14d)</span></div>
+        <div class="stat"><b>—</b><span>Analytics in Analytics tab</span></div>
       </div>
     </div>
 
@@ -3044,11 +3042,16 @@ async function renderAdminStudioPage(activeTab='members'){
   if(activeTab==='invitations')loadAdminInvitations(sec);
 
   sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{
+    const tab=btn.dataset.studioTab;
+    if(tab==='analytics'){
+      state._forceAdminRender=true;
+      renderAdminStudioPage('analytics');
+      return;
+    }
     sec.querySelectorAll('[data-studio-tab]').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
-    sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===btn.dataset.studioTab?'block':'none');
-    if(btn.dataset.studioTab==='analytics')initAnalyticsCharts();
-    if(btn.dataset.studioTab==='invitations')loadAdminInvitations(sec);
+    sec.querySelectorAll('[data-studio-panel]').forEach(x=>x.style.display=x.dataset.studioPanel===tab?'block':'none');
+    if(tab==='invitations')loadAdminInvitations(sec);
   });
 
   sec.querySelectorAll('[data-admin-profile]').forEach(btn=>btn.onclick=()=>{ const target=member(btn.dataset.adminProfile); if(target) goRoute('member:'+target.id); });
