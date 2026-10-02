@@ -1067,7 +1067,7 @@ function trackSiteEvent(eventName,opts={}){
   initSiteAnalytics();
   if(!state.backendReady||!supabaseClient)return;
   const payload={p_visitor_id:siteAnalyticsState.visitorId,p_session_id:siteAnalyticsState.sessionId,p_event_name:eventName,p_route:String(opts.route||location.pathname||'/').slice(0,160),p_entity_type:opts.entityType||null,p_entity_id:opts.entityId||null,p_category:opts.category||null,p_referrer:document.referrer||null,p_device_type:analyticsDevice(),p_user_id:state.currentUser?.id||null,p_metadata:opts.metadata||{}};
-  supabaseClient.rpc('record_site_analytics_event',payload).catch(()=>{});
+  void Promise.resolve(supabaseClient.rpc('record_site_analytics_event',payload)).catch(()=>{});
 }
 function trackSitePageView(){
   initSiteAnalytics();
