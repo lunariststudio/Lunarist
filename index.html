@@ -1710,6 +1710,10 @@ async function loadArtistReviews(artistId){
 }
 
 function render(preserveScroll){
+  if(state.route==='admin' && document.getElementById('adminPageView') && !state._forceAdminRender){
+    return;
+  }
+  state._forceAdminRender=false;
   const _scrollY=preserveScroll?window.scrollY:0;
   document.querySelectorAll('.navbtn[data-route]').forEach(b=>b.classList.toggle('active',b.dataset.route===state.route));
   if(!state.route.startsWith('member:')){ 
