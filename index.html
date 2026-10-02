@@ -3345,7 +3345,10 @@ async function loadData(){
             }
             if(Object.keys(patch).length){
               supabaseClient.from('projects').update(patch).eq('id', p.id).then(() => {});
-              render(true);
+              // YouTube metadata refreshes must not rebuild Admin Studio while it is open.
+              // Re-rendering the whole app here caused the Admin Studio to blink/reload
+              // once for every YouTube project found on the page.
+              if(state.route!=='admin') render(true);
             }
           }
         } catch(e) {}
