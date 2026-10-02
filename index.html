@@ -2944,10 +2944,11 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
         return;
       }
       const [p,s,m,pc,sc,mem,f,settings]=result.r;
-      renderAdminStudioPage(activeTab,null,{
+      const adminData={
         projects:p.data||[],servicesArr:s.data||[],memberCount:m.count||0,projectCount:pc.count||0,serviceCount:sc.count||0,
         members:mem.data||[],featured:f.data||[],settings:settings.data||[],pErr:p.error,sErr:s.error
-      });
+      };
+      renderAdminStudioPage(activeTab,null,adminData);
     };
     loadAdminData().catch(e=>{
       sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Admin Studio is ready</h3><p style="color:var(--muted)">'+esc(e?.message||'Unable to load admin data.')+'</p><button class="btn primary" id="retryAdminStudio" style="margin-top:12px">Retry</button></div>';
@@ -2968,7 +2969,7 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
     trendDays:[],trend:{},funnel:{}
   };
   let analytics=analyticsOverride||analyticsFallback;
-  if(!analyticsOverride){
+  if(activeTab==='analytics' && !analyticsOverride){
     Promise.race([
       loadAdvancedAnalytics(projects||[],servicesArr||[]),
       new Promise(resolve=>setTimeout(()=>resolve({
@@ -2977,9 +2978,9 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
       }),7000))
     ]).then(result=>{
       if(!result || typeof result!=='object')result={error:'Unable to load analytics.',loading:false};
-      renderAdminStudioPage(activeTab,result);
+      renderAdminStudioPage(activeTab,result,adminDataOverride);
     }).catch(error=>{
-      renderAdminStudioPage(activeTab,{...analyticsFallback,loading:false,error:error?.message||'Unable to load analytics.'});
+      renderAdminStudioPage(activeTab,{...analyticsFallback,loading:false,error:error?.message||'Unable to load analytics.'},adminDataOverride);
     });
   }
 
