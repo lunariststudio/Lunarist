@@ -38,9 +38,16 @@
     }
 
     function findHost(){
-      if(isClient())return document.getElementById('client-space-commissions');
-      const candidates=[...document.querySelectorAll('.panel,.section,.dashsection,main')];
-      return candidates.find(el=>/my commissions|my commission|commissions/i.test(el.textContent||''))||null;
+      // Keep the Commission Center out of public pages (especially Services,
+      // whose copy naturally contains the word "commissions"). Put it in the
+      // authenticated dashboard where it belongs.
+      if(isClient())return document.getElementById('client-space-commissions')||null;
+      if(!isArtist())return null;
+      const drawer=document.getElementById('drawer');
+      if(!drawer?.classList.contains('open'))return null;
+      const activeTab=drawer.querySelector('.dashnav .filter.active')?.dataset?.dash;
+      if(activeTab && activeTab!=='overview')return null;
+      return document.getElementById('dash-overview')||null;
     }
 
     function render(list){
@@ -94,7 +101,9 @@
 
     let lastKey='';
     const refresh=()=>{
-      const key=`${location.pathname}|${state.currentUser?.id||''}|${isClient()?'client':'artist'}`;
+      const drawerOpen=!!document.getElementById('drawer')?.classList.contains('open');
+      const activeTab=document.getElementById('drawer')?.querySelector('.dashnav .filter.active')?.dataset?.dash||'';
+      const key=`${location.pathname}|${state.currentUser?.id||''}|${isClient()?'client':'artist'}|${drawerOpen?'dashboard':'page'}|${activeTab}`;
       if(key===lastKey)return;
       lastKey=key;
       setTimeout(async()=>{await load();await addTimeline()},180);
