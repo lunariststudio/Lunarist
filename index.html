@@ -1317,7 +1317,12 @@ function renderNotificationsUI() {
 }
 
 async function createOrGetConversation(artistId, serviceId=null, projectId=null) {
-  if(!state.currentUser) { openAuth('signin'); return null; }
+  if(!state.currentUser) {
+    openAuth('signin');
+    document.getElementById('authSubtitle').textContent='Sign in to chat with this artist.';
+    document.getElementById('authModal')?.classList.add('open');
+    return null;
+  }
   if(state.currentUser.id === artistId) { toast("You cannot message yourself"); return null; }
 
   const { data: existing } = await supabaseClient.from('conversations')
@@ -1362,6 +1367,13 @@ async function translateAddonText(text){const key=String(text||'').trim();if(!ke
 async function translateServiceDescription(text){const key=String(text||'').trim();if(!key)return '';if(lunaristServiceDescriptionTranslations[key])return lunaristServiceDescriptionTranslations[key];try{const r=await fetch('/api/translate-addon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:key})});const d=await r.json();if(r.ok&&d.translation){lunaristServiceDescriptionTranslations[key]=d.translation;return d.translation}}catch(e){console.warn('Service description translation failed',e)}return key}
 
 function openService(id){
+  if(!state.currentUser){
+    state.pendingServiceId=id;
+    openAuth('signin');
+    document.getElementById('authSubtitle').textContent='Sign in to view this service and contact the artist.';
+    document.getElementById('authModal')?.classList.add('open');
+    return;
+  }
   state.openServiceId=id;
   trackSiteEvent('service_view',{entityType:'service',entityId:id,category:data.services.find(x=>x.id===id)?.category||null});
   const s=data.services.find(x=>x.id===id);if(!s)return;
@@ -1803,6 +1815,12 @@ function bind(){
   document.getElementById('profDirectChatBtn')?.addEventListener('click', async()=>{
     const m = member(state.route.split(':')[1]);
     if(!m) return;
+    if(!state.currentUser){
+      openAuth('signin');
+      document.getElementById('authSubtitle').textContent='Sign in to chat with this artist.';
+      document.getElementById('authModal')?.classList.add('open');
+      return;
+    }
     const conv = await createOrGetConversation(m.id);
     if(conv) { openDashboard(); switchDashTab('messages'); selectConversation(conv.id); }
   });
