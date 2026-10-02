@@ -900,6 +900,37 @@ function serviceBasePrice(service){
   return Number.isFinite(amount)&&amount>0?amount:0;
 }
 
+async function lunaristAIImprove(field, context){
+  const el=document.getElementById(field);
+  if(!el)return;
+  const original=el.value.trim();
+  if(!original){toast('Write a rough draft first.');return}
+  const btn=document.querySelector('[data-ai-improve="'+field+'"]');
+  if(btn){btn.disabled=true;btn.textContent='✨ Improving…';}
+  try{
+    const headers=await apiAuthHeaders();
+    const prompt=[
+      'You are Lunarist Studio\'s writing assistant.',
+      'Improve the creator\'s copy while preserving their meaning and factual claims.',
+      'Use a calm, thoughtful, premium creative-studio voice: clear, specific, human, never generic or overly promotional.',
+      'Do not invent clients, awards, prices, capabilities, timelines, or facts.',
+      'Return only the finished copy, with no commentary or quotation marks.',
+      context||'',
+      '\nDraft:\n'+original
+    ].join('\n');
+    const r=await fetch('/api/openai',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({input:prompt})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d?.error||'AI improvement failed.');
+    const improved=String(d.output_text||'').trim();
+    if(!improved)throw new Error('AI returned no text.');
+    el.value=improved;
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+    toast('✨ Copy improved with OpenAI');
+  }catch(e){toast(e.message||'AI improvement failed.')}finally{
+    if(btn){btn.disabled=false;btn.textContent='✨ Improve with AI';}
+  }
+}
+
 function updateSeoMeta(title, desc, image) {
   const pageTitle = title ? `${title} — Lunarist Studio` : 'Lunarist Studio — Unleash Your Dream';
   document.title = pageTitle;
@@ -1993,7 +2024,7 @@ async function openDashboard(initialTab='overview'){
         <div class="field"><label>Display name</label><input id="pfName" value="${esc(m.name)}"></div>
         <div class="field"><label>Username</label><input id="pfUsername" value="${esc(m.username)}" maxlength="32" pattern="[a-z0-9_]+"><div class="meta">${esc(location.host)}/<span id="pfUsernamePreview">${esc(m.username)}</span></div></div>
         <div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div>
-        <div class="field full"><label>Bio</label><textarea id="pfBio">${esc(m.bio)}</textarea></div>
+        <div class="field full"><label>Bio</label><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button type="button" class="btn" data-ai-improve="pfBio">✨ Improve with AI</button></div><textarea id="pfBio">${esc(m.bio)}</textarea></div>
         
         <div class="field full">
           <label>Profile Color Scheme</label>
@@ -2323,6 +2354,8 @@ function bindDashboard(ps,ss){
     }catch(e){if(status)status.textContent=e.message||'Translation failed.';toast(e.message||'Translation failed.')}finally{btn.disabled=false}
   });
 
+  document.querySelector('[data-ai-improve="pfBio"]')?.addEventListener('click',()=>lunaristAIImprove('pfBio','This is a short creator profile bio. Keep the creator’s identity and claims intact, make it distinctive and concise.'));
+
   document.getElementById('saveProfile')?.addEventListener('click',async()=>{
     const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
     const selectedThemeVal = document.querySelector('.theme-option.selected')?.dataset.themeVal || 'moonlight';
@@ -2432,7 +2465,7 @@ function showServiceForm(existing=null){
   const isMember=state.currentMember?.account_type==='member'||state.currentMember?.is_admin;
   const existingAddons = Array.isArray(existing?.add_ons) ? existing.add_ons : [];
 
-  f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} service</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="svTitle" value="${esc(existing?.title||'')}" placeholder="Motion design package"></div><div class="field"><label>Category</label><select id="svCategorySelect"></select><input id="svCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="svTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="svDesc">${esc(existing?.description||'')}</textarea></div><div class="field"><label>Starting price</label><input id="svPrice" value="${esc(existing?.price_from||'')}" placeholder="$300"><div id="svAutoPricePreview" class="meta" style="margin-top:8px;color:var(--gold);font-weight:800">Automatic total: $0.00</div></div><div class="field"><label>Delivery time</label><input id="svDelivery" value="${esc(existing?.delivery_time||'')}" placeholder="5–7 days"></div><div class="field full"><label>Thumbnail URL</label><input id="svThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="svThumbFile" type="file" accept="image/*"></div><div class="field"><label>Status</label><select id="svStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div>
+  f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} service</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="svTitle" value="${esc(existing?.title||'')}" placeholder="Motion design package"></div><div class="field"><label>Category</label><select id="svCategorySelect"></select><input id="svCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="svTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button type="button" class="btn" data-ai-improve="svDesc">✨ Improve with AI</button></div><textarea id="svDesc">${esc(existing?.description||'')}</textarea></div><div class="field"><label>Starting price</label><input id="svPrice" value="${esc(existing?.price_from||'')}" placeholder="$300"><div id="svAutoPricePreview" class="meta" style="margin-top:8px;color:var(--gold);font-weight:800">Automatic total: $0.00</div></div><div class="field"><label>Delivery time</label><input id="svDelivery" value="${esc(existing?.delivery_time||'')}" placeholder="5–7 days"></div><div class="field full"><label>Thumbnail URL</label><input id="svThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="svThumbFile" type="file" accept="image/*"></div><div class="field"><label>Status</label><select id="svStatus">${isMember?`<option value="published" ${(!existing?.status||existing?.status==='published'||existing?.published)?'selected':''}>Published</option><option value="draft" ${existing?.status==='draft'?'selected':''}>Draft</option>`:`<option value="draft" ${(!existing?.status||existing?.status==='draft')?'selected':''}>Draft</option><option value="pending" ${existing?.status==='pending'?'selected':''}>Submit for review</option>`}<option value="archived" ${existing?.status==='archived'?'selected':''}>Archived</option></select></div>
   <div class="field full service-addons-field">
     <div class="service-addons-heading"><div><label>Service Add-ons</label><div class="meta">Give clients optional upgrades or automatic video-duration pricing.</div></div><span class="addon-count-badge" id="addonCountBadge">0 options</span></div>
     <div id="addonContainer" style="margin-top:8px;display:flex;flex-direction:column;gap:10px">
@@ -2519,6 +2552,8 @@ function showServiceForm(existing=null){
   refreshServiceEditorPrice();
 
   document.getElementById('cancelService').onclick=()=>f.innerHTML='';
+  document.querySelector('[data-ai-improve="svDesc"]')?.addEventListener('click',()=>lunaristAIImprove('svDesc','This is a service description intended to help potential clients understand what they can commission. Keep the offer concrete and client-friendly.'));
+
   document.getElementById('saveService').onclick=async()=>{
     const title=document.getElementById('svTitle').value.trim(),categorySelectVal=catSelect.value,categoryNewVal=catNewInput.value.trim(),category=categorySelectVal==='__NEW__'?categoryNewVal:categorySelectVal,tags=document.getElementById('svTags').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
     let status=document.getElementById('svStatus').value;
@@ -2574,7 +2609,7 @@ function showProjectForm(existing=null){
   const f=document.getElementById('projectForm');if(!f)return;
   const isMember=state.currentMember?.account_type==='member'||state.currentMember?.is_admin;
   
-  f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} project</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="pjTitle" value="${esc(existing?.title||'')}" placeholder="Project title"></div><div class="field"><label>Category</label><select id="pjCategorySelect"></select><input id="pjCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="pjTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><textarea id="pjDesc">${esc(existing?.description||'')}</textarea></div><div class="field full"><label>Thumbnail URL</label><input id="pjThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Media URL</label><input id="pjMedia" value="${esc(existing?.media_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="pjThumbFile" type="file" accept="image/*"></div>
+  f.innerHTML=`<div class="panel" style="background:rgba(255,255,255,.02)"><div class="eyebrow">${existing?'Edit':'New'} project</div><div class="formgrid" style="margin-top:12px"><div class="field full"><label>Title</label><input id="pjTitle" value="${esc(existing?.title||'')}" placeholder="Project title"></div><div class="field"><label>Category</label><select id="pjCategorySelect"></select><input id="pjCategoryNew" placeholder="Enter new category…" style="display:none;margin-top:6px"></div><div class="field"><label>Tags</label><input id="pjTags" value="${esc((existing?.tags||[]).join(', '))}" placeholder="motion, branding"></div><div class="field full"><label>Description</label><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button type="button" class="btn" data-ai-improve="pjDesc">✨ Improve with AI</button></div><textarea id="pjDesc">${esc(existing?.description||'')}</textarea></div><div class="field full"><label>Thumbnail URL</label><input id="pjThumb" value="${esc(existing?.thumbnail_url||'')}" placeholder="https://…"></div><div class="field"><label>Media URL</label><input id="pjMedia" value="${esc(existing?.media_url||'')}" placeholder="https://…"></div><div class="field"><label>Thumbnail upload</label><input id="pjThumbFile" type="file" accept="image/*"></div>
   <div class="field"><label>Media upload</label><input id="pjMediaFile" type="file" accept="image/*,video/*,.pdf,.zip"></div>
   <div class="field full">
     <label>Social media / video</label>
@@ -2700,6 +2735,8 @@ function showProjectForm(existing=null){
   pjSocialUrl.addEventListener('change',fetchSocialIntoForm);
   pjSocialUrl.addEventListener('paste',()=>setTimeout(fetchSocialIntoForm,80));
   pjSocialUrl.addEventListener('blur',()=>{if(pjSocialUrl.value.trim())fetchSocialIntoForm()});
+
+  document.querySelector('[data-ai-improve="pjDesc"]')?.addEventListener('click',()=>lunaristAIImprove('pjDesc','This is a portfolio project description for a creative marketplace.'));
 
   document.getElementById('saveProject').onclick=async()=>{
     const title=document.getElementById('pjTitle').value.trim(),categorySelectVal=catSelect.value,categoryNewVal=catNewInput.value.trim(),category=categorySelectVal==='__NEW__'?categoryNewVal:categorySelectVal,tags=document.getElementById('pjTags').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,12);
