@@ -1038,7 +1038,7 @@ async function refreshAIRecommendations(){
   });
   if(!projects.length&&!services.length)return;
   try{
-    const r=await fetch('/api/ai-recommendations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
+    const r=await fetch('/api/openai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'recommendations',
       interests:state.session.interests||{},
       viewed:state.session.viewed||[],
       projects,services
