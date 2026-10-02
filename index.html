@@ -1001,7 +1001,18 @@ function score(p){
   const tagRaw=tags.reduce((n,t)=>n+Number(interests[t]||0),0);
   return Math.min(100,(Math.min(1,(interestRaw/10)+(tagRaw/40))*40)+(Math.min(1,tagRaw/20)*20)+(Math.min(1,Number(p?.views||0)/5000)*15)+(Math.max(0,1-(Math.max(0,(Date.now()-(Date.parse(p?.created_at||'')||Date.now())))/86400000)/180)*10)+(p?.member&&state.session.viewed.includes(p.member)?8:2)+5);
 }
+function aiOrder(items,ids){
+  const order=new Map((Array.isArray(ids)?ids:[]).map((id,i)=>[String(id),i]));
+  return [...items].sort((a,b)=>{
+    const aiA=order.has(String(a.id))?order.get(String(a.id)):9999;
+    const aiB=order.has(String(b.id))?order.get(String(b.id)):9999;
+    if(aiA!==aiB)return aiA-aiB;
+    return score(b)-score(a);
+  });
+}
 function personalized(){
+  const ai=state.aiRanking?.homeProjectIds||[];
+  if(ai.length)return aiOrder(data.projects.filter(p=>p.published!==false),ai);
   const ranked=(data.recommendations||[]).map(r=>data.projects.find(p=>p.id===r.project_id)).filter(Boolean);
   return ranked.length?ranked:[...data.projects].sort((a,b)=>score(b)-score(a));
 }
@@ -1013,6 +1024,36 @@ async function refreshRecommendations(){
     const rows=await r.json();
     data.recommendations=Array.isArray(rows)?rows:[];
   }catch(e){data.recommendations=[];}
+}
+async function refreshAIRecommendations(){
+  if(!state.backendReady || state._aiRecommendationLoaded)return;
+  state._aiRecommendationLoaded=true;
+  const projects=[...data.projects].sort((a,b)=>score(b)-score(a)).slice(0,48).map(p=>{
+    const m=member(p.member)||{};
+    return {id:p.id,title:p.title,category:p.category,tags:p.tags,description:p.description||p.desc,creator:m.name,role:m.role,popularity:Number(p.likes||0)+Number(p.views||0),freshness:Date.parse(p.created_at||'')||0};
+  });
+  const services=[...data.services].sort((a,b)=>(Number(b.views||0)-Number(a.views||0))).slice(0,48).map(s=>{
+    const m=member(s.member)||{};
+    return {id:s.id,title:s.title,category:s.category,tags:s.tags,description:s.description,creator:m.name,role:m.role,price:s.price_from||s.amount,delivery:s.delivery_time,popularity:Number(s.views||0),freshness:Date.parse(s.created_at||'')||0};
+  });
+  if(!projects.length&&!services.length)return;
+  try{
+    const r=await fetch('/api/ai-recommendations',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({
+      interests:state.session.interests||{},
+      viewed:state.session.viewed||[],
+      projects,services
+    })});
+    if(!r.ok)throw new Error('AI recommendation request failed');
+    const d=await r.json();
+    state.aiRanking={
+      homeProjectIds:Array.isArray(d.homeProjectIds)?d.homeProjectIds:[],
+      discoverProjectIds:Array.isArray(d.discoverProjectIds)?d.discoverProjectIds:[],
+      serviceIds:Array.isArray(d.serviceIds)?d.serviceIds:[]
+    };
+    if(['home','services','discover'].includes(state.route))render(true);
+  }catch(e){
+    state.aiRanking={homeProjectIds:[],discoverProjectIds:[],serviceIds:[]};
+  }
 }
 async function track(p,type='view'){state.session.interests[p.category]=(state.session.interests[p.category]||0)+(type==='like'?4:1);(p.tags||[]).forEach(t=>state.session.interests[t]=(state.session.interests[t]||0)+(type==='like'?.7:.15));if(!state.session.viewed.includes(p.id))state.session.viewed.unshift(p.id);state.session.viewed=state.session.viewed.slice(0,30);saveSession();if(state.backendReady)fetch('/api/lunarist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:{session_id:state.session.id,project_id:p.id,event_type:type,category:p.category,metadata:{tags:p.tags||[]}}})}).catch(()=>{});}
 function avatar(m){return `<img class="avatar" src="${esc(m?.avatar||'https://i.pravatar.cc/160?u=unknown')}" alt="${esc(m?.name||'Artist')}" loading="lazy" onerror="handleImageError(this)">`}
@@ -1065,7 +1106,7 @@ function card(p,feature=false){
   </article>`;
 }
 function serviceCard(s){const m=member(s.member);return `<article class="card service-card services-page" data-service="${s.id}"><div class="thumb auto-ratio"><img src="${esc(s.thumbnail_url||'')}" alt="${esc(s.title)}" loading="lazy" onload="this.classList.toggle('portrait',this.naturalHeight>this.naturalWidth);applyNaturalMediaRatio(this.parentElement,this)" onerror="handleImageError(this)"><div class="overlay"><span class="badge">${esc(s.category)}</span></div></div><div class="cardbody"><div class="title">${esc(s.title)}</div><div class="meta artist">${avatar(m)}<span>${esc(m?.name||'Unknown artist')}</span></div><div class="meta">${[s.price_from?('From '+esc(s.price_from)):'',esc(s.delivery_time||'')].filter(Boolean).join(' · ')}</div><div class="tags">${(s.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div></article>`}
-function services(){let list=data.services;if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
+function services(){let list=[...data.services];if(state.query){const q=state.query.toLowerCase();list=list.filter(s=>(s.title+' '+s.category+' '+(s.tags||[]).join(' ')+' '+(member(s.member)?.name||'')).toLowerCase().includes(q))}else if(state.aiRanking?.serviceIds?.length){list=aiOrder(list,state.aiRanking.serviceIds)}return `<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Hire the collective</div><h2 style="font-size:46px">Services.</h2><p>Book Lunarist members directly for commissions and packages.</p></div><input class="search" id="searchInput" placeholder="Search services, artists…" value="${esc(state.query)}"></div><div class="grid" id="servicesGrid">${list.length?list.map(serviceCard).join(''):emptyState('No services listed yet.','Lunarist Members can list services from their dashboard.')}</div></section></div>`}
 
 function money(v){const n=Number(String(v??'').replace(/[^0-9.]/g,''));return Number.isFinite(n)&&n>0?n:0}
 function isVideoDurationAddon(ao){const t=String(ao?.title||'').toLowerCase();return /video\s+over\s+3\s+minutes/.test(t)||/3\s*minutes.*30\s*sec/.test(t)||/30\s*sec.*3\s*minutes/.test(t)}
@@ -1553,12 +1594,17 @@ function discover(){
     });
   }
 
-  list.sort((a,b)=>
-    state.filter==='Recommended'?score(b)-score(a):
-    state.filter==='Trending'?b.likes-a.likes:
-    state.filter==='Newest'?(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0):
-    score(b)-score(a)
-  );
+  const aiDiscoverActive=!state.query&&state.roleFilter==='All Roles'&&(state.filter==='All'||state.filter==='Recommended');
+  if(aiDiscoverActive&&state.aiRanking?.discoverProjectIds?.length){
+    list=aiOrder(list,state.aiRanking.discoverProjectIds);
+  }else{
+    list.sort((a,b)=>
+      state.filter==='Recommended'?score(b)-score(a):
+      state.filter==='Trending'?b.likes-a.likes:
+      state.filter==='Newest'?(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0):
+      score(b)-score(a)
+    );
+  }
 
   const cats=['All','Recommended','Trending','Newest',...new Set(data.projects.map(p=>p.category))];
 
@@ -3431,6 +3477,7 @@ async function loadData(){
     if(!state.routeInitialized){state.route=routeFromPath();state.routeInitialized=true}
     await refreshRecommendations();
     render();
+    refreshAIRecommendations();
 
     data.projects.forEach(async (p) => {
       const vid = extractYoutubeId(p.media_url) || extractYoutubeId(p.video) || extractYoutubeId(p.thumbnail_url);
