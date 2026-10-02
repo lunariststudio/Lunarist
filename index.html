@@ -1615,13 +1615,9 @@ function discover(){
     'Blizzcasters',
     'Minstrels',
     'Echobinders',
-    'Astral Weavers Director',
-    'Blizzcasters Director',
-    'Minstrels Director',
-    'Echobinders Director',
     'Leader',
     'Administrator',
-    ...data.members.map(m=>roleOf(m)).filter(Boolean)
+    ...data.members.map(m=>roleOf(m)).filter(Boolean).filter(role=>!/director/i.test(role))
   ].filter((v,i,a)=>a.indexOf(v)===i);
 
   let list=data.projects.filter(p=>{
