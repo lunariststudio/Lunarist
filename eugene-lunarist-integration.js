@@ -68,13 +68,8 @@
     document.getElementById('eugeneLunaristOpen')?.addEventListener('click',()=>window.open(lunaristUrl(),'_blank','noopener,noreferrer'));
   }
 
-  function enhancePublicProfile(){
-    const path=location.pathname.replace(/^\/+|\/+$/g,'');
-    if(!path||path.includes('/')||/^(login|signup|discover|projects|profile|admin|settings|member-space|my-commission|clients)$/i.test(path))return;
-    if(document.getElementById('lunaristEugenePublicBtn'))return;
-    const sb=window.supabaseClient||window.supabase||window._supabase;if(!sb)return;
-    sb.from('profiles').select('eugene_card_url').eq('username',path).maybeSingle().then(r=>{const url=normalizeCardUrl(r.data?.eugene_card_url||'');if(!url)return;const host=document.querySelector('.lpm-copy')||document.querySelector('.lunarist-public-member-profile');if(!host)return;const a=document.createElement('a');a.id='lunaristEugenePublicBtn';a.className='btn';a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Eugene Card ↗';a.style.cssText='display:inline-flex;margin:12px 8px 0 0;text-decoration:none';host.appendChild(a)}).catch(()=>{});
-  }
+  // Eugene Card is a private account connection. Do not expose a
+  // connected Eugene Card link on public artist/member profiles.
 
   function offerEugeneLinkFromReturn(){
     const p=new URLSearchParams(location.search);const from=p.get('eugene');if(from)sessionStorage.setItem('lunaristEugeneReturn',from)
@@ -84,7 +79,6 @@
   offerEugeneLinkFromReturn();
   let bootstrapped=false;
   const timer=setInterval(async()=>{
-    enhancePublicProfile();
     if(window.state?.currentUser&&!bootstrapped){bootstrapped=true;await loadCardUrl();await consumeEugeneLink()}
   },800);
   window.addEventListener('beforeunload',()=>clearInterval(timer));
