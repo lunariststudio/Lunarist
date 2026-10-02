@@ -680,6 +680,35 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
 }
 .chat-attach-btn{color:#54709a!important}
 .chat-attach-btn:hover{color:#0b2857!important;background:rgba(22,119,255,.08)!important}
+<style id="force-dark-input-readable">
+/* Dark input surfaces: always use white, high-contrast text. */
+.duration-addon-input,
+.duration-addon-input:focus,
+#modalContent input,
+#modalContent textarea,
+#modalContent select,
+.chat-input-wrap textarea,
+.chat-input-wrap textarea:focus{
+  background:#0a0910!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  caret-color:#fff!important;
+}
+.duration-addon-input::placeholder,
+#modalContent input::placeholder,
+#modalContent textarea::placeholder,
+.chat-input-wrap textarea::placeholder{
+  color:rgba(255,255,255,.72)!important;
+  -webkit-text-fill-color:rgba(255,255,255,.72)!important;
+  opacity:1!important;
+}
+.chat-input-wrap{
+  background:#0a0910!important;
+}
+.chat-attach-btn{
+  color:#fff!important;
+}
+</style>
 </style>
 </head>
 <body>
