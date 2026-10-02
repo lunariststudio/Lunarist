@@ -2969,7 +2969,7 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
     trendDays:[],trend:{},funnel:{}
   };
   let analytics=analyticsOverride||analyticsFallback;
-  if(activeTab==='analytics' && !analyticsOverride){
+  if(!analyticsOverride){
     Promise.race([
       loadAdvancedAnalytics(projects||[],servicesArr||[]),
       new Promise(resolve=>setTimeout(()=>resolve({
