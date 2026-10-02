@@ -2808,15 +2808,46 @@ async function renderAdminStudioPage(activeTab='members'){
   const sec = document.getElementById('adminPageView'); if(!sec) return;
   sec.innerHTML='<div class="panel"><div class="eyebrow">Studio Admin</div><h3>Loading Moderation Dashboard…</h3></div>';
 
+  // Never let one stalled Supabase request leave Admin Studio on an infinite spinner.
+  // Each query gets its own bounded wait; non-critical queries fall back to empty data
+  // so the Admin shell can still render and the affected section can be retried.
+  const adminQuery = (promise, fallback) => Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallback), 5000))
+  ]);
   const [{data:projects,error:pErr},{data:servicesArr,error:sErr},{count:memberCount},{count:projectCount},{count:serviceCount},{data:members},{data:featured},{data:settings}] = await Promise.all([
-    supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
-    supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
-    supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
-    supabaseClient.from('projects').select('*',{count:'exact',head:true}),
-    supabaseClient.from('services').select('*',{count:'exact',head:true}),
-    supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
-    supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
-    supabaseClient.from('studio_settings').select('key,value').order('key')
+    adminQuery(
+      supabaseClient.from('projects').select('id,owner_id,title,category,status,featured,created_at,updated_at,views,likes').order('updated_at',{ascending:false}).limit(200),
+      {data:[],error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('services').select('id,owner_id,artist_id,title,category,status,price_from,delivery_time,created_at,updated_at').order('updated_at',{ascending:false}).limit(200),
+      {data:[],error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('profiles').select('*',{count:'exact',head:true}),
+      {count:0,error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('projects').select('*',{count:'exact',head:true}),
+      {count:0,error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('services').select('*',{count:'exact',head:true}),
+      {count:0,error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('profiles').select('id,username,display_name,role,is_admin,account_type,available,tos,theme').order('display_name').limit(200),
+      {data:[],error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('projects').select('id,title,category,featured,status,views,likes').eq('featured',true).order('updated_at',{ascending:false}).limit(20),
+      {data:[],error:null}
+    ),
+    adminQuery(
+      supabaseClient.from('studio_settings').select('key,value').order('key'),
+      {data:[],error:null}
+    )
   ]);
 
   const analytics=activeTab==='analytics' ? await loadAdvancedAnalytics(projects||[],servicesArr||[]) : {totalVisitors:0,totalVisits:0,totalEvents:0,totalRevenue:0,pendingRevenue:0,avgOrderValue:0,conversionRate:0,depositCount:0,fullCount:0,funnel:{},topServices:[],topCategories:[],trendDays:[],trend:{}};
