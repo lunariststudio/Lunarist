@@ -3116,53 +3116,45 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
       </div>
     </div>
 
-    <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
-      ${analytics.loading?`<div class="panel"><h3>Loading Analytics…</h3><p style="color:var(--muted)">Analytics is loading separately. The rest of Admin Studio is ready to use.</p></div>`:analytics.error?`<div class="panel"><h3>Analytics unavailable</h3><p style="color:var(--muted)">${esc(analytics.error)}</p></div>`:`
+    <div data-studio-panel="analytics" style="\${activeTab==='analytics'?'':'display:none'}">
+      \${analytics.loading?'<div class="panel"><h3>Loading Analytics…</h3><p class="meta">Building your traffic and business picture.</p></div>':analytics.error?'<div class="panel"><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p></div>':'
       <div class="panel" style="margin-bottom:16px">
-        <div class="eyebrow">Audience</div>
-        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:10px">
-          <div class="stat"><b>${analytics.totalVisitors.toLocaleString()}</b><span>Total Visitors</span></div>
-          <div class="stat"><b>${analytics.totalVisits.toLocaleString()}</b><span>Total Visits</span></div>
-          <div class="stat"><b>${analytics.totalEvents.toLocaleString()}</b><span>Project Engagement Events</span></div>
-        </div>
-        <div class="meta" style="margin-top:10px">Visitors use a random first-party browser ID; no IP address or fingerprint is stored.</div>
-      </div>
-
-      <div class="panel" style="margin-bottom:16px">
-        <div class="eyebrow">Revenue</div>
-        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:10px">
-          <div class="stat"><b>$${analytics.totalRevenue.toFixed(2)}</b><span>Collected</span></div>
-          <div class="stat"><b>$${analytics.pendingRevenue.toFixed(2)}</b><span>Pending (in queue)</span></div>
-          <div class="stat"><b>$${analytics.avgOrderValue.toFixed(2)}</b><span>Avg. order value</span></div>
-          <div class="stat"><b>${analytics.conversionRate}%</b><span>Inquiry → paid</span></div>
-          <div class="stat"><b>${analytics.depositCount} / ${analytics.fullCount}</b><span>Deposits / Full paid</span></div>
+        <div class="row" style="justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap">
+          <div><div class="eyebrow">Lunarist Intelligence</div><h2 style="margin:4px 0;font-size:34px">Analytics</h2><p class="meta">First-party traffic, discovery, services and commission intelligence.</p></div>
+          <div class="row" style="gap:8px"><select id="analyticsRange" class="search" style="min-width:120px"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option></select><button class="btn" id="refreshAnalytics">↻ Refresh</button></div>
         </div>
       </div>
-
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px">
+        <div class="stat"><b>\${Number(analytics.totalVisitors||0).toLocaleString()}</b><span>Unique visitors</span></div>
+        <div class="stat"><b>\${Number(analytics.totalVisits||0).toLocaleString()}</b><span>Sessions</span></div>
+        <div class="stat"><b>\${Number(analytics.pageViews||0).toLocaleString()}</b><span>Page views</span></div>
+        <div class="stat"><b>\${(Number(analytics.projectClicks||0)+Number(analytics.serviceClicks||0)).toLocaleString()}</b><span>Discovery clicks</span></div>
+        <div class="stat"><b>\${Number(analytics.engagementRate||0)}%</b><span>Engagement rate</span></div>
+        <div class="stat"><b>$\${Number(analytics.revenue||0).toFixed(2)}</b><span>Revenue</span></div>
+        <div class="stat"><b>\${Number(analytics.inquiryToPaid||0)}%</b><span>Inquiry → paid</span></div>
+        <div class="stat"><b>$\${Number(analytics.avgOrderValue||0).toFixed(2)}</b><span>Avg. order</span></div>
+      </div>
       <div class="split" style="margin-bottom:16px">
-        <div class="panel">
-          <div class="eyebrow">Engagement — last 14 days</div>
-          <div style="height:220px;margin-top:10px"><canvas id="chartEngagementTrend"></canvas></div>
-        </div>
-        <div class="panel">
-          <div class="eyebrow">Commission funnel</div>
-          <div style="height:220px;margin-top:10px"><canvas id="chartFunnel"></canvas></div>
-        </div>
+        <div class="panel"><div class="eyebrow">Traffic & engagement</div><div style="height:280px;margin-top:12px"><canvas id="chartAnalyticsTraffic"></canvas></div></div>
+        <div class="panel"><div class="eyebrow">Commission funnel</div><div style="height:280px;margin-top:12px"><canvas id="chartAnalyticsFunnel"></canvas></div></div>
       </div>
-
-      <div class="split">
-        <div class="panel">
-          <div class="eyebrow">Top services by revenue</div>
-          <div style="height:220px;margin-top:10px">${analytics.topServices.length?`<canvas id="chartRevenueByService"></canvas>`:'<div class="meta" style="padding:16px 0">No paid commissions yet.</div>'}</div>
-        </div>
-        <div class="panel">
-          <div class="eyebrow">Clicks by category</div>
-          <div style="height:220px;margin-top:10px">${analytics.topCategories.length?`<canvas id="chartCategoryViews"></canvas>`:'<div class="meta" style="padding:16px 0">No website clicks yet.</div>'}</div>
-        </div>
+      <div class="split" style="margin-bottom:16px">
+        <div class="panel"><div class="eyebrow">Top projects</div><div style="margin-top:12px">\${analytics.projectRows?.length?analytics.projectRows.slice(0,8).map(p=>'<div class="listitem"><div class="grow"><b>'+esc(p.title||'Untitled')+'</b><div class="meta">'+esc(p.category||'Uncategorized')+' · '+Number(p.unique_visitors||0).toLocaleString()+' visitors</div></div><span class="meta">'+Number(p.views||0)+' views · '+Number(p.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No project activity in this period.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Top services</div><div style="margin-top:12px">\${analytics.serviceRows?.length?analytics.serviceRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.title||'Untitled')+'</b><div class="meta">'+esc(x.category||'Uncategorized')+' · '+Number(x.unique_visitors||0).toLocaleString()+' visitors</div></div><span class="meta">'+Number(x.views||0)+' views · '+Number(x.clicks||0)+' clicks</span></div>').join(''):'<div class="meta">No service activity in this period.</div>'}</div></div>
       </div>
-      `}
-    </div>
-
+      <div class="split" style="margin-bottom:16px">
+        <div class="panel"><div class="eyebrow">Where people come from</div><div style="margin-top:12px">\${analytics.sourceRows?.length?analytics.sourceRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.source)+'</b></div><span class="meta">'+Number(x.visits||0)+' visits · '+Number(x.visitors||0)+' visitors</span></div>').join(''):'<div class="meta">No source data yet.</div>'}</div></div>
+        <div class="panel"><div class="eyebrow">Devices</div><div style="height:240px;margin-top:12px"><canvas id="chartAnalyticsDevices"></canvas></div></div>
+      </div>
+      <div class="split" style="margin-bottom:16px">
+        <div class="panel"><div class="eyebrow">Categories</div><div style="height:260px;margin-top:12px"><canvas id="chartAnalyticsCategories"></canvas></div></div>
+        <div class="panel"><div class="eyebrow">Audience pages</div><div style="margin-top:12px">\${analytics.pageRows?.length?analytics.pageRows.slice(0,8).map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.route||'/')+'</b></div><span class="meta">'+Number(x.views||0)+' views · '+Number(x.visitors||0)+' visitors</span></div>').join(''):'<div class="meta">No page views yet.</div>'}</div></div>
+      </div>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="eyebrow">AI analysis</div><h3 style="margin:4px 0">What should we improve?</h3><p class="meta">OpenAI analyzes aggregate analytics only and turns patterns into practical next actions.</p></div><button class="btn pink" id="runAnalyticsAI">✨ Analyze with OpenAI</button></div>
+        <div id="analyticsAIResult" style="margin-top:14px"><div class="meta">Run the analysis when you want a fresh interpretation of the current period.</div></div>
+      </div>
+      '}</div>
     <div data-studio-panel="settings" style="${activeTab==='settings'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Studio Settings</div>
@@ -3177,37 +3169,33 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
   let chartsReady=false;
   const chartInstances={};
   function initAnalyticsCharts(){
-    if(chartsReady||analytics.error||typeof Chart==='undefined')return;
+    if(chartsReady||analytics.error||analytics.loading||typeof Chart==='undefined')return;
     chartsReady=true;
-
-    const trendCtx=document.getElementById('chartEngagementTrend');
-    if(trendCtx){
-      const labels=analytics.trendDays.map(d=>d.slice(5));
-      chartInstances.trend=new Chart(trendCtx,{type:'line',data:{labels,datasets:[
-        {label:'Views',data:analytics.trendDays.map(d=>analytics.trend[d].view),borderColor:'#c9b6ff',backgroundColor:'rgba(201,182,255,.15)',tension:.3,fill:true},
-        {label:'Likes',data:analytics.trendDays.map(d=>analytics.trend[d].like),borderColor:'#ff86c8',backgroundColor:'rgba(255,134,200,.12)',tension:.3,fill:true},
-        {label:'Saves',data:analytics.trendDays.map(d=>analytics.trend[d].save),borderColor:'#8ee0ba',backgroundColor:'rgba(142,224,186,.12)',tension:.3,fill:true}
-      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c96ad'}}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
-    }
-
-    const funnelCtx=document.getElementById('chartFunnel');
-    if(funnelCtx){
-      const labels=Object.keys(analytics.funnel);
-      chartInstances.funnel=new Chart(funnelCtx,{type:'bar',data:{labels,datasets:[{label:'Commissions',data:Object.values(analytics.funnel),backgroundColor:'#c9b6ff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
-    }
-
-    const revCtx=document.getElementById('chartRevenueByService');
-    if(revCtx){
-      chartInstances.revenue=new Chart(revCtx,{type:'bar',data:{labels:analytics.topServices.map(s=>s.title),datasets:[{label:'Revenue',data:analytics.topServices.map(s=>s.revenue),backgroundColor:'#e8cf91'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true},y:{ticks:{color:'#9c96ad'},grid:{display:false}}}}});
-    }
-
-    const catCtx=document.getElementById('chartCategoryViews');
-    if(catCtx){
-      chartInstances.category=new Chart(catCtx,{type:'bar',data:{labels:analytics.topCategories.map(c=>c[0]),datasets:[{label:'Clicks',data:analytics.topCategories.map(c=>c[1]),backgroundColor:'#8ee0ba'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9c96ad'},grid:{display:false}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}}}});
-    }
+    const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c96ad'}}},scales:{x:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9c96ad'},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true}}};
+    const days=Array.isArray(analytics.daily)?analytics.daily:[],labels=days.map(x=>String(x.day_key||'').slice(5));
+    const tc=document.getElementById('chartAnalyticsTraffic');
+    if(tc)chartInstances.traffic=new Chart(tc,{type:'line',data:{labels,datasets:[{label:'Visitors',data:days.map(x=>Number(x.visitors||0)),tension:.3,borderColor:'#c9b6ff'},{label:'Page views',data:days.map(x=>Number(x.page_views||0)),tension:.3,borderColor:'#8ee0ba'},{label:'Discovery clicks',data:days.map(x=>Number(x.project_clicks||0)+Number(x.service_clicks||0)),tension:.3,borderColor:'#ff86c8'}]},options:base});
+    const fc=document.getElementById('chartAnalyticsFunnel');
+    if(fc)chartInstances.funnel=new Chart(fc,{type:'bar',data:{labels:['Inquiries','Qualified','Paid'],datasets:[{data:[Number(analytics.inquiries||0),Number(analytics.qualified||0),Number(analytics.paid||0)],backgroundColor:['#c9b6ff','#8ee0ba','#e8cf91']}]},options:{...base,plugins:{legend:{display:false}}}});
+    const dc=document.getElementById('chartAnalyticsDevices'),dr=analytics.deviceRows||[];
+    if(dc)chartInstances.devices=new Chart(dc,{type:'doughnut',data:{labels:dr.map(x=>x.device),datasets:[{data:dr.map(x=>Number(x.visits||0)),backgroundColor:['#c9b6ff','#8ee0ba','#ff86c8','#e8cf91']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9c96ad'}}}}});
+    const cc=document.getElementById('chartAnalyticsCategories'),cr=analytics.categoryRows||[];
+    if(cc)chartInstances.categories=new Chart(cc,{type:'bar',data:{labels:cr.slice(0,10).map(x=>x.category),datasets:[{label:'Clicks',data:cr.slice(0,10).map(x=>Number(x.clicks||0)),backgroundColor:'#8ee0ba'},{label:'Engagement',data:cr.slice(0,10).map(x=>Number(x.project_engagement||0)),backgroundColor:'#c9b6ff'}]},options:{...base,indexAxis:'y'}});
   }
   if(activeTab==='analytics')initAnalyticsCharts();
   if(activeTab==='invitations')loadAdminInvitations(sec);
+  sec.querySelector('#analyticsRange')?.addEventListener('change',e=>{state.analyticsDays=Number(e.target.value)||30;state._forceAdminRender=true;renderAdminStudioPage('analytics');});
+  sec.querySelector('#refreshAnalytics')?.addEventListener('click',()=>{state._forceAdminRender=true;renderAdminStudioPage('analytics');});
+  sec.querySelector('#runAnalyticsAI')?.addEventListener('click',async()=>{
+    const btn=sec.querySelector('#runAnalyticsAI'),out=sec.querySelector('#analyticsAIResult');if(!btn||!out)return;
+    btn.disabled=true;btn.textContent='✨ Analyzing…';out.innerHTML='<div class="meta">OpenAI is reading the aggregate dashboard data…</div>';
+    try{
+      const r=await fetch('/api/openai',{method:'POST',headers:await apiAuthHeaders(),body:JSON.stringify({action:'analytics_insights',analytics:{days:state.analyticsDays||30,totals:analytics.totals,daily:analytics.daily,projects:analytics.projectRows,services:analytics.serviceRows,categories:analytics.categoryRows,sources:analytics.sourceRows,devices:analytics.deviceRows,commission:analytics.commission}})});
+      const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to analyze analytics');
+      out.innerHTML='<div style="display:grid;gap:10px">'+(d.summary?'<div class="panel" style="margin:0;background:rgba(201,182,255,.05)">'+esc(d.summary)+'</div>':'')+(Array.isArray(d.insights)?d.insights.map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.title||'Insight')+'</b><div class="meta">'+esc(x.detail||'')+'</div></div><span class="tag">'+esc(x.priority||'medium')+'</span></div>').join(''):'')+(Array.isArray(d.actions)&&d.actions.length?'<div><div class="eyebrow" style="margin-bottom:6px">Next actions</div>'+d.actions.map(x=>'<div class="meta" style="padding:4px 0">→ '+esc(x)+'</div>').join('')+'</div>':'')+'</div>';
+    }catch(e){out.innerHTML='<div class="meta" style="color:var(--danger)">'+esc(e.message||'Analytics AI failed.')+'</div>'}
+    finally{btn.disabled=false;btn.textContent='✨ Analyze with OpenAI';}
+  });
 
   sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{
     sec.querySelectorAll('[data-studio-tab]').forEach(x=>x.classList.remove('active'));
