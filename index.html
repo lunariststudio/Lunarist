@@ -623,7 +623,25 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
   body:before,body:after{display:none}
 }
 </style>
-</head>
+<style id="lunarist-ux-calm-pass">
+/* Calm UX pass: preserve Lunarist's atmosphere while reducing competing content. */
+.home-page > .section:nth-of-type(4),
+.home-page > .section:nth-of-type(5){display:none}
+.home-page .heroactions .btn{min-height:42px}
+.navlinks{gap:4px}
+.navin{gap:18px}
+.navbtn{padding:8px 10px}
+@media(max-width:1000px){
+  .navlinks{gap:2px}
+  .navbtn{padding:8px 9px}
+}
+@media(max-width:720px){
+  .home-page > .section:nth-of-type(4),
+  .home-page > .section:nth-of-type(5){display:none}
+  .navin{gap:10px}
+  .navbtn{padding:8px}
+}
+</style></head>
 <body>
 <!-- LUNARIST BRAND GUIDELINE DECOR -->
 <div class="brand-guideline-overlay" aria-hidden="true">
@@ -1583,8 +1601,8 @@ function openService(id){
 }
 
 function emptyState(title='Nothing here yet.',text='Lunarist is waiting for its next creative signal.'){return `<div class="empty" style="grid-column:1/-1"><strong style="color:var(--text);display:block;margin-bottom:6px">${esc(title)}</strong>${esc(text)}</div>`}
-function home(){const rec=personalized(),trending=[...data.projects].sort((a,b)=>b.likes-a.likes),recent=[...data.projects].sort((a,b)=>(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0));return `<div class="container"><section class="hero"><div class="eyebrow">A creative network by Lunarist Studio</div><h1>Unleash<br><em>Your Dream.</em></h1><p>Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.</p><div class="heroactions">
-<button class="btn primary" data-route="discover">Explore the work</button><button class="btn" data-route="artists">Meet our artists</button></div></section><section class="section"><div class="sectionhead"><div><h2>For you</h2><p>Curated from what you explore.</p></div><span class="eyebrow">Personalized</span></div><div class="grid">${rec.length?rec.slice(0,5).map((p,i)=>card(p,i===0)).join(''):emptyState('No published work yet.','Create the first Lunarist project from your member space.')}</div></section><section class="section"><div class="sectionhead"><div><h2>Trending this week</h2><p>What the Lunarist community is watching.</p></div><span class="eyebrow">Popular</span></div><div class="grid">${trending.length?trending.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section><section class="section"><div class="split"><div class="panel"><div class="sectionhead"><div><h2>Artists</h2><p>Find the right creative voice.</p></div><button class="btn" data-route="artists">View all</button></div><div class="artistgrid">${data.members.length?data.members.map(artistCard).join(''):emptyState('No public artist profiles yet.','Create an account to become one.')}</div></div><div class="panel"><div class="eyebrow">Discovery engine</div><h2 style="font-size:30px;letter-spacing:-.04em">Not everything has to match your taste.</h2><p style="color:var(--muted)">Lunarist mixes relevance with exploration, so your feed can introduce you to artists and disciplines you would not normally click.</p><button class="btn pink" data-action="reset-interest">Reset my feed</button></div></div></section><section class="section"><div class="sectionhead"><div><h2>New arrivals</h2><p>Fresh published work from the studio.</p></div></div><div class="grid">${recent.length?recent.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section></div>`}
+function home(){const rec=personalized(),trending=[...data.projects].sort((a,b)=>b.likes-a.likes),recent=[...data.projects].sort((a,b)=>(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0));return `<div class="container home-page"><section class="hero"><div class="eyebrow">A creative network by Lunarist Studio</div><h1>Unleash<br><em>Your Dream.</em></h1><p>Lunarist is a living portfolio where every artist can publish, every project can be discovered, and every visitor gets a different creative journey.</p><div class="heroactions">
+<button class="btn primary" data-route="discover">Explore the work</button><button class="btn" data-route="services">Find a service</button></div></section><section class="section"><div class="sectionhead"><div><h2>For you</h2><p>Curated from what you explore.</p></div><span class="eyebrow">Personalized</span></div><div class="grid">${rec.length?rec.slice(0,5).map((p,i)=>card(p,i===0)).join(''):emptyState('No published work yet.','Create the first Lunarist project from your member space.')}</div></section><section class="section"><div class="sectionhead"><div><h2>Trending this week</h2><p>What the Lunarist community is watching.</p></div><span class="eyebrow">Popular</span></div><div class="grid">${trending.length?trending.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section><section class="section"><div class="split"><div class="panel"><div class="sectionhead"><div><h2>Artists</h2><p>Find the right creative voice.</p></div><button class="btn" data-route="artists">View all</button></div><div class="artistgrid">${data.members.length?data.members.map(artistCard).join(''):emptyState('No public artist profiles yet.','Create an account to become one.')}</div></div><div class="panel"><div class="eyebrow">Discovery engine</div><h2 style="font-size:30px;letter-spacing:-.04em">Not everything has to match your taste.</h2><p style="color:var(--muted)">Lunarist mixes relevance with exploration, so your feed can introduce you to artists and disciplines you would not normally click.</p><button class="btn pink" data-action="reset-interest">Reset my feed</button></div></div></section><section class="section"><div class="sectionhead"><div><h2>New arrivals</h2><p>Fresh published work from the studio.</p></div></div><div class="grid">${recent.length?recent.slice(0,4).map(p=>card(p)).join(''):emptyState()}</div></section></div>`}
 function artistCard(m){return `<article class="artistcard" data-member="${m.id}">${avatar(m)}<div class="artistname">${esc(m.name)}</div><div class="role">${esc(m.role)}</div>${m.is_admin?'<span class="badge" style="display:inline-block;margin-top:8px">Administrator</span>':''}<div class="tags">${(m.skills||[]).slice(0,2).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:12px;font-size:11px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available':'● Booked'}</div></article>`}
 function discover(){
   const roleOf = m => {
