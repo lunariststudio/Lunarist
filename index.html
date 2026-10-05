@@ -3251,7 +3251,7 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
         <div class="admin-analytics-grid"><div class="panel admin-analytics-card"><div class="admin-card-head"><div><div class="eyebrow">Discovery</div><h3>Top projects</h3></div></div><div class="admin-ranking">${analyticsProjectHtml}</div></div><div class="panel admin-analytics-card"><div class="admin-card-head"><div><div class="eyebrow">Services</div><h3>Top services</h3></div></div><div class="admin-ranking">${analyticsServiceHtml}</div></div></div>
         <div class="admin-analytics-grid"><div class="panel admin-analytics-card"><div class="admin-card-head"><div><div class="eyebrow">Acquisition</div><h3>Where people come from</h3></div></div><div class="admin-ranking">${analyticsSourceHtml}</div></div><div class="panel admin-analytics-card"><div class="admin-card-head"><div><div class="eyebrow">Audience</div><h3>Devices</h3></div></div><div class="admin-chart-sm"><canvas id="chartAnalyticsDevices"></canvas></div></div></div>
         <div class="panel admin-analytics-card"><div class="admin-card-head"><div><div class="eyebrow">Audience pages</div><h3>Most visited routes</h3></div></div><div class="admin-ranking">${analyticsPageHtml}</div></div>
-        <div class="panel admin-analytics-card admin-ai-card"><div class="admin-card-head"><div><div class="eyebrow">AI analysis</div><h3>What should we improve?</h3><p class="meta">OpenAI receives aggregate analytics only and turns patterns into practical next actions.</p></div><button class="btn pink" id="runAnalyticsAI">✨ Analyze with OpenAI</button></div><div id="analyticsAIResult" style="margin-top:14px"><div class="meta">Run an analysis for the selected period.</div></div></div>
+        <div class="panel admin-analytics-card admin-ai-card"><div class="admin-card-head"><div><div class="eyebrow">AI analysis</div><h3>What should we improve?</h3><p class="meta">OpenAI receives aggregate analytics only and turns patterns into practical next actions.</p></div><button class="btn pink" id="runAnalyticsAI">✨ Analyze with Lunarist</button></div><div id="analyticsAIResult" style="margin-top:14px"><div class="meta">Run an analysis for the selected period.</div></div></div>
       </div>
       '}</div>
     <div data-studio-panel="settings" style="${activeTab==='settings'?'':'display:none'}">
@@ -3293,7 +3293,7 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
       const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to analyze analytics');
       out.innerHTML='<div style="display:grid;gap:10px">'+(d.summary?'<div class="panel" style="margin:0;background:rgba(201,182,255,.05)">'+esc(d.summary)+'</div>':'')+(Array.isArray(d.insights)?d.insights.map(x=>'<div class="listitem"><div class="grow"><b>'+esc(x.title||'Insight')+'</b><div class="meta">'+esc(x.detail||'')+'</div></div><span class="tag">'+esc(x.priority||'medium')+'</span></div>').join(''):'')+(Array.isArray(d.actions)&&d.actions.length?'<div><div class="eyebrow" style="margin-bottom:6px">Next actions</div>'+d.actions.map(x=>'<div class="meta" style="padding:4px 0">→ '+esc(x)+'</div>').join('')+'</div>':'')+'</div>';
     }catch(e){out.innerHTML='<div class="meta" style="color:var(--danger)">'+esc(e.message||'Analytics AI failed.')+'</div>'}
-    finally{btn.disabled=false;btn.textContent='✨ Analyze with OpenAI';}
+    finally{btn.disabled=false;btn.textContent='✨ Analyze with Lunarist';}
   });
 
   sec.querySelectorAll('[data-studio-tab]').forEach(btn=>btn.onclick=()=>{
