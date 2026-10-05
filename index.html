@@ -3251,7 +3251,7 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
     </div>
 
     <div data-studio-panel="analytics" style="${activeTab==='analytics'?'':'display:none'}">
-      ${analytics.loading?'<div class="panel admin-analytics-loading"><div class="eyebrow">Lunarist Intelligence</div><h3>Loading analytics…</h3><p class="meta">Building your traffic, discovery and business picture.</p></div>':analytics.error?'<div class="panel admin-analytics-error"><div class="eyebrow">Analytics</div><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p><button class="btn primary" id="refreshAnalytics">Retry</button></div>':'
+      ${analytics.loading?'<div class="panel admin-analytics-loading"><div class="eyebrow">Lunarist Intelligence</div><h3>Loading analytics…</h3><p class="meta">Building your traffic, discovery and business picture.</p></div>':analytics.error?'<div class="panel admin-analytics-error"><div class="eyebrow">Analytics</div><h3>Analytics unavailable</h3><p class="meta">'+esc(analytics.error)+'</p><button class="btn primary" id="refreshAnalytics">Retry</button></div>':`
       <div class="admin-analytics-shell">
         <div class="panel admin-analytics-hero"><div><div class="eyebrow">Lunarist Intelligence</div><h2>Analytics</h2><p class="meta">First-party traffic, session quality, and real discovery interactions. Project clicks and service clicks are tracked separately.</p></div><div class="admin-analytics-controls"><select id="analyticsRange" class="search"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">1 year</option></select><button class="btn" id="refreshAnalytics">↻ Refresh</button></div></div>
         <div class="admin-analytics-kpis">
@@ -3275,7 +3275,7 @@ async function renderAdminStudioPage(activeTab='members', analyticsOverride=null
         <div class="panel admin-analytics-card"><div class="admin-card-head"><div><div class="eyebrow">Audience pages</div><h3>Most visited routes</h3></div></div><div class="admin-ranking">${analyticsPageHtml}</div></div>
         <div class="panel admin-analytics-card admin-ai-card"><div class="admin-card-head"><div><div class="eyebrow">AI analysis</div><h3>What should we improve?</h3><p class="meta">OpenAI receives aggregate analytics only and turns patterns into practical next actions.</p></div><button class="btn pink" id="runAnalyticsAI">✨ Analyze with Lunarist</button></div><div id="analyticsAIResult" style="margin-top:14px"><div class="meta">Run an analysis for the selected period.</div></div></div>
       </div>
-      '}</div>
+      `}</div>
     <div data-studio-panel="settings" style="${activeTab==='settings'?'':'display:none'}">
       <div class="panel">
         <div class="eyebrow">Studio Settings</div>
