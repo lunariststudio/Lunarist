@@ -3891,5 +3891,134 @@ async function capturePaypalReturnIfPresent(){
   }
   frameId=requestAnimationFrame(frame);
 })();
-</script></body>
+</script>
+<!-- Lunarist guided service funnel -->
+<style id="lunarist-service-funnel-styles">
+#lunarist-service-funnel{position:fixed;inset:0;z-index:2147483000;display:none;background:rgba(8,8,12,.72);backdrop-filter:blur(14px);padding:18px;box-sizing:border-box}
+#lunarist-service-funnel.is-open{display:flex;align-items:center;justify-content:center}
+.lsf-panel{width:min(760px,100%);max-height:min(88vh,820px);overflow:auto;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:var(--bg,#101014);box-shadow:0 24px 90px rgba(0,0,0,.45);color:var(--text,#fff)}
+.lsf-head{padding:22px 24px 12px;position:sticky;top:0;background:inherit;z-index:2}
+.lsf-kicker{font-size:10px;letter-spacing:.14em;font-weight:800;opacity:.55}
+.lsf-title{font-size:25px;font-weight:750;margin:6px 0}
+.lsf-sub{font-size:13px;opacity:.62;line-height:1.5}
+.lsf-close{position:absolute;right:18px;top:18px;border:0;background:rgba(255,255,255,.08);color:inherit;width:34px;height:34px;border-radius:50%;cursor:pointer}
+.lsf-steps{display:flex;gap:6px;padding:0 24px 14px;overflow:auto}
+.lsf-step{white-space:nowrap;font-size:11px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.06);opacity:.45}
+.lsf-step.active{opacity:1;background:rgba(255,255,255,.14)}
+.lsf-body{padding:8px 24px 24px}
+.lsf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lsf-card{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;background:rgba(255,255,255,.025);cursor:pointer;transition:.18s}
+.lsf-card:hover,.lsf-card.selected{border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+.lsf-card.selected{background:rgba(255,255,255,.08)}
+.lsf-card h3{margin:0 0 5px;font-size:15px}.lsf-card p{margin:0;font-size:12px;opacity:.62;line-height:1.45}
+.lsf-price{margin-top:12px;font-weight:750;font-size:14px}
+.lsf-fields{display:grid;gap:12px}
+.lsf-field{display:grid;gap:6px}.lsf-field label{font-size:11px;font-weight:700;opacity:.65}
+.lsf-field input,.lsf-field textarea,.lsf-field select{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.045);color:inherit;padding:11px 12px;outline:none}
+.lsf-field textarea{min-height:120px;resize:vertical}
+.lsf-summary{display:grid;gap:8px;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;background:rgba(255,255,255,.03)}
+.lsf-row{display:flex;justify-content:space-between;gap:20px;font-size:13px}.lsf-total{font-size:17px;font-weight:800;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)}
+.lsf-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+.lsf-btn{border:0;border-radius:12px;padding:12px 16px;font-weight:750;cursor:pointer;background:rgba(255,255,255,.1);color:inherit}
+.lsf-btn.primary{background:#fff;color:#111}.lsf-btn:disabled{opacity:.35;cursor:not-allowed}
+.lsf-check{display:flex;align-items:flex-start;gap:9px;padding:11px 0;font-size:12px;opacity:.8}
+@media(max-width:620px){#lunarist-service-funnel{padding:8px}.lsf-panel{max-height:94vh;border-radius:20px}.lsf-grid{grid-template-columns:1fr}.lsf-head,.lsf-body{padding-left:16px;padding-right:16px}.lsf-steps{padding-left:16px;padding-right:16px}}
+</style>
+<div id="lunarist-service-funnel" aria-hidden="true">
+  <div class="lsf-panel" role="dialog" aria-modal="true" aria-labelledby="lsf-title">
+    <div class="lsf-head">
+      <button class="lsf-close" type="button" aria-label="Close">×</button>
+      <div class="lsf-kicker">LUNARIST · START ORDER</div>
+      <div class="lsf-title" id="lsf-title">What do you want to make?</div>
+      <div class="lsf-sub" id="lsf-sub">Choose a service to get started. You can review everything before sending.</div>
+    </div>
+    <div class="lsf-steps">
+      <span class="lsf-step active" data-step="1">Service</span>
+      <span class="lsf-step" data-step="2">Package</span>
+      <span class="lsf-step" data-step="3">Options</span>
+      <span class="lsf-step" data-step="4">Brief</span>
+      <span class="lsf-step" data-step="5">Review</span>
+    </div>
+    <div class="lsf-body" id="lsf-body"></div>
+  </div>
+</div>
+<script>
+(function(){
+  if(window.__lunaristServiceFunnel) return;
+  window.__lunaristServiceFunnel=true;
+  const modal=document.getElementById('lunarist-service-funnel'), body=document.getElementById('lsf-body');
+  const title=document.getElementById('lsf-title'), sub=document.getElementById('lsf-sub');
+  const steps=[...modal.querySelectorAll('.lsf-step')];
+  const state={step:1,service:null,package:null,options:[],brief:{name:'',email:'',details:'',deadline:''}};
+  const clean=s=>String(s||'').replace(/\s+/g,' ').trim();
+  const money=s=>{const m=String(s||'').match(/(?:[$€£¥]|USD|EUR|GBP|IDR)\s*[\d,.]+/i);return m?m[0]:''};
+  function setStep(n){state.step=n;steps.forEach(x=>x.classList.toggle('active',+x.dataset.step===n));}
+  function getServices(){
+    const els=[...document.querySelectorAll('button,a,[role="button"],.card,.service-card,.service')];
+    const seen=new Set(), out=[];
+    els.forEach(el=>{
+      const t=clean(el.innerText||el.textContent);
+      if(!t||t.length>180||!/inquire|commission|service|order|package|hire|starting|price|\$|€|£|¥|IDR/i.test(t)) return;
+      if(/start order|inquire|commission me|learn more/i.test(t) && t.length<45) return;
+      const key=t.slice(0,120).toLowerCase();
+      if(seen.has(key)) return; seen.add(key);
+      const p=money(t);
+      out.push({name:t.split(/\n/)[0].slice(0,70),desc:t.slice(0,180),price:p});
+    });
+    return out.slice(0,8);
+  }
+  function render(){
+    if(state.step===1){
+      title.textContent='What do you want to make?'; sub.textContent='Choose a service. You can change your choice later.';
+      const services=getServices();
+      body.innerHTML=services.length?'<div class="lsf-grid">'+services.map((s,i)=>`<div class="lsf-card" data-service="${i}"><h3>${s.name}</h3><p>${s.desc}</p>${s.price?`<div class="lsf-price">Starting ${s.price}</div>`:''}</div>`).join('')+'</div>':'<div class="lsf-summary"><div class="lsf-row"><b>Custom project</b><span>Inquire</span></div><p class="lsf-sub">Tell us what you want to make and we’ll help shape the right service.</p></div>';
+      body.querySelectorAll('[data-service]').forEach((el,i)=>el.onclick=()=>{state.service=services[i];state.step=2;render()});
+      if(!services.length){body.firstElementChild.onclick=()=>{state.service={name:'Custom project',desc:'Custom project inquiry',price:''};state.step=2;render()}}
+    } else if(state.step===2){
+      title.textContent='Choose a package'; sub.textContent='Start simple, or tell us if your project needs something custom.';
+      const base=state.service?.price||'';
+      const packs=[['Starter','A focused version of the service',base],['Standard','A complete, recommended package',base],['Custom','For projects with specific needs','Inquire']];
+      body.innerHTML='<div class="lsf-grid">'+packs.map((p,i)=>`<div class="lsf-card ${i===1?'selected':''}" data-p="${i}"><h3>${p[0]}${i===1?' · Recommended':''}</h3><p>${p[1]}</p><div class="lsf-price">${p[2]||'Inquire'}</div></div>`).join('')+'</div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-next>Continue</button></div>';
+      body.querySelectorAll('[data-p]').forEach((el,i)=>el.onclick=()=>{body.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');state.package=packs[i]});
+      state.package=state.package||packs[1];
+      body.querySelector('[data-back]').onclick=()=>{state.step=1;render()}; body.querySelector('[data-next]').onclick=()=>{state.step=3;render()};
+    } else if(state.step===3){
+      title.textContent='Customize your order'; sub.textContent='Choose any useful extras. You can skip this step.';
+      const opts=['Priority delivery','Extra revision','Source files','Additional format'];
+      body.innerHTML='<div class="lsf-fields">'+opts.map((o,i)=>`<label class="lsf-check"><input type="checkbox" data-opt="${i}"> <span><b>${o}</b><br><span style="opacity:.6">Add this to your request if it fits your project.</span></span></label>`).join('')+'</div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-next>Continue</button></div>';
+      body.querySelectorAll('[data-opt]').forEach(x=>x.onchange=()=>{if(x.checked)state.options.push(opts[+x.dataset.opt]);else state.options=state.options.filter(v=>v!==opts[+x.dataset.opt])});
+      body.querySelector('[data-back]').onclick=()=>{state.step=2;render()};body.querySelector('[data-next]').onclick=()=>{state.step=4;render()};
+    } else if(state.step===4){
+      title.textContent='Tell us about your project'; sub.textContent='A short brief is enough. We’ll follow up if we need more.';
+      body.innerHTML=`<div class="lsf-fields"><div class="lsf-field"><label>Your name</label><input id="lsf-name" value="${state.brief.name}"></div><div class="lsf-field"><label>Email</label><input id="lsf-email" type="email" value="${state.brief.email}"></div><div class="lsf-field"><label>Target deadline</label><input id="lsf-deadline" value="${state.brief.deadline}" placeholder="e.g. 2 weeks"></div><div class="lsf-field"><label>What are you making?</label><textarea id="lsf-details" placeholder="Tell us the goal, references, deliverables, or anything important.">${state.brief.details}</textarea></div></div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-next>Review order</button></div>`;
+      body.querySelector('[data-back]').onclick=()=>{state.step=3;render()};body.querySelector('[data-next]').onclick=()=>{state.brief={name:document.getElementById('lsf-name').value,email:document.getElementById('lsf-email').value,deadline:document.getElementById('lsf-deadline').value,details:document.getElementById('lsf-details').value};state.step=5;render()};
+    } else {
+      title.textContent='Review your request'; sub.textContent='Everything look right? Send it to start the conversation.';
+      body.innerHTML=`<div class="lsf-summary"><div class="lsf-row"><span>Service</span><b>${state.service?.name||'Custom project'}</b></div><div class="lsf-row"><span>Package</span><b>${state.package?.[0]||'Custom'}</b></div><div class="lsf-row"><span>Options</span><b>${state.options.length?state.options.join(', '):'None'}</b></div><div class="lsf-row"><span>Deadline</span><b>${state.brief.deadline||'Flexible'}</b></div><div class="lsf-row"><span>Email</span><b>${state.brief.email||'Not provided'}</b></div><div class="lsf-total"><span>Next step</span><span style="float:right">Send inquiry →</span></div></div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-send>Send inquiry</button></div>`;
+      body.querySelector('[data-back]').onclick=()=>{state.step=4;render()};
+      body.querySelector('[data-send]').onclick=()=>{
+        const payload=`Service: ${state.service?.name||'Custom project'}\nPackage: ${state.package?.[0]||'Custom'}\nOptions: ${state.options.join(', ')||'None'}\nDeadline: ${state.brief.deadline||'Flexible'}\n\n${state.brief.details||''}`;
+        modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');
+        // Reuse an existing inquiry UI if the site exposes one; otherwise copy the brief for the user.
+        const target=[...document.querySelectorAll('button,a,[role="button"]')].find(x=>/^(inquire|commission me|contact|send inquiry)$/i.test(clean(x.innerText)));
+        if(target){try{target.click()}catch(e){}}
+        try{navigator.clipboard?.writeText(payload)}catch(e){}
+      };
+    }
+  }
+  function open(){state.step=1;state.service=null;state.package=null;state.options=[];modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');render()}
+  function close(){modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true')}
+  modal.querySelector('.lsf-close').onclick=close;
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+  document.addEventListener('click',e=>{
+    const el=e.target.closest('button,a,[role="button"]'); if(!el)return;
+    const t=clean(el.innerText||el.textContent);
+    if(/^(start order|start your order|order now|inquire|commission me)$/i.test(t)){
+      e.preventDefault();e.stopPropagation();open();
+    }
+  },true);
+})();
+</script>
+</body>
 </html>
