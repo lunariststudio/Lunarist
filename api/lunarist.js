@@ -4,7 +4,7 @@ import {handleOAuth} from '../lib/oauth-provider.js';
 import {handleOAuthAdmin} from '../lib/oauth-admin.js';
 import {handleLunaristApiV1} from '../lib/lunarist-api-v1.js';
 function config(){return{url:(process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL||"").replace(/\/$/,""),key:(process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY||process.env.SUPABASE_SECRET_KEY||"").trim()}}
-const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin,socials',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at,slides',order:'created_at.desc'},services:{select:'id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,published,featured,views,add_ons,created_at,service_projects(project_id)',order:'created_at.desc'}};
+const RESOURCES={profiles:{select:'id,username,display_name,role,bio,avatar_url,skills,available,account_type,is_admin,socials',order:'created_at'},projects:{select:'id,owner_id,title,description,category,tags,thumbnail_url,media_url,media_type,published,featured,views,likes,created_at,slides',order:'created_at.desc'},services:{select:'id,owner_id,artist_id,title,description,category,tags,price_from,delivery_time,thumbnail_url,published,featured,views,add_ons,sort_order,created_at,service_projects(project_id)',order:'sort_order.asc.nullslast,created_at.desc'}};
 const EVENT_TYPES=['view','like','save','share','open_artist','search'];
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EUGENE_FIREBASE_API_KEY='AIzaSyCm13Nh6k6W9wsL0_OPpjKZNrbSg-pFsuA';

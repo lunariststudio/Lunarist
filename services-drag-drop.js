@@ -1,34 +1,101 @@
 // Lunarist Services drag & drop ordering.
-// Mirrors the Projects-style reorder interaction and persists order in Supabase.
+// Uses the existing public.services.sort_order column and the current user's services only.
 (function(){
-  if(typeof window==='undefined'||window.__lunaristServicesDnD)return;
+  if(typeof window==='undefined' || window.__lunaristServicesDnD)return;
   window.__lunaristServicesDnD=true;
-  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-  let timer=null,busy=false;
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function style(){if($('#lunarist-services-dnd-style'))return;const s=document.createElement('style');s.id='lunarist-services-dnd-style';s.textContent=`.ls-service-drag-handle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.035);color:var(--muted);cursor:grab;user-select:none;touch-action:none;font-size:16px;flex:0 0 auto}.ls-service-drag-handle:active{cursor:grabbing}.ls-service-dnd-card{position:relative}.ls-service-dnd-card.ls-dragging{opacity:.45;transform:scale(.99)}.ls-service-dnd-card.ls-drag-over{outline:2px dashed var(--gold);outline-offset:3px}.ls-service-dnd-badge{position:absolute;top:8px;left:8px;z-index:4;padding:4px 7px;border-radius:999px;background:rgba(0,0,0,.72);color:var(--text);font-size:10px;font-weight:800;pointer-events:none}.ls-services-drop-hint{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;border:1px dashed var(--line);border-radius:11px;color:var(--muted);font-size:12px}.ls-services-drop-hint b{color:var(--text)}@media(max-width:700px){.ls-service-drag-handle{width:36px;height:36px}.ls-services-drop-hint{font-size:11px}}`;document.head.appendChild(s)}
-  function currentUserId(){return window.state?.currentUser?.id||window.state?.user?.id||''}
-  async function rows(){if(!window.supabaseClient||!currentUserId())return [];try{const r=await supabaseClient.from('services').select('id,title,sort_order').eq('owner_id',currentUserId()).order('sort_order',{ascending:true}).order('created_at',{ascending:true});return r.error?[]:(r.data||[])}catch{return []}}
-  function textOf(el){return (el.textContent||'').replace(/\s+/g,' ').trim()}
-  function cardForTitle(title){
-    const candidates=$$('body *').filter(el=>{if(el.children.length>12)return false;const t=textOf(el);return t===title||t.includes(title)});
-    candidates.sort((a,b)=>a.children.length-b.children.length);
-    for(const el of candidates){let p=el;for(let i=0;i<5&&p&&p!==document.body;i++,p=p.parentElement){if(/button/i.test(p.innerHTML)&&(/edit|delete|service/i.test(p.innerHTML)||p.querySelector('button')))return p}}
-    return candidates[0]||null;
+  let timer=null, boundList=null, saving=false;
+
+  function injectStyle(){
+    if(document.getElementById('lunarist-services-dnd-style'))return;
+    const s=document.createElement('style');
+    s.id='lunarist-services-dnd-style';
+    s.textContent=`
+      #serviceList.service-reorder-list{display:flex;flex-direction:column;gap:8px}
+      #serviceList .service-reorder-item{position:relative;transition:transform .16s ease,opacity .16s ease,box-shadow .16s ease;border:1px solid transparent}
+      #serviceList .service-reorder-item.ls-dragging{opacity:.45;transform:scale(.99)}
+      #serviceList .service-reorder-item.ls-drag-over{border-color:var(--gold);box-shadow:0 0 0 2px rgba(232,207,145,.12)}
+      #serviceList .service-drag-handle{width:34px;height:34px;min-width:34px;padding:0;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.035);color:var(--muted);cursor:grab;display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;touch-action:none;user-select:none}
+      #serviceList .service-drag-handle:hover{color:var(--text);border-color:var(--gold)}
+      #serviceList .service-drag-handle:active{cursor:grabbing}
+      #serviceList .service-reorder-item[draggable=true]{cursor:default}
+      #serviceList .service-reorder-item.ls-drop-placeholder{height:64px;border:1px dashed var(--gold);border-radius:12px;background:rgba(232,207,145,.04)}
+      @media(max-width:700px){#serviceList .service-drag-handle{width:38px;height:38px;min-width:38px}}
+    `;
+    document.head.appendChild(s);
   }
-  function findCards(serviceRows){
-    const cards=[];for(const r of serviceRows){const el=cardForTitle(r.title);if(!el||cards.some(x=>x.el===el))continue;cards.push({el,row:r})}
-    return cards;
+
+  function currentUserId(){return window.state?.currentUser?.id||''}
+  function list(){return document.getElementById('serviceList')}
+  function items(){const l=list();return l?[...l.querySelectorAll(':scope > .service-reorder-item[data-service-reorder-id]')]:[]}
+  function idOf(el){return el?.dataset?.serviceReorderId||''}
+
+  async function saveOrder(){
+    const l=list(); const uid=currentUserId(); if(!l||!uid||!window.supabaseClient||saving)return;
+    const ids=items().map(idOf).filter(Boolean); if(!ids.length)return;
+    saving=true;
+    try{
+      const results=await Promise.all(ids.map((id,index)=>supabaseClient.from('services').update({sort_order:index}).eq('id',id).eq('owner_id',uid)));
+      const failed=results.find(r=>r?.error); if(failed)throw failed.error;
+      if(Array.isArray(window.data?.services)){
+        ids.forEach((id,index)=>{const s=window.data.services.find(x=>x.id===id);if(s)s.sort_order=index;});
+      }
+      if(Array.isArray(window.state?.myServices)) window.state.myServices.forEach(s=>{const i=ids.indexOf(s.id);if(i>=0)s.sort_order=i});
+      window.toast?.('Service order saved.');
+    }catch(e){
+      window.toast?.('Could not save service order: '+(e?.message||'Unknown error'));
+    }finally{saving=false}
   }
-  function commonParent(cards){if(cards.length<2)return null;let p=cards[0].el.parentElement;while(p&&p!==document.body){if(cards.every(c=>c.el.parentElement===p))return p;p=p.parentElement}return cards.every(c=>c.el.parentElement===cards[0].el.parentElement)?cards[0].el.parentElement:null}
-  function addHandle(card){if(card.el.querySelector(':scope > .ls-service-drag-handle'))return;card.el.classList.add('ls-service-dnd-card');card.el.setAttribute('draggable','true');const h=document.createElement('div');h.className='ls-service-drag-handle';h.title='Drag to reorder service';h.setAttribute('aria-label','Drag to reorder service');h.textContent='⠿';card.el.insertBefore(h,card.el.firstChild);const badge=document.createElement('span');badge.className='ls-service-dnd-badge';badge.textContent='Drag';card.el.appendChild(badge);}
-  async function save(parent,cards){if(!window.supabaseClient||!currentUserId())return;const ordered=[...parent.children].map((el,i)=>cards.find(c=>c.el===el)).filter(Boolean);if(!ordered.length)return;try{const results=await Promise.all(ordered.map((c,i)=>supabaseClient.from('services').update({sort_order:i}).eq('id',c.row.id).eq('owner_id',currentUserId())));if(results.some(r=>r.error))throw Error('Could not save service order');ordered.forEach((c,i)=>{c.row.sort_order=i;window.data?.services?.find?.(x=>x.id===c.row.id)&&(window.data.services.find(x=>x.id===c.row.id).sort_order=i)});window.toast?.('Service order saved.')}catch(e){window.toast?.('Could not save service order: '+e.message)}}
-  function bind(parent,cards){
-    if(parent.dataset.lunaristServicesDnd==='1')return;parent.dataset.lunaristServicesDnd='1';
-    let dragging=null;
-    cards.forEach(c=>{addHandle(c);c.el.addEventListener('dragstart',e=>{dragging=c.el;c.el.classList.add('ls-dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',c.row.id)});c.el.addEventListener('dragend',async()=>{if(!dragging)return;c.el.classList.remove('ls-dragging');cards.forEach(x=>x.el.classList.remove('ls-drag-over'));await save(parent,cards);dragging=null});c.el.addEventListener('dragover',e=>{if(!dragging||dragging===c.el)return;e.preventDefault();const rect=c.el.getBoundingClientRect();const after=e.clientY>rect.top+rect.height/2;if(after)parent.insertBefore(dragging,c.el.nextSibling);else parent.insertBefore(dragging,c.el);cards.forEach(x=>x.el.classList.toggle('ls-drag-over',x.el===c.el))});c.el.addEventListener('dragleave',()=>c.el.classList.remove('ls-drag-over'));
-      let touchStart=null; c.el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;if(!e.target.closest('.ls-service-drag-handle'))return;touchStart={x:e.clientX,y:e.clientY};c.el.setPointerCapture?.(e.pointerId)});c.el.addEventListener('pointermove',e=>{if(!touchStart)return;const dx=e.clientX-touchStart.x,dy=e.clientY-touchStart.y;if(Math.hypot(dx,dy)<8)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.ls-service-dnd-card');if(!target||target===c.el||target.parentElement!==parent)return;const rect=target.getBoundingClientRect();if(e.clientY>rect.top+rect.height/2)parent.insertBefore(c.el,target.nextSibling);else parent.insertBefore(c.el,target);});c.el.addEventListener('pointerup',async()=>{if(!touchStart)return;touchStart=null;await save(parent,cards)});});
+
+  function bind(){
+    injectStyle();
+    const l=list(); if(!l || !currentUserId())return;
+    if(boundList===l && l.dataset.serviceDndBound==='1')return;
+    boundList=l; l.dataset.serviceDndBound='1';
+    let dragging=null, pointerDrag=null;
+
+    l.addEventListener('dragstart',e=>{
+      const item=e.target.closest('.service-reorder-item');
+      if(!item || !e.target.closest('.service-drag-handle')){e.preventDefault();return}
+      dragging=item; item.classList.add('ls-dragging');
+      e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',idOf(item));
+    });
+    l.addEventListener('dragover',e=>{
+      if(!dragging)return; e.preventDefault();
+      const target=e.target.closest('.service-reorder-item');
+      if(!target || target===dragging)return;
+      const r=target.getBoundingClientRect();
+      target.classList.add('ls-drag-over');
+      if(e.clientY < r.top+r.height/2) l.insertBefore(dragging,target); else l.insertBefore(dragging,target.nextSibling);
+    });
+    l.addEventListener('dragleave',e=>{const target=e.target.closest('.service-reorder-item');target?.classList.remove('ls-drag-over')});
+    l.addEventListener('dragend',async()=>{
+      if(!dragging)return; dragging.classList.remove('ls-dragging'); items().forEach(x=>x.classList.remove('ls-drag-over')); dragging=null; await saveOrder();
+    });
+
+    // Pointer fallback for touch devices.
+    l.addEventListener('pointerdown',e=>{
+      const handle=e.target.closest('.service-drag-handle'); const item=e.target.closest('.service-reorder-item');
+      if(!handle||!item||e.pointerType==='mouse')return;
+      pointerDrag={item,id:idOf(item),x:e.clientX,y:e.clientY,active:false,pointerId:e.pointerId};
+      handle.setPointerCapture?.(e.pointerId);
+    });
+    l.addEventListener('pointermove',e=>{
+      if(!pointerDrag || e.pointerId!==pointerDrag.pointerId)return;
+      if(!pointerDrag.active && Math.hypot(e.clientX-pointerDrag.x,e.clientY-pointerDrag.y)<8)return;
+      pointerDrag.active=true; const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.service-reorder-item');
+      if(!target||target===pointerDrag.item||target.parentElement!==l)return;
+      const r=target.getBoundingClientRect(); target.classList.add('ls-drag-over');
+      if(e.clientY<r.top+r.height/2)l.insertBefore(pointerDrag.item,target);else l.insertBefore(pointerDrag.item,target.nextSibling);
+    });
+    l.addEventListener('pointerup',async e=>{
+      if(!pointerDrag||e.pointerId!==pointerDrag.pointerId)return;
+      const didMove=pointerDrag.active; pointerDrag=null; items().forEach(x=>x.classList.remove('ls-drag-over'));
+      if(didMove)await saveOrder();
+    });
+    l.addEventListener('pointercancel',()=>{pointerDrag=null;items().forEach(x=>x.classList.remove('ls-drag-over'))});
   }
-  async function scan(){if(busy)return;busy=true;try{style();const rs=await rows();if(rs.length<2)return;const cards=findCards(rs);if(cards.length<2)return;const parent=commonParent(cards);if(!parent)return;cards.forEach(addHandle);bind(parent,cards);if(!$('#lsServicesDropHint')){const hint=document.createElement('div');hint.id='lsServicesDropHint';hint.className='ls-services-drop-hint';hint.innerHTML='<b>Services:</b> drag the ⠿ handle to reorder. Your order is saved automatically.';parent.parentElement?.insertBefore(hint,parent)}}finally{busy=false}}
-  const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(scan,250)});obs.observe(document.body,{childList:true,subtree:true});scan();
+
+  const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(bind,100)});
+  obs.observe(document.body,{childList:true,subtree:true});
+  bind();
 })();
