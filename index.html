@@ -3892,37 +3892,104 @@ async function capturePaypalReturnIfPresent(){
   frameId=requestAnimationFrame(frame);
 })();
 </script>
-<!-- Lunarist guided service funnel -->
+<!-- Lunarist guided service funnel — refined UI/UX -->
 <style id="lunarist-service-funnel-styles">
-#lunarist-service-funnel{position:fixed;inset:0;z-index:2147483000;display:none;background:rgba(8,8,12,.72);backdrop-filter:blur(14px);padding:18px;box-sizing:border-box}
-#lunarist-service-funnel.is-open{display:flex;align-items:center;justify-content:center}
-.lsf-panel{width:min(760px,100%);max-height:min(88vh,820px);overflow:auto;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:var(--bg,#101014);box-shadow:0 24px 90px rgba(0,0,0,.45);color:var(--text,#fff)}
-.lsf-head{padding:22px 24px 12px;position:sticky;top:0;background:inherit;z-index:2}
-.lsf-kicker{font-size:10px;letter-spacing:.14em;font-weight:800;opacity:.55}
-.lsf-title{font-size:25px;font-weight:750;margin:6px 0}
-.lsf-sub{font-size:13px;opacity:.62;line-height:1.5}
-.lsf-close{position:absolute;right:18px;top:18px;border:0;background:rgba(255,255,255,.08);color:inherit;width:34px;height:34px;border-radius:50%;cursor:pointer}
-.lsf-steps{display:flex;gap:6px;padding:0 24px 14px;overflow:auto}
-.lsf-step{white-space:nowrap;font-size:11px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.06);opacity:.45}
-.lsf-step.active{opacity:1;background:rgba(255,255,255,.14)}
-.lsf-body{padding:8px 24px 24px}
+#lunarist-service-funnel{
+  --lsf-ink:var(--text,#f7f5ef);
+  --lsf-muted:var(--muted,#aaa7a0);
+  --lsf-line:rgba(255,255,255,.11);
+  --lsf-soft:rgba(255,255,255,.055);
+  --lsf-glow:rgba(255,255,255,.075);
+  position:fixed;inset:0;z-index:2147483000;display:none;
+  background:rgba(5,5,8,.78);backdrop-filter:blur(18px) saturate(.85);
+  -webkit-backdrop-filter:blur(18px) saturate(.85);padding:20px;box-sizing:border-box;
+  color:var(--lsf-ink);font-family:inherit;
+}
+#lunarist-service-funnel.is-open{display:flex;align-items:center;justify-content:center;animation:lsfFade .22s ease}
+@keyframes lsfFade{from{opacity:0}to{opacity:1}}
+.lsf-panel{
+  width:min(820px,100%);max-height:min(90vh,860px);overflow:auto;
+  border:1px solid var(--lsf-line);border-radius:28px;
+  background:linear-gradient(145deg,rgba(27,27,31,.98),rgba(12,12,15,.985));
+  box-shadow:0 35px 120px rgba(0,0,0,.52),0 0 0 1px rgba(255,255,255,.025) inset;
+  animation:lsfRise .28s cubic-bezier(.2,.8,.2,1);
+  scrollbar-width:thin;
+}
+@keyframes lsfRise{from{transform:translateY(12px) scale(.985);opacity:.5}to{transform:none;opacity:1}}
+.lsf-head{padding:28px 30px 18px;position:sticky;top:0;background:linear-gradient(rgba(20,20,24,.99),rgba(20,20,24,.94));z-index:3;border-bottom:1px solid rgba(255,255,255,.06)}
+.lsf-kicker{font-size:9px;letter-spacing:.18em;font-weight:800;opacity:.48}
+.lsf-title{font-size:29px;line-height:1.12;font-weight:720;letter-spacing:-.025em;margin:8px 44px 6px 0}
+.lsf-sub{font-size:13px;line-height:1.55;max-width:600px;color:var(--lsf-muted)}
+.lsf-close{position:absolute;right:20px;top:20px;border:1px solid var(--lsf-line);background:rgba(255,255,255,.045);color:inherit;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;line-height:1;transition:.18s}
+.lsf-close:hover{background:rgba(255,255,255,.1);transform:rotate(4deg)}
+.lsf-steps{display:flex;align-items:center;gap:0;padding:0 30px 18px;background:linear-gradient(rgba(20,20,24,.94),rgba(20,20,24,.94));position:sticky;top:105px;z-index:2}
+.lsf-step{position:relative;display:flex;align-items:center;gap:7px;white-space:nowrap;font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--lsf-muted);padding:6px 10px 6px 0}
+.lsf-step:not(:last-child)::after{content:"";width:24px;height:1px;background:var(--lsf-line);margin-left:5px}
+.lsf-step::before{content:attr(data-step);display:grid;place-items:center;width:20px;height:20px;border:1px solid var(--lsf-line);border-radius:50%;font-size:9px}
+.lsf-step.active{color:var(--lsf-ink)}
+.lsf-step.active::before{background:var(--lsf-ink);color:#151519;border-color:var(--lsf-ink)}
+.lsf-step.done{color:rgba(255,255,255,.72)}
+.lsf-step.done::before{content:"✓";background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.22);color:var(--lsf-ink)}
+.lsf-body{padding:12px 30px 30px;min-height:300px}
+.lsf-section-label{font-size:10px;letter-spacing:.13em;font-weight:800;opacity:.42;margin:2px 0 12px}
 .lsf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.lsf-card{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;background:rgba(255,255,255,.025);cursor:pointer;transition:.18s}
-.lsf-card:hover,.lsf-card.selected{border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
-.lsf-card.selected{background:rgba(255,255,255,.08)}
-.lsf-card h3{margin:0 0 5px;font-size:15px}.lsf-card p{margin:0;font-size:12px;opacity:.62;line-height:1.45}
-.lsf-price{margin-top:12px;font-weight:750;font-size:14px}
-.lsf-fields{display:grid;gap:12px}
-.lsf-field{display:grid;gap:6px}.lsf-field label{font-size:11px;font-weight:700;opacity:.65}
-.lsf-field input,.lsf-field textarea,.lsf-field select{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.045);color:inherit;padding:11px 12px;outline:none}
-.lsf-field textarea{min-height:120px;resize:vertical}
-.lsf-summary{display:grid;gap:8px;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;background:rgba(255,255,255,.03)}
-.lsf-row{display:flex;justify-content:space-between;gap:20px;font-size:13px}.lsf-total{font-size:17px;font-weight:800;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)}
-.lsf-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
-.lsf-btn{border:0;border-radius:12px;padding:12px 16px;font-weight:750;cursor:pointer;background:rgba(255,255,255,.1);color:inherit}
-.lsf-btn.primary{background:#fff;color:#111}.lsf-btn:disabled{opacity:.35;cursor:not-allowed}
-.lsf-check{display:flex;align-items:flex-start;gap:9px;padding:11px 0;font-size:12px;opacity:.8}
-@media(max-width:620px){#lunarist-service-funnel{padding:8px}.lsf-panel{max-height:94vh;border-radius:20px}.lsf-grid{grid-template-columns:1fr}.lsf-head,.lsf-body{padding-left:16px;padding-right:16px}.lsf-steps{padding-left:16px;padding-right:16px}}
+.lsf-card{
+  position:relative;border:1px solid var(--lsf-line);border-radius:18px;padding:18px;
+  background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.015));
+  cursor:pointer;transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease;
+}
+.lsf-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.055)}
+.lsf-card.selected{border-color:rgba(255,255,255,.42);background:rgba(255,255,255,.085);box-shadow:0 10px 35px rgba(0,0,0,.16)}
+.lsf-card.selected::after{content:"✓";position:absolute;right:14px;top:14px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--lsf-ink);color:#17171a;font-size:11px;font-weight:900}
+.lsf-card h3{margin:0 30px 7px 0;font-size:15px;font-weight:720;letter-spacing:-.01em}
+.lsf-card p{margin:0;font-size:12px;color:var(--lsf-muted);line-height:1.55}
+.lsf-price{margin-top:14px;font-size:13px;font-weight:780}
+.lsf-recommended{display:inline-block;margin-bottom:9px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.58}
+.lsf-fields{display:grid;gap:14px;max-width:680px}
+.lsf-field{display:grid;gap:7px}
+.lsf-field label{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.52}
+.lsf-field input,.lsf-field textarea,.lsf-field select{
+  width:100%;box-sizing:border-box;border:1px solid var(--lsf-line);border-radius:13px;
+  background:rgba(255,255,255,.035);color:inherit;padding:12px 13px;outline:none;font:inherit;font-size:13px;
+  transition:border-color .18s,background .18s;
+}
+.lsf-field input:focus,.lsf-field textarea:focus,.lsf-field select:focus{border-color:rgba(255,255,255,.38);background:rgba(255,255,255,.06)}
+.lsf-field textarea{min-height:135px;resize:vertical}
+.lsf-option{
+  display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--lsf-line);border-radius:15px;
+  background:rgba(255,255,255,.025);cursor:pointer;transition:.18s;
+}
+.lsf-option:hover{background:rgba(255,255,255,.055)}
+.lsf-option.is-on{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.07)}
+.lsf-option input{accent-color:#fff;width:16px;height:16px}
+.lsf-option-copy{font-size:12px;line-height:1.4}.lsf-option-copy b{font-size:13px}
+.lsf-option-copy span{opacity:.52}
+.lsf-summary{display:grid;gap:0;border:1px solid var(--lsf-line);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.025);max-width:680px}
+.lsf-row{display:flex;justify-content:space-between;gap:24px;padding:14px 16px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.065)}
+.lsf-row span:first-child{opacity:.52}.lsf-row b{text-align:right;font-weight:650}
+.lsf-total{display:flex;justify-content:space-between;padding:17px 16px;font-size:13px;font-weight:800}
+.lsf-note{font-size:11px;color:var(--lsf-muted);line-height:1.5;margin-top:12px;max-width:600px}
+.lsf-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px}
+.lsf-actions-right{display:flex;gap:8px}
+.lsf-btn{border:1px solid var(--lsf-line);border-radius:12px;padding:11px 15px;font:inherit;font-size:12px;font-weight:760;cursor:pointer;background:rgba(255,255,255,.045);color:inherit;transition:.18s}
+.lsf-btn:hover{background:rgba(255,255,255,.09);transform:translateY(-1px)}
+.lsf-btn.primary{background:var(--lsf-ink);color:#111116;border-color:var(--lsf-ink);padding-left:18px;padding-right:18px}
+.lsf-btn.primary:hover{box-shadow:0 8px 28px rgba(255,255,255,.1)}
+.lsf-btn.ghost{border-color:transparent;background:transparent}
+.lsf-empty{padding:24px;border:1px dashed var(--lsf-line);border-radius:16px}
+.lsf-empty strong{display:block;margin-bottom:5px}.lsf-empty span{font-size:12px;color:var(--lsf-muted)}
+.lsf-trust{display:flex;gap:10px;align-items:center;margin-top:16px;font-size:10px;color:var(--lsf-muted)}
+.lsf-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+@media(max-width:680px){
+  #lunarist-service-funnel{padding:7px}
+  .lsf-panel{max-height:96vh;border-radius:22px}
+  .lsf-head{padding:22px 18px 14px}.lsf-title{font-size:24px}.lsf-close{right:14px;top:14px}
+  .lsf-steps{padding:0 18px 14px;top:92px;overflow-x:auto}
+  .lsf-step{font-size:9px}.lsf-step:not(:last-child)::after{width:10px}
+  .lsf-body{padding:10px 18px 22px}.lsf-grid{grid-template-columns:1fr}
+  .lsf-actions{position:sticky;bottom:0;padding-top:12px;background:linear-gradient(transparent,rgba(12,12,15,.98) 30%);margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
+  .lsf-btn.primary{flex:1}
+}
 </style>
 <div id="lunarist-service-funnel" aria-hidden="true">
   <div class="lsf-panel" role="dialog" aria-modal="true" aria-labelledby="lsf-title">
@@ -3930,7 +3997,7 @@ async function capturePaypalReturnIfPresent(){
       <button class="lsf-close" type="button" aria-label="Close">×</button>
       <div class="lsf-kicker">LUNARIST · START ORDER</div>
       <div class="lsf-title" id="lsf-title">What do you want to make?</div>
-      <div class="lsf-sub" id="lsf-sub">Choose a service to get started. You can review everything before sending.</div>
+      <div class="lsf-sub" id="lsf-sub">Choose a service. You can review everything before sending.</div>
     </div>
     <div class="lsf-steps">
       <span class="lsf-step active" data-step="1">Service</span>
@@ -3944,79 +4011,73 @@ async function capturePaypalReturnIfPresent(){
 </div>
 <script>
 (function(){
-  if(window.__lunaristServiceFunnel) return;
-  window.__lunaristServiceFunnel=true;
-  const modal=document.getElementById('lunarist-service-funnel'), body=document.getElementById('lsf-body');
-  const title=document.getElementById('lsf-title'), sub=document.getElementById('lsf-sub');
-  const steps=[...modal.querySelectorAll('.lsf-step')];
+  if(window.__lunaristServiceFunnel) return; window.__lunaristServiceFunnel=true;
+  const modal=document.getElementById('lunarist-service-funnel'),body=document.getElementById('lsf-body');
+  const title=document.getElementById('lsf-title'),sub=document.getElementById('lsf-sub'),steps=[...modal.querySelectorAll('.lsf-step')];
   const state={step:1,service:null,package:null,options:[],brief:{name:'',email:'',details:'',deadline:''}};
   const clean=s=>String(s||'').replace(/\s+/g,' ').trim();
   const money=s=>{const m=String(s||'').match(/(?:[$€£¥]|USD|EUR|GBP|IDR)\s*[\d,.]+/i);return m?m[0]:''};
-  function setStep(n){state.step=n;steps.forEach(x=>x.classList.toggle('active',+x.dataset.step===n));}
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function setStep(n){state.step=n;steps.forEach(x=>{const v=+x.dataset.step;x.classList.toggle('active',v===n);x.classList.toggle('done',v<n)})}
   function getServices(){
-    const els=[...document.querySelectorAll('button,a,[role="button"],.card,.service-card,.service')];
-    const seen=new Set(), out=[];
+    const els=[...document.querySelectorAll('button,a,[role="button"],.card,.service-card,.service')],seen=new Set(),out=[];
     els.forEach(el=>{
       const t=clean(el.innerText||el.textContent);
-      if(!t||t.length>180||!/inquire|commission|service|order|package|hire|starting|price|\$|€|£|¥|IDR/i.test(t)) return;
-      if(/start order|inquire|commission me|learn more/i.test(t) && t.length<45) return;
-      const key=t.slice(0,120).toLowerCase();
-      if(seen.has(key)) return; seen.add(key);
-      const p=money(t);
-      out.push({name:t.split(/\n/)[0].slice(0,70),desc:t.slice(0,180),price:p});
-    });
-    return out.slice(0,8);
+      if(!t||t.length>180||!/inquire|commission|service|order|package|hire|starting|price|\$|€|£|¥|IDR/i.test(t))return;
+      if(/start order|inquire|commission me|learn more/i.test(t)&&t.length<45)return;
+      const key=t.slice(0,120).toLowerCase();if(seen.has(key))return;seen.add(key);
+      out.push({name:t.split(/\n/)[0].slice(0,70),desc:t.slice(0,180),price:money(t)});
+    }); return out.slice(0,8);
   }
+  function actions(back,next,nextLabel='Continue'){return `<div class="lsf-actions"><button class="lsf-btn ghost" data-back>${back?'← Back':'Cancel'}</button><div class="lsf-actions-right"><button class="lsf-btn primary" data-next>${nextLabel} →</button></div></div>`}
   function render(){
+    setStep(state.step);
     if(state.step===1){
-      title.textContent='What do you want to make?'; sub.textContent='Choose a service. You can change your choice later.';
-      const services=getServices();
-      body.innerHTML=services.length?'<div class="lsf-grid">'+services.map((s,i)=>`<div class="lsf-card" data-service="${i}"><h3>${s.name}</h3><p>${s.desc}</p>${s.price?`<div class="lsf-price">Starting ${s.price}</div>`:''}</div>`).join('')+'</div>':'<div class="lsf-summary"><div class="lsf-row"><b>Custom project</b><span>Inquire</span></div><p class="lsf-sub">Tell us what you want to make and we’ll help shape the right service.</p></div>';
-      body.querySelectorAll('[data-service]').forEach((el,i)=>el.onclick=()=>{state.service=services[i];state.step=2;render()});
-      if(!services.length){body.firstElementChild.onclick=()=>{state.service={name:'Custom project',desc:'Custom project inquiry',price:''};state.step=2;render()}}
+      title.textContent='What do you want to make?';sub.textContent='Start with the kind of work you need. We’ll guide you from there.';
+      const ss=getServices();
+      body.innerHTML=ss.length?`<div class="lsf-section-label">SELECT A SERVICE</div><div class="lsf-grid">${ss.map((s,i)=>`<div class="lsf-card" data-service="${i}"><h3>${esc(s.name)}</h3><p>${esc(s.desc)}</p>${s.price?`<div class="lsf-price">Starting ${esc(s.price)}</div>`:''}</div>`).join('')}</div>`:`<div class="lsf-empty"><strong>Something custom?</strong><span>Tell us what you’re making and we’ll help shape the right service.</span></div>`;
+      if(ss.length)body.querySelectorAll('[data-service]').forEach((el,i)=>el.onclick=()=>{body.querySelectorAll('[data-service]').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');state.service=ss[i];setTimeout(()=>{state.step=2;render()},120)});
+      else {state.service={name:'Custom project',desc:'Custom project inquiry',price:''};body.firstElementChild.onclick=()=>{state.step=2;render()}}
     } else if(state.step===2){
-      title.textContent='Choose a package'; sub.textContent='Start simple, or tell us if your project needs something custom.';
+      title.textContent='Choose a package';sub.textContent='Pick the closest fit. You can always adjust the scope later.';
       const base=state.service?.price||'';
-      const packs=[['Starter','A focused version of the service',base],['Standard','A complete, recommended package',base],['Custom','For projects with specific needs','Inquire']];
-      body.innerHTML='<div class="lsf-grid">'+packs.map((p,i)=>`<div class="lsf-card ${i===1?'selected':''}" data-p="${i}"><h3>${p[0]}${i===1?' · Recommended':''}</h3><p>${p[1]}</p><div class="lsf-price">${p[2]||'Inquire'}</div></div>`).join('')+'</div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-next>Continue</button></div>';
+      const packs=[['Starter','A focused version for a clear, defined outcome',base],['Standard','The balanced option for most projects',base],['Custom','For unique scope, multiple deliverables, or ongoing work','Inquire']];
+      body.innerHTML=`<div class="lsf-section-label">PACKAGE</div><div class="lsf-grid">${packs.map((p,i)=>`<div class="lsf-card ${state.package?.[0]===p[0]?'selected':''}" data-p="${i}">${i===1?'<span class="lsf-recommended">Recommended</span>':''}<h3>${p[0]}</h3><p>${p[1]}</p><div class="lsf-price">${p[2]||'Inquire'}</div></div>`).join('')}</div>${actions(true,true)}`;
       body.querySelectorAll('[data-p]').forEach((el,i)=>el.onclick=()=>{body.querySelectorAll('[data-p]').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');state.package=packs[i]});
-      state.package=state.package||packs[1];
-      body.querySelector('[data-back]').onclick=()=>{state.step=1;render()}; body.querySelector('[data-next]').onclick=()=>{state.step=3;render()};
+      if(!state.package)state.package=packs[1];
+      body.querySelector('[data-back]').onclick=()=>{state.step=1;render()};body.querySelector('[data-next]').onclick=()=>{state.step=3;render()};
     } else if(state.step===3){
-      title.textContent='Customize your order'; sub.textContent='Choose any useful extras. You can skip this step.';
+      title.textContent='Make it yours';sub.textContent='Add anything that would make the project more useful. Nothing is required.';
       const opts=['Priority delivery','Extra revision','Source files','Additional format'];
-      body.innerHTML='<div class="lsf-fields">'+opts.map((o,i)=>`<label class="lsf-check"><input type="checkbox" data-opt="${i}"> <span><b>${o}</b><br><span style="opacity:.6">Add this to your request if it fits your project.</span></span></label>`).join('')+'</div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-next>Continue</button></div>';
-      body.querySelectorAll('[data-opt]').forEach(x=>x.onchange=()=>{if(x.checked)state.options.push(opts[+x.dataset.opt]);else state.options=state.options.filter(v=>v!==opts[+x.dataset.opt])});
+      body.innerHTML=`<div class="lsf-section-label">OPTIONAL EXTRAS</div><div class="lsf-fields">${opts.map((o,i)=>`<label class="lsf-option ${state.options.includes(o)?'is-on':''}"><input type="checkbox" data-opt="${i}" ${state.options.includes(o)?'checked':''}><span class="lsf-option-copy"><b>${o}</b><br><span>Add this if it fits your project.</span></span></label>`).join('')}</div><div class="lsf-note">We’ll confirm final pricing and availability before work begins.</div>${actions(true,true)}`;
+      body.querySelectorAll('[data-opt]').forEach(x=>x.onchange=()=>{const o=opts[+x.dataset.opt];if(x.checked)state.options.push(o);else state.options=state.options.filter(v=>v!==o);x.closest('.lsf-option').classList.toggle('is-on',x.checked)});
       body.querySelector('[data-back]').onclick=()=>{state.step=2;render()};body.querySelector('[data-next]').onclick=()=>{state.step=4;render()};
     } else if(state.step===4){
-      title.textContent='Tell us about your project'; sub.textContent='A short brief is enough. We’ll follow up if we need more.';
-      body.innerHTML=`<div class="lsf-fields"><div class="lsf-field"><label>Your name</label><input id="lsf-name" value="${state.brief.name}"></div><div class="lsf-field"><label>Email</label><input id="lsf-email" type="email" value="${state.brief.email}"></div><div class="lsf-field"><label>Target deadline</label><input id="lsf-deadline" value="${state.brief.deadline}" placeholder="e.g. 2 weeks"></div><div class="lsf-field"><label>What are you making?</label><textarea id="lsf-details" placeholder="Tell us the goal, references, deliverables, or anything important.">${state.brief.details}</textarea></div></div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-next>Review order</button></div>`;
+      title.textContent='Tell us about the project';sub.textContent='A rough brief is enough. Links, references, and constraints are welcome.';
+      body.innerHTML=`<div class="lsf-fields"><div class="lsf-field"><label>Your name</label><input id="lsf-name" value="${esc(state.brief.name)}" autocomplete="name"></div><div class="lsf-field"><label>Email</label><input id="lsf-email" type="email" value="${esc(state.brief.email)}" autocomplete="email"></div><div class="lsf-field"><label>Target deadline</label><input id="lsf-deadline" value="${esc(state.brief.deadline)}" placeholder="Flexible / e.g. 2 weeks"></div><div class="lsf-field"><label>Project brief</label><textarea id="lsf-details" placeholder="What are you making? What should the final result do or feel like?">${esc(state.brief.details)}</textarea></div></div>${actions(true,true,'Review order')}`;
       body.querySelector('[data-back]').onclick=()=>{state.step=3;render()};body.querySelector('[data-next]').onclick=()=>{state.brief={name:document.getElementById('lsf-name').value,email:document.getElementById('lsf-email').value,deadline:document.getElementById('lsf-deadline').value,details:document.getElementById('lsf-details').value};state.step=5;render()};
+      setTimeout(()=>document.getElementById('lsf-details')?.focus(),80);
     } else {
-      title.textContent='Review your request'; sub.textContent='Everything look right? Send it to start the conversation.';
-      body.innerHTML=`<div class="lsf-summary"><div class="lsf-row"><span>Service</span><b>${state.service?.name||'Custom project'}</b></div><div class="lsf-row"><span>Package</span><b>${state.package?.[0]||'Custom'}</b></div><div class="lsf-row"><span>Options</span><b>${state.options.length?state.options.join(', '):'None'}</b></div><div class="lsf-row"><span>Deadline</span><b>${state.brief.deadline||'Flexible'}</b></div><div class="lsf-row"><span>Email</span><b>${state.brief.email||'Not provided'}</b></div><div class="lsf-total"><span>Next step</span><span style="float:right">Send inquiry →</span></div></div><div class="lsf-actions"><button class="lsf-btn" data-back>Back</button><button class="lsf-btn primary" data-send>Send inquiry</button></div>`;
+      title.textContent='One last look';sub.textContent='Review your request. We’ll confirm scope, availability, and final pricing with you.';
+      body.innerHTML=`<div class="lsf-section-label">YOUR REQUEST</div><div class="lsf-summary"><div class="lsf-row"><span>Service</span><b>${esc(state.service?.name||'Custom project')}</b></div><div class="lsf-row"><span>Package</span><b>${esc(state.package?.[0]||'Custom')}</b></div><div class="lsf-row"><span>Options</span><b>${esc(state.options.length?state.options.join(', '):'None')}</b></div><div class="lsf-row"><span>Deadline</span><b>${esc(state.brief.deadline||'Flexible')}</b></div><div class="lsf-row"><span>Email</span><b>${esc(state.brief.email||'Not provided')}</b></div><div class="lsf-total"><span>Next step</span><span>Send inquiry →</span></div></div><div class="lsf-note">No payment is taken at this stage. This starts the conversation so the scope can be confirmed.</div>${actions(true,true,'Send inquiry')}`;
       body.querySelector('[data-back]').onclick=()=>{state.step=4;render()};
-      body.querySelector('[data-send]').onclick=()=>{
+      body.querySelector('[data-next]').onclick=()=>{
         const payload=`Service: ${state.service?.name||'Custom project'}\nPackage: ${state.package?.[0]||'Custom'}\nOptions: ${state.options.join(', ')||'None'}\nDeadline: ${state.brief.deadline||'Flexible'}\n\n${state.brief.details||''}`;
         modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');
-        // Reuse an existing inquiry UI if the site exposes one; otherwise copy the brief for the user.
         const target=[...document.querySelectorAll('button,a,[role="button"]')].find(x=>/^(inquire|commission me|contact|send inquiry)$/i.test(clean(x.innerText)));
         if(target){try{target.click()}catch(e){}}
         try{navigator.clipboard?.writeText(payload)}catch(e){}
       };
     }
   }
-  function open(){state.step=1;state.service=null;state.package=null;state.options=[];modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');render()}
+  function open(){state.step=1;state.service=null;state.package=null;state.options=[];state.brief={name:'',email:'',details:'',deadline:''};modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');render()}
   function close(){modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true')}
-  modal.querySelector('.lsf-close').onclick=close;
-  modal.addEventListener('click',e=>{if(e.target===modal)close()});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+  modal.querySelector('.lsf-close').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('is-open'))close()});
   document.addEventListener('click',e=>{
-    const el=e.target.closest('button,a,[role="button"]'); if(!el)return;
+    const el=e.target.closest('button,a,[role="button"]');if(!el)return;
     const t=clean(el.innerText||el.textContent);
-    if(/^(start order|start your order|order now|inquire|commission me)$/i.test(t)){
-      e.preventDefault();e.stopPropagation();open();
-    }
+    if(/^(start order|start your order|order now|inquire|commission me)$/i.test(t)){e.preventDefault();e.stopPropagation();open()}
   },true);
 })();
 </script>
