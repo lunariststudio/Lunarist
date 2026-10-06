@@ -2265,9 +2265,72 @@ async function openDashboard(initialTab='overview'){
     </div>
   `;
   
-  document.getElementById('dash-services').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My services</div><h3 style="margin:4px 0">Offer commissions & packages</h3><div class="meta" style="margin-top:4px">Drag the handle to control the order clients see your services.</div></div><button class="btn primary" id="addService">+ New service</button></div><div id="serviceList" class="service-reorder-list" style="margin-top:12px">${userServices.length?userServices.map((s,idx)=>`<div class="listitem service-reorder-item" draggable="true" data-service-reorder-id="${esc(s.id)}"><button class="drag-handle service-drag-handle" type="button" title="Drag to reorder" aria-label="Drag to reorder ${esc(s.title)}">⋮⋮</button><img class="listthumb" src="${esc(s.thumbnail_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(s.title)}</b><div class="meta">${esc(s.category)} · ${esc(s.status||(s.published?'published':'draft'))} · ${(s.service_projects||s.projectIds||[]).length} linked project(s)</div></div><button class="btn" data-edit-service="${s.id}">Edit</button></div>`).join(''):emptyState('No services yet.','List a service artists can hire you for.')}</div><div id="serviceForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can offer services.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create services.')}</div>`;
+  document.getElementById('dash-services').innerHTML=canPublish?`<div class="panel"><div class="row"><div class="grow"><div class="eyebrow">My services</div><h3 style="margin:4px 0">Offer commissions & packages</h3><div class="meta" style="margin-top:4px">Drag the handle to control the order clients see your services.</div></div><button class="btn primary" id="addService">+ New service</button></div><div id="serviceList" class="service-reorder-list" style="margin-top:12px">${userServices.length?userServices.map((s,idx)=>`<div class="listitem draggable" draggable="true" data-id="${esc(s.id)}"><div class="drag-handle" title="Drag to reorder">⋮⋮</div><img class="listthumb" src="${esc(s.thumbnail_url||'')}" onerror="handleImageError(this)"><div class="grow"><b>${esc(s.title)}</b><div class="meta">${esc(s.category)} · ${esc(s.status||(s.published?'published':'draft'))} · ${(s.service_projects||s.projectIds||[]).length} linked project(s)</div></div><button class="btn" data-edit-service="${s.id}">Edit</button></div>`).join(''):emptyState('No services yet.','List a service artists can hire you for.')}</div><div id="serviceForm" style="margin-top:16px"></div></div>`:`<div class="panel">${emptyState('Lunarist Members can offer services.','You currently have a User account. Ask a Studio admin to promote you to Lunarist Member to create services.')}</div>`;
   document.getElementById('drawer').classList.add('open');
   bindDashboard(state.myProjects,userServices)
+}
+
+function setupServiceDragAndDrop(){
+  const container=document.getElementById('serviceList');
+  if(!container)return;
+
+  container.querySelectorAll('.listitem.draggable').forEach(item=>{
+    item.addEventListener('dragstart',(e)=>{
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',item.dataset.id);
+    });
+
+    item.addEventListener('dragend',async()=>{
+      item.classList.remove('dragging');
+      await saveNewServiceOrder();
+    });
+
+    item.addEventListener('dragover',(e)=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      const draggingItem=container.querySelector('.dragging');
+      if(!draggingItem||draggingItem===item)return;
+
+      const rect=item.getBoundingClientRect();
+      const next=(e.clientY-rect.top)/(rect.bottom-rect.top)>0.5;
+      container.insertBefore(draggingItem,next?item.nextSibling:item);
+    });
+  });
+
+  async function saveNewServiceOrder(){
+    const items=Array.from(container.querySelectorAll('.listitem.draggable'));
+    const updates=items.map((el,index)=>({
+      id:el.dataset.id,
+      sort_order:index
+    }));
+
+    if(Array.isArray(window.data?.services)){
+      window.data.services.sort((a,b)=>{
+        const idxA=updates.findIndex(u=>u.id===a.id);
+        const idxB=updates.findIndex(u=>u.id===b.id);
+        return (idxA<0?999999:idxA)-(idxB<0?999999:idxB);
+      });
+      updates.forEach(u=>{
+        const s=window.data.services.find(x=>x.id===u.id);
+        if(s)s.sort_order=u.sort_order;
+      });
+    }
+
+    if(Array.isArray(window.state?.myServices)){
+      window.state.myServices.sort((a,b)=>{
+        const idxA=updates.findIndex(u=>u.id===a.id);
+        const idxB=updates.findIndex(u=>u.id===b.id);
+        return (idxA<0?999999:idxA)-(idxB<0?999999:idxB);
+      });
+    }
+
+    for(const update of updates){
+      await supabaseClient.from('services').update({sort_order:update.sort_order}).eq('id',update.id).eq('owner_id',state.currentUser.id);
+    }
+    toast('Service order saved');
+    await loadData();
+  }
 }
 
 function commissionClientStatusLabel(status){
@@ -2612,6 +2675,7 @@ function bindDashboard(ps,ss){
   document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>showServiceForm((ss||[]).find(s=>s.id===b.dataset.editService)));
 
   setupProjectDragAndDrop();
+  setupServiceDragAndDrop();
 }
 
 function setupProjectDragAndDrop(){
@@ -3847,7 +3911,6 @@ async function capturePaypalReturnIfPresent(){
 <script src="/client-messaging.js"></script>
 <script src="/x-project-player.js"></script>
 <script src="/social-project-fix.js"></script>
-<script src="/services-drag-drop.js"></script>
 <script src="/x-discovery-likes.js"></script>
 <script src="/discover-role-filter.js"></script>
 <script src="/discover-filters-fix.js"></script>
