@@ -791,6 +791,29 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
 .addon-box,.chat-attachment-preview{color:#073a86!important}
 .addon-box label{color:#073a86!important}
 </style>
+<style id="lunarist-client-portal-message-visibility-final">
+/* Client Portal message composer: force readable contrast. */
+#clientMessagesPanel #clientMessageForm.client-message-form input#clientMessageInput,
+#clientMessagesPanel input#clientMessageInput {
+  appearance:none !important; -webkit-appearance:none !important;
+  background:#ffffff !important; background-image:none !important;
+  color:#172554 !important; -webkit-text-fill-color:#172554 !important;
+  caret-color:#1769e0 !important; text-shadow:none !important; opacity:1 !important;
+  border:1px solid rgba(55,105,190,.32) !important;
+  box-shadow:none !important;
+}
+#clientMessagesPanel input#clientMessageInput::placeholder {
+  color:#64748b !important; -webkit-text-fill-color:#64748b !important; opacity:1 !important;
+}
+#clientMessagesPanel input#clientMessageInput:focus {
+  background:#ffffff !important; color:#172554 !important;
+  -webkit-text-fill-color:#172554 !important; caret-color:#1769e0 !important;
+  border-color:#4b8df8 !important; box-shadow:0 0 0 3px rgba(75,141,248,.16) !important;
+}
+#clientMessagesPanel #clientMessageForm.client-message-form > button.btn {
+  background:#1877f2 !important; color:#ffffff !important; -webkit-text-fill-color:#ffffff !important;
+}
+</style>
 </head>
 <body>
 <!-- LUNARIST BRAND GUIDELINE DECOR -->
@@ -4007,7 +4030,7 @@ async function capturePaypalReturnIfPresent(){
 <script src="/public-member-profile.js?v=1"></script>
 <script src="/client-space-nav-fix.js?v=1"></script>
 <script src="/eugene-lunarist-integration.js?v=1"></script>
-<script src="/client-messaging.js"></script>
+<script src="/client-messaging.js?v=20261007-contrast2"></script>
 <script src="/x-project-player.js"></script>
 <script src="/social-project-fix.js"></script>
 <script src="/x-discovery-likes.js"></script>
