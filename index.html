@@ -2020,7 +2020,22 @@ function toggleNotificationsPopover(e){
   const willOpen=!pop.classList.contains('open');
   pop.classList.toggle('open',willOpen);
   btn.setAttribute('aria-expanded',willOpen?'true':'false');
-  if(willOpen) loadUserNotifications();
+  if(willOpen){
+    const rect=btn.getBoundingClientRect();
+    const vw=Math.max(document.documentElement.clientWidth,window.innerWidth||0);
+    const gap=10, margin=16;
+    const width=Math.min(360,Math.max(280,vw-(margin*2)));
+    const left=Math.max(margin,Math.min(rect.right-width,vw-width-margin));
+    pop.style.position='fixed';
+    pop.style.width=width+'px';
+    pop.style.left=left+'px';
+    pop.style.right='auto';
+    pop.style.top=Math.max(margin,rect.bottom+gap)+'px';
+    pop.style.transform='none';
+    loadUserNotifications();
+  }else{
+    pop.style.left=''; pop.style.right=''; pop.style.top=''; pop.style.width=''; pop.style.transform='';
+  }
 }
 
 document.addEventListener('click',(e)=>{
@@ -2032,8 +2047,28 @@ document.addEventListener('click',(e)=>{
   if(p?.classList.contains('open')){
     p.classList.remove('open');
     b?.setAttribute('aria-expanded','false');
+    p.style.left=''; p.style.right=''; p.style.top=''; p.style.width=''; p.style.transform='';
   }
 });
+
+function repositionNotificationPopover(){
+  const btn=document.getElementById('notifToggleBtn');
+  const pop=document.getElementById('notifPopover');
+  if(!btn || !pop || !pop.classList.contains('open')) return;
+  const rect=btn.getBoundingClientRect();
+  const vw=Math.max(document.documentElement.clientWidth,window.innerWidth||0);
+  const margin=16, gap=10;
+  const width=Math.min(360,Math.max(280,vw-(margin*2)));
+  const left=Math.max(margin,Math.min(rect.right-width,vw-width-margin));
+  pop.style.position='fixed';
+  pop.style.width=width+'px';
+  pop.style.left=left+'px';
+  pop.style.right='auto';
+  pop.style.top=Math.max(margin,rect.bottom+gap)+'px';
+  pop.style.transform='none';
+}
+window.addEventListener('resize',repositionNotificationPopover,{passive:true});
+window.addEventListener('scroll',repositionNotificationPopover,{passive:true});
 
 function bind(){
   document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{document.getElementById('navlinks').classList.remove('open');goRoute(b.dataset.route)});
@@ -4070,7 +4105,7 @@ async function capturePaypalReturnIfPresent(){
 <script src="/public-member-profile.js?v=1"></script>
 <script src="/client-space-nav-fix.js?v=1"></script>
 <script src="/eugene-lunarist-integration.js?v=1"></script>
-<script src="/client-messaging.js?v=20261007-contrast2"></script>
+<script src="/client-messaging.js?v=20261007-contrast3"></script>
 <script src="/x-project-player.js"></script>
 <script src="/social-project-fix.js"></script>
 <script src="/x-discovery-likes.js"></script>
