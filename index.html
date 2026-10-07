@@ -63,6 +63,8 @@
 .notif-badge{position:absolute;top:-4px;right:-4px;background:#1677ff;color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px}
 .notif-popover{position:fixed;right:max(24px,calc((100vw - 1280px)/2 + 24px));top:84px;width:min(360px,calc(100vw - 32px));max-height:min(420px,calc(100vh - 104px));background:rgba(255,255,255,.98);color:#073a86;border:1px solid rgba(13,98,223,.18);border-radius:18px;box-shadow:0 24px 70px rgba(7,58,134,.20);z-index:300;display:none;flex-direction:column;overflow:hidden}
 .notif-popover.open{display:flex}
+/* Notification layer must sit above mobile navigation, cards, drawers, and transformed app surfaces. */
+.notif-popover{z-index:2147483647!important;isolation:isolate}
 .notif-header{padding:14px 16px;border-bottom:1px solid rgba(13,98,223,.12);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fff,#f5f9ff)}
 .notif-header b{color:#073a86!important}
 #markNotifsReadBtn{color:#1769e0!important}
@@ -1425,16 +1427,79 @@ async function sendNotification(userId, title, message, type='info', link=null) 
 }
 
 async function loadUserNotifications() {
-  if(!state.currentUser) return;
-  const { data: list } = await supabaseClient.from('notifications')
+  if(!state.currentUser || !supabaseClient) return;
+  const userId=state.currentUser.id;
+  const { data: list, error } = await supabaseClient.from('notifications')
     .select('*')
-    .eq('user_id', state.currentUser.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(20);
 
+  if(error){
+    console.warn('[Lunarist] notification refresh failed:', error.message||error);
+    return;
+  }
+  // Ignore a late response from a previous account after logout/account switching.
+  if(!state.currentUser || state.currentUser.id!==userId) return;
   state.notifications = list || [];
   renderNotificationsUI();
 }
+
+function stopNotificationBackgroundSync(){
+  if(lunaristNotificationBackgroundTimer) clearInterval(lunaristNotificationBackgroundTimer);
+  lunaristNotificationBackgroundTimer=null;
+  lunaristNotificationRealtimeUserId=null;
+  if(lunaristNotificationRealtimeChannel && supabaseClient){
+    try{ supabaseClient.removeChannel(lunaristNotificationRealtimeChannel); }catch{}
+  }
+  lunaristNotificationRealtimeChannel=null;
+}
+
+function startNotificationBackgroundSync(){
+  stopNotificationBackgroundSync();
+  if(!state.currentUser || !supabaseClient) return;
+  const userId=state.currentUser.id;
+  lunaristNotificationRealtimeUserId=userId;
+
+  // Initial fetch keeps the badge correct after a fresh login/reload.
+  loadUserNotifications().catch(()=>{});
+
+  // Realtime gives an immediate badge update. The notifications table is enabled
+  // in the supabase_realtime publication; the user_id filter keeps events scoped.
+  try{
+    const channelName='lunarist-notifications-'+String(userId).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48)+'-'+Date.now().toString(36);
+    lunaristNotificationRealtimeChannel=supabaseClient
+      .channel(channelName)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+userId},payload=>{
+        if(lunaristNotificationRealtimeUserId!==state.currentUser?.id) return;
+        loadUserNotifications().catch(()=>{});
+      })
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'notifications',filter:'user_id=eq.'+userId},payload=>{
+        if(lunaristNotificationRealtimeUserId!==state.currentUser?.id) return;
+        loadUserNotifications().catch(()=>{});
+      })
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'notifications',filter:'user_id=eq.'+userId},payload=>{
+        if(lunaristNotificationRealtimeUserId!==state.currentUser?.id) return;
+        loadUserNotifications().catch(()=>{});
+      })
+      .subscribe(status=>{
+        if(status==='SUBSCRIBED') console.info('[Lunarist] notification realtime connected');
+        if(status==='CHANNEL_ERROR' || status==='TIMED_OUT') console.warn('[Lunarist] notification realtime unavailable; polling fallback remains active');
+      });
+  }catch(e){
+    console.warn('[Lunarist] notification realtime setup failed; polling fallback remains active:', e?.message||e);
+  }
+
+  // Safety net for browsers/network paths where Realtime is temporarily unavailable.
+  // This also catches notifications created while the tab was asleep or offline.
+  lunaristNotificationBackgroundTimer=setInterval(()=>{
+    if(state.currentUser?.id===userId && document.visibilityState!=='hidden') loadUserNotifications().catch(()=>{});
+  },15000);
+}
+
+window.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && state.currentUser) loadUserNotifications().catch(()=>{});
+});
 
 function renderNotificationsUI() {
   const toggleBtn = document.getElementById('notifToggleBtn');
@@ -1511,6 +1576,9 @@ async function createOrGetConversation(artistId, serviceId=null, projectId=null)
 
 let lunaristMessageBackgroundTimer = null;
 let lunaristMessageBackgroundLoading = false;
+let lunaristNotificationBackgroundTimer = null;
+let lunaristNotificationRealtimeChannel = null;
+let lunaristNotificationRealtimeUserId = null;
 
 async function loadUserConversations() {
   if(!state.currentUser || !supabaseClient) {
@@ -2021,6 +2089,9 @@ function toggleNotificationsPopover(e){
   pop.classList.toggle('open',willOpen);
   btn.setAttribute('aria-expanded',willOpen?'true':'false');
   if(willOpen){
+    /* Keep the notification layer outside header/app stacking contexts on mobile. */
+    if(pop.parentElement!==document.body) document.body.appendChild(pop);
+    pop.style.zIndex='2147483647';
     const rect=btn.getBoundingClientRect();
     const vw=Math.max(document.documentElement.clientWidth,window.innerWidth||0);
     const gap=10, margin=16;
@@ -2055,6 +2126,8 @@ function repositionNotificationPopover(){
   const btn=document.getElementById('notifToggleBtn');
   const pop=document.getElementById('notifPopover');
   if(!btn || !pop || !pop.classList.contains('open')) return;
+  if(pop.parentElement!==document.body) document.body.appendChild(pop);
+  pop.style.zIndex='2147483647';
   const rect=btn.getBoundingClientRect();
   const vw=Math.max(document.documentElement.clientWidth,window.innerWidth||0);
   const margin=16, gap=10;
@@ -2323,7 +2396,7 @@ async function refreshUser(){
     applyTheme(state.selectedTheme);
     document.getElementById('accountName').textContent=state.currentMember?.name||'Member';
     document.getElementById('accountAvatar').outerHTML=`<img class="avatar" id="accountAvatar" src="${esc(state.currentMember?.avatar||'')}" alt="" onerror="handleImageError(this)">`;
-    loadUserNotifications();
+    startNotificationBackgroundSync();
     await loadSavedIds();
     startBackgroundMessageSync();
   }else{
@@ -2333,6 +2406,7 @@ async function refreshUser(){
     document.getElementById('accountAvatar').outerHTML='<span class="avatar" id="accountAvatar">G</span>';
     state.currentMember=null;
     state.savedIds=new Set();
+    stopNotificationBackgroundSync();
     stopBackgroundMessageSync();
     applyTheme('moonlight');
   }
