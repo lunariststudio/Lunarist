@@ -93,7 +93,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .navin{gap:14px}.navlinks{gap:4px}.navbtn{position:relative;transition:color .25s var(--ease),background .25s var(--ease),border-color .25s var(--ease),transform .25s var(--ease)}
 .navbtn:after{content:"";position:absolute;left:18%;right:18%;bottom:3px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--moon),var(--pink));transform:scaleX(0);transform-origin:center;transition:transform .3s var(--ease)}
 .navbtn:hover:after,.navbtn.active:after{transform:scaleX(1)}
-.nav-commission{color:var(--pink)} .navbtn.nav-commission.active{background:rgba(255,134,200,.12);border-color:rgba(255,134,200,.35);color:var(--pink);box-shadow:0 0 0 1px rgba(255,134,200,.08) inset}
+.nav-commission{color:var(--pink)} .nav-artist-commission{color:var(--pink)} .navbtn.nav-commission.active{background:rgba(255,134,200,.12);border-color:rgba(255,134,200,.35);color:var(--pink);box-shadow:0 0 0 1px rgba(255,134,200,.08) inset}
 .nav-tools{display:flex;align-items:center;gap:8px}.lang-switch{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted);padding:7px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.08em}.lang-switch span{cursor:pointer;transition:color .2s,opacity .2s}.lang-switch .active{color:var(--text)}.lang-switch .sep{opacity:.35;cursor:default}
 .btn,.card,.panel,.artistcard,.filter,.userchip,.search,.field input,.field textarea,.field select,.stat{transition:transform .32s var(--ease),border-color .32s var(--ease),background .32s var(--ease),box-shadow .32s var(--ease),color .25s var(--ease)}
 .btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(0) scale(.98)}
@@ -837,7 +837,7 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
 </div>
 
 <div class="app" id="app">
-<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions" style="display:none">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
+<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-artist-commission" id="navArtistCommissionBtn" data-i18n="artistCommissionCenter" style="display:none" hidden aria-hidden="true">Artist Commission Center</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions" style="display:none" hidden aria-hidden="true">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
 <div class="notif-popover" id="notifPopover"><div class="notif-header"><b style="font-size:13px">Notifications</b><button id="markNotifsReadBtn" style="background:none;border:none;color:var(--moon);font-size:11px;cursor:pointer">Mark all read</button></div><div class="notif-list" id="notifList"></div></div>
 <main id="view"></main>
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
@@ -3962,6 +3962,7 @@ async function loadData(){
 
 function updatePrimaryNavVisibility(){
   const navAdmin=document.getElementById('navAdminBtn');
+  const navArtistCommission=document.getElementById('navArtistCommissionBtn');
   const navCommission=document.getElementById('navCommissionsBtn');
   const isSignedIn=!!state.currentUser;
   const isAdmin=!!state.currentMember?.is_admin;
@@ -3970,6 +3971,12 @@ function updatePrimaryNavVisibility(){
   // Keep restricted navigation hidden by default. This applies to the shared
   // nav used by both desktop and mobile, so a restricted tab never appears
   // briefly while auth/member state is loading.
+  if(navArtistCommission){
+    const canSeeArtistCommission=isSignedIn && isMember && !isAdmin;
+    navArtistCommission.style.display=canSeeArtistCommission?'inline-flex':'none';
+    navArtistCommission.hidden=!canSeeArtistCommission;
+    navArtistCommission.setAttribute('aria-hidden',canSeeArtistCommission?'false':'true');
+  }
   if(navCommission){
     const canSeeCommissions=isSignedIn && !isMember && !isAdmin;
     navCommission.style.display=canSeeCommissions?'inline-flex':'none';
@@ -4003,7 +4010,7 @@ function updateAccountButton(){
 /* Navigation + language */
 const I18N={
   en:{
-    home:'Home',discover:'Discover',services:'Services',artists:'Artists',myCommissions:'My Commissions',adminStudio:'Admin Studio',
+    home:'Home',discover:'Discover',services:'Services',artists:'Artists',artistCommissionCenter:'Artist Commission Center',myCommissions:'My Commissions',adminStudio:'Admin Studio',
     overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',servicesTab:'Services',savedTab:'Saved 🔖',
     memberSpace:'Member space',yourLunarist:'Your Lunarist',directMessaging:'Direct Messaging',activeCollaborations:'Active Collaborations',
     myServices:'My services',myProjects:'My projects',editProfile:'Edit profile',clientDashboard:'Client Dashboard',
@@ -4029,7 +4036,7 @@ const I18N={
     activeSession:'Active Session',startedConversation:'Started conversation',loading:'Loading…',loadingReviews:'Loading reviews…',loadingCommissions:'Loading your commissions…'
   },
   ja:{
-    home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',
+    home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',artistCommissionCenter:'アーティスト・コミッションセンター',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',
     overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',servicesTab:'サービス',savedTab:'保存済み 🔖',
     memberSpace:'メンバースペース',yourLunarist:'あなたのLunarist',directMessaging:'ダイレクトメッセージ',activeCollaborations:'進行中のコラボレーション',
     myServices:'マイサービス',myProjects:'マイプロジェクト',editProfile:'プロフィールを編集',clientDashboard:'クライアントダッシュボード',
@@ -4143,7 +4150,7 @@ function applyLanguage(lang){
 function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>{applyLanguage(el.dataset.lang);render();});}
 function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
 
-document.getElementById('accountBtn').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(state.currentUser){openDashboard();}else{openAuth('signin');document.getElementById('authModal')?.classList.add('open');}});document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>{updatePrimaryNavVisibility();document.getElementById('navlinks').classList.toggle('open')};document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');if(!state.currentUser||state.currentMember?.account_type==='member'||state.currentMember?.is_admin)return;await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
+document.getElementById('accountBtn').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(state.currentUser){openDashboard();}else{openAuth('signin');document.getElementById('authModal')?.classList.add('open');}});document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>{updatePrimaryNavVisibility();document.getElementById('navlinks').classList.toggle('open')};document.getElementById('navArtistCommissionBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');updatePrimaryNavVisibility();if(!state.currentUser||state.currentMember?.account_type!=='member'||state.currentMember?.is_admin)return;await openDashboard('overview')};document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');updatePrimaryNavVisibility();if(!state.currentUser||state.currentMember?.account_type==='member'||state.currentMember?.is_admin)return;await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
 async function capturePaypalReturnIfPresent(){
   const params=new URLSearchParams(location.search);
   const paypalStatus=params.get('paypal');
