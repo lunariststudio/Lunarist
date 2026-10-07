@@ -1,5 +1,67 @@
 /* Lunarist Client Space messaging. Uses existing conversations/messages schema. */
 (function(){
+  function installClientMessageStyles(){
+    if(document.getElementById('lunarist-client-message-contrast')) return;
+    const style=document.createElement('style');
+    style.id='lunarist-client-message-contrast';
+    style.textContent=`
+      #clientMessagesPanel{color:#12233f!important;}
+      #clientMessagesPanel .client-section-title h2,
+      #clientMessagesPanel .client-section-title p,
+      #clientMessagesPanel .client-chat-header,
+      #clientMessagesPanel .client-chat-header strong{color:#12233f!important;}
+      #clientMessagesPanel .client-conversation{
+        display:flex!important;align-items:center!important;justify-content:space-between!important;
+        gap:12px!important;width:100%!important;text-align:left!important;
+        color:#12233f!important;background:rgba(255,255,255,.78)!important;
+        border:1px solid rgba(7,58,134,.16)!important;border-radius:14px!important;
+      }
+      #clientMessagesPanel .client-conversation span{color:#54709a!important;}
+      #clientMessagesPanel .client-message-list{
+        background:rgba(255,255,255,.72)!important;border:1px solid rgba(7,58,134,.14)!important;
+        border-radius:16px!important;padding:14px!important;
+      }
+      #clientMessagesPanel .client-message{
+        color:#12233f!important;background:rgba(255,255,255,.94)!important;
+        border:1px solid rgba(7,58,134,.12)!important;border-radius:14px!important;
+        padding:10px 13px!important;margin:8px 0!important;
+      }
+      #clientMessagesPanel .client-message.mine{
+        color:#fff!important;background:#146ee8!important;border-color:#146ee8!important;
+      }
+      #clientMessagesPanel .client-message small{display:block!important;color:#6680a5!important;margin-top:5px!important;}
+      #clientMessagesPanel .client-message.mine small{color:rgba(255,255,255,.78)!important;}
+      #clientMessagesPanel .client-message-form{
+        display:flex!important;align-items:center!important;gap:10px!important;
+        margin-top:12px!important;padding:10px!important;border-radius:16px!important;
+        background:rgba(255,255,255,.9)!important;border:1px solid rgba(7,58,134,.18)!important;
+      }
+      #clientMessagesPanel #clientMessageInput{
+        flex:1!important;min-width:0!important;height:44px!important;
+        color:#12233f!important;-webkit-text-fill-color:#12233f!important;
+        background:#fff!important;border:1px solid rgba(7,58,134,.2)!important;
+        border-radius:12px!important;padding:10px 13px!important;outline:none!important;
+        opacity:1!important;
+      }
+      #clientMessagesPanel #clientMessageInput::placeholder{
+        color:#54709a!important;-webkit-text-fill-color:#54709a!important;opacity:1!important;
+      }
+      #clientMessagesPanel #clientMessageInput:focus{
+        border-color:#146ee8!important;box-shadow:0 0 0 3px rgba(20,110,232,.12)!important;
+      }
+      #clientMessagesPanel .client-message-form button{
+        flex:0 0 auto!important;color:#fff!important;background:#146ee8!important;
+        border:0!important;border-radius:12px!important;padding:11px 18px!important;
+      }
+      #clientMessagesPanel .client-empty{color:#54709a!important;}
+      @media(max-width:640px){
+        #clientMessagesPanel .client-message-form{align-items:stretch!important;}
+        #clientMessagesPanel .client-message-form button{padding:10px 14px!important;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  installClientMessageStyles();
   const wait=()=>window.supabaseClient||window.supabase||window.sb||null;
   function esc(s){return String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}
   async function boot(){
