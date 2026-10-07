@@ -1283,13 +1283,6 @@ async function openDashboard(initialTab='overview'){
   state.myProjects=(ps||[]).sort((a,b)=>(a.position||0)-(b.position||0));
   const userServices = ((ss && ss.length) ? ss : data.services.filter(s => s.member === m.id)).slice().sort((a,b)=>{ const ao=Number(a.sort_order); const bo=Number(b.sort_order); const an=Number.isFinite(ao)?ao:2147483647; const bn=Number.isFinite(bo)?bo:2147483647; return an-bn || String(b.created_at||'').localeCompare(String(a.created_at||'')); });
 
-  const themeOptions = [
-    { key: 'moonlight', name: 'Moonlight', c1: '#c9b6ff', c2: '#ff86c8' },
-    { key: 'cyberpink', name: 'Cyber Pink', c1: '#ff86c8', c2: '#ff4da6' },
-    { key: 'goldember', name: 'Gold Ember', c1: '#e8cf91', c2: '#ff9e42' },
-    { key: 'emeraldglow', name: 'Emerald Glow', c1: '#8ee0ba', c2: '#51c4a0' },
-    { key: 'midnight', name: 'Midnight Blue', c1: '#8bb2ff', c2: '#a28eff' }
-  ];
 
   document.getElementById('dashTitle').textContent=m.name+' · '+roleLabel(m);
   document.getElementById('dash-overview').innerHTML=`<div class="panel"><div class="eyebrow">Overview</div><h3 style="font-size:26px;margin:5px 0">Welcome back, ${esc(m.name)}.</h3><p style="color:var(--muted)">Your profile and projects are stored in Supabase. Published work appears in Discover.</p><div class="stats"><span class="stat">${roleLabel(m)}</span><span class="stat">${(state.myProjects).length} projects</span><span class="stat">${(state.myProjects).reduce((n,p)=>n+Number(p.views||0),0).toLocaleString()} views</span></div>${(m.account_type!=='member'&&!m.is_admin)?'<p class="meta" style="margin-top:10px">You\'re a Lunarist User — ask a Studio admin to promote you to Lunarist Member to publish work.</p>':''}</div>`;
@@ -1315,22 +1308,6 @@ async function openDashboard(initialTab='overview'){
         <div class="field"><label>Username</label><input id="pfUsername" value="${esc(m.username)}" maxlength="32" pattern="[a-z0-9_]+"><div class="meta">${esc(location.host)}/<span id="pfUsernamePreview">${esc(m.username)}</span></div></div>
         <div class="field full"><label>Role</label><input id="pfRole" value="${esc(m.role)}"></div>
         <div class="field full"><label>Bio</label><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button type="button" class="btn" data-ai-improve="pfBio">✨ Improve with AI</button></div><textarea id="pfBio">${esc(m.bio)}</textarea></div>
-        
-        <div class="field full">
-          <label>Profile Color Scheme</label>
-          <div class="meta">Select a color theme accent for your profile and space.</div>
-          <div class="theme-picker-grid" id="themePickerGrid">
-            ${themeOptions.map(t=>`
-              <div class="theme-option ${(m.theme===t.key || (!m.theme && t.key==='moonlight')) ? 'selected' : ''}" data-theme-val="${t.key}">
-                <div class="theme-swatches">
-                  <span class="theme-swatch" style="background:${t.c1}"></span>
-                  <span class="theme-swatch" style="background:${t.c2}"></span>
-                </div>
-                <span style="font-size:12px;font-weight:700">${t.name}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
 
         <div class="field full" style="margin-top:6px">
           <label style="font-size:12px;font-weight:700;color:var(--moon)">Terms of Service (TOS)</label>
@@ -1690,15 +1667,6 @@ function bindDashboard(ps,ss){
   if(pfUsername){
     pfUsername.oninput=()=>{const clean=pfUsername.value.toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,32);if(clean!==pfUsername.value)pfUsername.value=clean;document.getElementById('pfUsernamePreview').textContent=clean||'username'};
   }
-  
-  document.querySelectorAll('.theme-option').forEach(opt => {
-    opt.onclick = () => {
-      document.querySelectorAll('.theme-option').forEach(x => x.classList.remove('selected'));
-      opt.classList.add('selected');
-      const val = opt.dataset.themeVal;
-      applyTheme(val);
-    };
-  });
 
   document.getElementById('pfAvatarBtn')?.addEventListener('click',()=>document.getElementById('pfAvatarFile').click());
   document.getElementById('pfAvatarFile')?.addEventListener('change',async(e)=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(file.size>5*1024*1024){toast('Image must be under 5MB');return}const statusEl=document.getElementById('pfAvatarStatus');statusEl.textContent='Uploading…';try{const url=await uploadProjectFile(file,'avatar');pendingAvatarUrl=url;document.getElementById('pfAvatarPreview').src=url;statusEl.textContent='New photo ready — click Save profile to apply.'}catch(err){statusEl.textContent='Upload failed.';toast(err.message||'Could not upload photo')}});
@@ -1722,7 +1690,6 @@ function bindDashboard(ps,ss){
 
   document.getElementById('saveProfile')?.addEventListener('click',async()=>{
     const username=pfUsername.value.trim();if(!username){toast('Username cannot be empty');return}
-    const selectedThemeVal = document.querySelector('.theme-option.selected')?.dataset.themeVal || 'moonlight';
     const tosText=document.getElementById('pfTos').value.trim();
     const tosChanged=tosText!==String(state.currentMember?.tos||'').trim();
     let tosJa=state.currentMember?.tos_ja||'';
@@ -1747,7 +1714,6 @@ function bindDashboard(ps,ss){
       bio:document.getElementById('pfBio').value.trim(),
       tos:tosText,
       tos_ja:tosJa,
-      theme:selectedThemeVal,
       available:document.getElementById('pfAvail').value==='1',
       updated_at:new Date().toISOString()
     };
