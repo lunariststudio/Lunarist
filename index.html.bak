@@ -837,7 +837,7 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
 </div>
 
 <div class="app" id="app">
-<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions" style="display:none">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
+<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
 <div class="notif-popover" id="notifPopover"><div class="notif-header"><b style="font-size:13px">Notifications</b><button id="markNotifsReadBtn" style="background:none;border:none;color:var(--moon);font-size:11px;cursor:pointer">Mark all read</button></div><div class="notif-list" id="notifList"></div></div>
 <main id="view"></main>
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
@@ -3967,23 +3967,16 @@ function updatePrimaryNavVisibility(){
   const isAdmin=!!state.currentMember?.is_admin;
   const isMember=state.currentMember?.account_type==='member';
 
-  // Keep restricted navigation hidden by default. This applies to the shared
-  // nav used by both desktop and mobile, so a restricted tab never appears
-  // briefly while auth/member state is loading.
+  // Client-only navigation should never leak into the mobile menu for
+  // guests or Lunarist Members/Administrators. Members manage commissions
+  // from their member space; the public client commission page is for users.
   if(navCommission){
-    const canSeeCommissions=isSignedIn && !isMember && !isAdmin;
-    navCommission.style.display=canSeeCommissions?'inline-flex':'none';
-    navCommission.hidden=!canSeeCommissions;
-    navCommission.setAttribute('aria-hidden',canSeeCommissions?'false':'true');
+    navCommission.style.display=(isSignedIn && !isMember && !isAdmin)?'inline-flex':'none';
   }
   if(navAdmin){
-    const canSeeAdmin=isSignedIn && isAdmin;
-    navAdmin.style.display=canSeeAdmin?'inline-flex':'none';
-    navAdmin.hidden=!canSeeAdmin;
-    navAdmin.setAttribute('aria-hidden',canSeeAdmin?'false':'true');
+    navAdmin.style.display=isAdmin?'inline-flex':'none';
   }
 }
-
 
 function updateAccountButton(){
   const b=document.getElementById('accountBtn');
@@ -4143,7 +4136,7 @@ function applyLanguage(lang){
 function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>{applyLanguage(el.dataset.lang);render();});}
 function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
 
-document.getElementById('accountBtn').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(state.currentUser){openDashboard();}else{openAuth('signin');document.getElementById('authModal')?.classList.add('open');}});document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>{updatePrimaryNavVisibility();document.getElementById('navlinks').classList.toggle('open')};document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');if(!state.currentUser||state.currentMember?.account_type==='member'||state.currentMember?.is_admin)return;await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
+document.getElementById('accountBtn').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(state.currentUser){openDashboard();}else{openAuth('signin');document.getElementById('authModal')?.classList.add('open');}});document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>document.getElementById('navlinks').classList.toggle('open');document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');if(!state.currentUser||state.currentMember?.account_type==='member'||state.currentMember?.is_admin)return;await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
 async function capturePaypalReturnIfPresent(){
   const params=new URLSearchParams(location.search);
   const paypalStatus=params.get('paypal');
