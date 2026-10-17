@@ -22,19 +22,14 @@ jobs:
           markers = [
               '<script src="/profile-sync.js"></script>',
               '<script src="/lunarist-enhancements.js?v=2"></script>',
-              '<script src="/client-space.js?v=2"></script>',
-              '<script src="/client-space-ui.js?v=2"></script>',
+              '<script src="/client-hub.js?v=20261017-1"></script>',
+              '<script src="/client-messaging.js?v=20261007-contrast3"></script>',
               '<script src="/social-links.js?v=1"></script>',
               '<script src="/commission-command-center.js?v=1"></script>',
-              '<script src="/commission-filters.js?v=1"></script>',
-              '<script src="/client-next-action.js?v=1"></script>',
-              '<script src="/client-commission-detail.js?v=1"></script>',
-              '<script src="/client-commission-timeline.js?v=1"></script>',
               '<script src="/commission-payment-state.js?v=1"></script>',
-              '<script src="/client-space-mobile-polish.js?v=1"></script>',
               '<script src="/public-member-profile.js?v=1"></script>',
-              '<script src="/client-space-nav-fix.js?v=1"></script>',
               '<script src="/eugene-lunarist-integration.js?v=1"></script>',
+              '<script src="/client-hub-eugene-card-tab.js"></script>',
               '<script src="/oauth-browser-bridge.js?v=2"></script>',
           ]
           for marker in markers:

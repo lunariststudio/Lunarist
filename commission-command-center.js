@@ -29,8 +29,8 @@
     const isArtist=()=>!!state.currentMember&&!state.currentMember.is_admin&&!isClient();
 
     async function load(){
-      if(!state.currentUser)return;
-      const mine=isClient()?'client_id':'artist_id';
+      if(!state.currentUser || isClient())return;
+      const mine='artist_id';
       const {data,error}=await supabaseClient.from('commissions').select('id,artist_id,client_id,status,amount,total_amount,currency,target_deadline,created_at,updated_at,project_title,service:service_id(title),artist:artist_id(display_name,username),client:client_id(display_name,username)').eq(mine,state.currentUser.id).order('created_at',{ascending:false});
       if(error||!Array.isArray(data))return;
       window.__lccCommissions=data;
@@ -41,7 +41,7 @@
       // Keep the Commission Center out of public pages (especially Services,
       // whose copy naturally contains the word "commissions"). Put it in the
       // authenticated dashboard where it belongs.
-      if(isClient())return document.getElementById('client-space-commissions')||null;
+      if(isClient())return null;
       if(!isArtist())return null;
       const drawer=document.getElementById('drawer');
       if(!drawer?.classList.contains('open'))return null;
@@ -54,13 +54,11 @@
       const host=findHost();if(!host)return;
       const old=document.getElementById('lcc-command-center');if(old)old.remove();
       const active=list.filter(c=>!['completed','cancelled'].includes(c.status));
-      const needsClient=list.filter(c=>c.status==='delivered').length;
       const needsArtist=list.filter(c=>['waitlist','paid','revisions'].includes(c.status)).length;
       const urgent=list.filter(c=>{const n=days(c.target_deadline);return n!==null&&n<=3&&!['completed','cancelled'].includes(c.status)}).length;
       const completed=list.filter(c=>c.status==='completed').length;
-      const role=isClient()?'Client':'Artist';
+      const role='Artist';
       const actions=[];
-      if(isClient()&&needsClient)actions.push(`<div class="lcc-action"><strong>✓ ${needsClient} delivery${needsClient===1?'':'ies'} waiting for approval</strong><small>Review delivered work and complete the commission when everything is ready.</small><button class="btn pink" data-lcc-jump="client-space-commissions">Open commissions</button></div>`);
       if(isArtist()&&needsArtist)actions.push(`<div class="lcc-action"><strong>⚡ ${needsArtist} commission${needsArtist===1?'':'s'} need your attention</strong><small>Check new requests, paid work, or revision requests.</small></div>`);
       if(urgent)actions.push(`<div class="lcc-action"><strong>⏱ ${urgent} deadline${urgent===1?'':'s'} coming soon</strong><small>Open the relevant commission and keep the client updated.</small></div>`);
       if(!actions.length)actions.push(`<div class="lcc-action"><strong>You're all caught up.</strong><small>${completed} completed commission${completed===1?'':'s'} in your history.</small></div>`);
@@ -68,8 +66,6 @@
       const wrap=document.createElement('div');wrap.id='lcc-command-center';wrap.className='lcc-wrap';
       wrap.innerHTML=`<div class="lcc-head"><div><div class="eyebrow">${role} Commission Center</div><div class="lcc-title">Everything that needs your attention</div><div class="lcc-sub">A quick view of status, deadlines and next actions.</div></div><div class="lcc-badges"><span class="lcc-badge">${active.length} active</span>${urgent?`<span class="lcc-badge urgent">${urgent} urgent</span>`:''}</div></div><div class="lcc-grid"><div class="lcc-stat"><b>${list.length}</b><span>Total commissions</span></div><div class="lcc-stat"><b>${active.length}</b><span>Active</span></div><div class="lcc-stat"><b>${completed}</b><span>Completed</span></div><div class="lcc-stat"><b>${money(list[0]||{})}</b><span>Latest value</span></div></div><div class="lcc-actions">${actions.join('')}</div>`;
       host.prepend(wrap);
-      wrap.querySelectorAll('[data-lcc-jump]').forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.lccJump);if(t){t.scrollIntoView({behavior:'smooth',block:'start'})}});
-
       // Add deadline/status badges to visible commission cards without replacing existing controls.
       const cards=[...host.querySelectorAll('.panel')].filter(x=>x!==wrap&&!x.closest('#lcc-command-center'));
       cards.forEach(card=>{

@@ -837,7 +837,7 @@ h1 em{font-family:"Space Grotesk",sans-serif;color:var(--brand-purple)}
 </div>
 
 <div class="app" id="app">
-<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-artist-commission" id="navArtistCommissionBtn" data-i18n="artistCommissionCenter" style="display:none" hidden aria-hidden="true">Artist Commission Center</button><button class="navbtn nav-commission" id="navCommissionsBtn" data-i18n="myCommissions" style="display:none" hidden aria-hidden="true">My Commissions</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
+<header class="nav"><div class="navin"><button class="brand" data-route="home">LUNARIST <span>✦</span></button><nav class="navlinks" id="navlinks"><button class="navbtn active" data-route="home" data-i18n="home">Home</button><button class="navbtn" data-route="discover" data-i18n="discover">Discover</button><button class="navbtn" data-route="services" data-i18n="services">Services</button><button class="navbtn" data-route="artists" data-i18n="artists">Artists</button><button class="navbtn nav-artist-commission" id="navArtistCommissionBtn" data-i18n="artistCommissionCenter" style="display:none" hidden aria-hidden="true">Artist Commission Center</button><button class="navbtn" data-route="admin" id="navAdminBtn" style="display:none" data-i18n="adminStudio">Admin Studio</button></nav><div class="nav-tools"><button class="lang-switch" id="langSwitch" aria-label="Language"><span data-lang="en" class="active">EN</span><span class="sep">|</span><span data-lang="ja">JP</span></button></div><button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" style="display:none">🔔 <span id="notifBadgeCount" class="notif-badge" style="display:none">0</span></button><button class="navbtn mobile" id="menuBtn">Menu</button><button class="userchip" id="accountBtn"><span class="avatar" id="accountAvatar">G</span><span id="accountName">Guest</span></button></div></header>
 <div class="notif-popover" id="notifPopover"><div class="notif-header"><b style="font-size:13px">Notifications</b><button id="markNotifsReadBtn" style="background:none;border:none;color:var(--moon);font-size:11px;cursor:pointer">Mark all read</button></div><div class="notif-list" id="notifList"></div></div>
 <main id="view"></main>
 <footer class="footer"><div class="container row"><div class="grow"><strong>LUNARIST STUDIO</strong><br><span>Unleash Your Dream.</span></div><span>Creative network · 2026</span></div></footer>
@@ -1075,7 +1075,7 @@ window.addEventListener('error', (e) => {
 });
 
 let supabaseClient=null;
-const state={route:'home',filter:'All',roleFilter:'All Roles',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',inviteCode:'',loadError:null,conversations:[],activeConversation:null,notifications:[],myCommissions:[],myCommissionError:null,myReviews:[],savedIds:new Set()};
+const state={route:'home',filter:'All',roleFilter:'All Roles',query:'',session:{id:'s_'+Math.random().toString(36).slice(2),interests:{},viewed:[],liked:[]},currentUser:null,currentMember:null,selectedTheme:'moonlight',backendReady:false,authMode:'signin',inviteCode:'',loadError:null,conversations:[],activeConversation:null,notifications:[],savedIds:new Set()};
 const data={members:[],projects:[],services:[],recommendations:[]};window.state=state;window.data=data;
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
@@ -1162,10 +1162,10 @@ function saveSession(){localStorage.setItem('lunarist_session',JSON.stringify(st
 function member(id){return data.members.find(m=>m.id===id)||null}
 function roleLabel(m){if(!m)return 'Guest';if(m.is_admin)return 'Administrator';return m.account_type==='member'?'Lunarist Member':'User'}
 function memberByUsername(u){u=String(u||'').toLowerCase();return data.members.find(m=>(m.username||'').toLowerCase()===u)||null}
-const RESERVED_ROUTES=['discover','artists','services','commissions','artist-commissions','admin','api'];
-function pathForRoute(route){if(route==='home')return '/';if(route==='discover')return '/discover';if(route==='artists')return '/artists';if(route==='services')return '/services';if(route==='commissions')return '/commissions';if(route==='artist-commissions')return '/artist-commissions';if(route==='admin')return '/admin';if(route.startsWith('member:')){const m=member(route.split(':')[1]);return m?.username?('/'+m.username):'/artists'}return '/'}
+const RESERVED_ROUTES=['discover','artists','services','commissions','clients','artist-commissions','admin','api'];
+function pathForRoute(route){if(route==='home')return '/';if(route==='discover')return '/discover';if(route==='artists')return '/artists';if(route==='services')return '/services';if(route==='clients'||route==='commissions')return '/clients';if(route==='artist-commissions')return '/artist-commissions';if(route==='admin')return '/admin';if(route.startsWith('member:')){const m=member(route.split(':')[1]);return m?.username?('/'+m.username):'/artists'}return '/'}
 function goRoute(route,replace){state.route=route;const path=pathForRoute(route);if(location.pathname!==path){history[replace?'replaceState':'pushState']({route},'',path)}render()}
-function routeFromPath(){const seg=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,''));if(!seg)return 'home';if(seg==='discover')return 'discover';if(seg==='artists')return 'artists';if(seg==='services')return 'services';if(seg==='commissions')return 'commissions';if(seg==='artist-commissions')return 'artist-commissions';if(seg==='admin')return 'admin';if(RESERVED_ROUTES.includes(seg.toLowerCase()))return 'home';const m=memberByUsername(seg);return m?'member:'+m.id:'home'}
+function routeFromPath(){const seg=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,''));if(!seg)return 'home';if(seg==='discover')return 'discover';if(seg==='artists')return 'artists';if(seg==='services')return 'services';if(seg==='clients'||seg==='commissions')return 'clients';if(seg==='artist-commissions')return 'artist-commissions';if(seg==='admin')return 'admin';if(RESERVED_ROUTES.includes(seg.toLowerCase()))return 'home';const m=memberByUsername(seg);return m?'member:'+m.id:'home'}
 function extractYoutubeId(url){
   if(!url) return null;
   const s=String(url).trim();
@@ -2010,11 +2010,8 @@ function profilePage(m){
   updateSeoMeta(`${m.name} (@${m.username})`, m.bio, m.avatar);
   
   const formattedTos = String((state.language==='ja' && m.tos_ja ? m.tos_ja : m.tos)||'').trim();
-  const isClientProfile = m.account_type !== 'member' && !m.is_admin;
-  const canViewClientDashboard = isClientProfile && (state.currentUser?.id === m.id || !!state.currentMember?.is_admin);
-  const clientDash = canViewClientDashboard ? `<div class="panel" id="publicClientDashboard" style="margin-top:42px"><div class="eyebrow">Client Dashboard</div><h2 style="margin:4px 0">My commissions &amp; reviews</h2><p class="meta">Your completed commissions, current orders, and reviews are all collected here.</p><div id="publicClientCommissions" style="margin-top:16px"><div class="meta">Loading your commissions…</div></div></div>` : '';
 
-  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div><div id="profileSocialLinks" data-social-profile-id="${esc(m.id)}"></div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body" id="profileTosBody">${formatDescription(formattedTos)}</div></div>`:''}${clientDash}</section></div>`
+  return `<div class="container"><section class="section" style="padding-top:55px"><div class="row" style="justify-content:space-between"><button class="btn" data-route="artists">← Artists</button><div class="row"><button class="btn pink" id="profDirectChatBtn">💬 Chat with ${esc(m.name)}</button><button class="btn" id="copyProfileLink" data-username="${esc(m.username)}">Copy link</button></div></div><div class="panel" style="margin-top:16px;padding:30px"><div class="row" style="align-items:flex-start"><img class="avatar" style="width:86px;height:86px" src="${esc(m.avatar)}" alt="" onerror="handleImageError(this)"><div><div class="eyebrow">@${esc(m.username)}${m.is_admin?' · Administrator':(m.account_type==='member'?' · Lunarist Member':' · Client')}</div><h2 style="font-size:42px;margin:3px 0">${esc(m.name)}</h2><div style="color:var(--muted)">${esc(m.role)}</div><p style="max-width:650px;color:var(--muted)">${formatDescription(m.bio)}</p><div class="tags">${(m.skills||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="margin-top:14px;color:${m.available?'var(--green)':'var(--muted)'}">${m.available?'● Available for commissions':'● Currently booked'}</div><div id="profileSocialLinks" data-social-profile-id="${esc(m.id)}"></div></div></div></div><div class="sectionhead" style="margin-top:38px"><div><h2>Services</h2><p>${ss.length} listed</p></div></div><div class="grid">${ss.length?ss.map(serviceCard).join(''):emptyState('No services listed yet.')}</div><div class="sectionhead" style="margin-top:38px"><div><h2>Selected work</h2><p>${ps.length} published projects</p></div></div><div class="grid">${ps.length?ps.map(p=>card(p)).join(''):emptyState('No published projects yet.')}</div><div class="sectionhead" style="margin-top:42px"><div><div class="eyebrow">Client reviews</div><h2>Reviews from clients</h2><p id="artistReviewSummary">Loading reviews…</p></div></div><div id="artistReviews" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="panel"><div class="meta">Loading reviews…</div></div></div>${formattedTos?`<div class="sectionhead" style="margin-top:42px"><div><div class="profile-tos-badge">📜 Artist Policies</div><h2 style="margin-top:6px">Terms of Service</h2></div></div><div class="profile-tos-card"><div class="profile-tos-body" id="profileTosBody">${formatDescription(formattedTos)}</div></div>`:''}</section></div>`
 }
 
 async function ensureProfileTosJapanese(m){
@@ -2062,7 +2059,7 @@ function render(preserveScroll){
     applyTheme(state.currentMember?.theme || 'moonlight');
     updateSeoMeta('', '', '');
   }
-  let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route==='commissions'?`<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Client Dashboard</div><h1 style="margin:4px 0">My Commissions</h1><p>Track your commissions, approve deliveries, and leave reviews for completed work.</p></div></div><div id="dash-commissions" style="margin-top:20px"></div></section></div>`:state.route==='artist-commissions'?`<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Lunarist Member</div><h1 style="margin:4px 0">Artist Commission Center</h1><p>Manage incoming commissions, clients, deadlines, payments, and delivery status from one dedicated workspace.</p></div></div><div id="artistCommissionCenter" style="margin-top:20px"></div></section></div>`:state.route==='admin'?`<div class="container"><section class="section" style="padding-top:55px" id="adminPageView"></section></div>`:state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
+  let html=state.loadError?`<div class="container"><section class="section" style="padding-top:90px"><div class="empty"><strong style="color:var(--danger);display:block;margin-bottom:8px">Lunarist couldn't load its database.</strong><span>${esc(state.loadError)}</span><div class="heroactions" style="justify-content:center"><button class="btn primary" id="retryBtn">Retry</button></div></div></section></div>`:state.route==='home'?home():state.route==='discover'?discover():state.route==='services'?services():state.route==='artists'?artists():state.route==='artist-commissions'?`<div class="container"><section class="section" style="padding-top:55px"><div class="sectionhead"><div><div class="eyebrow">Lunarist Member</div><h1 style="margin:4px 0">Artist Commission Center</h1><p>Manage incoming commissions, clients, deadlines, payments, and delivery status from one dedicated workspace.</p></div></div><div id="artistCommissionCenter" style="margin-top:20px"></div></section></div>`:state.route==='admin'?`<div class="container"><section class="section" style="padding-top:55px" id="adminPageView"></section></div>`:state.route.startsWith('member:')?profilePage(member(state.route.split(':')[1])):home();
   document.getElementById('view').innerHTML=html;
   bind();
   if(state.route.startsWith('member:')) {
@@ -2070,9 +2067,7 @@ function render(preserveScroll){
     loadArtistReviews(pid);
     const pm=member(pid);
     if(pm && state.language==='ja' && String(pm.tos||'').trim() && !String(pm.tos_ja||'').trim()) ensureProfileTosJapanese(pm);
-    if(pm && pm.account_type!=='member' && !pm.is_admin && (state.currentUser?.id===pm.id || !!state.currentMember?.is_admin)) renderPublicClientDashboard(pm.id);
   }
-  if(state.route==='commissions') renderClientCommissionsTab();
   if(state.route!=='admin') trackSitePageView();
   if(state.route==='admin') renderAdminStudioPage();
   applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
@@ -2453,8 +2448,6 @@ function switchDashTab(tabName) {
   if(!valid.includes(tabName)) tabName='overview';
   document.querySelectorAll('[data-dash]').forEach(x=>x.classList.toggle('active', x.dataset.dash===tabName));
   document.querySelectorAll('.dashsection').forEach(x=>x.classList.toggle('active', x.id==='dash-'+tabName));
-  const navCommission=document.getElementById('navCommissionsBtn');
-  if(navCommission) navCommission.classList.toggle('active', tabName==='commissions');
   const drawer=document.getElementById('drawer');
   if(drawer) drawer.dataset.activeTab=tabName;
   applyLanguage(state.language || localStorage.getItem('lunarist_lang') || 'en');
@@ -2508,20 +2501,6 @@ async function openArtistCommissionCenter(){
   }));
 }
 
-async function openCommissionsPage(){
-  if(!state.currentUser){openAuth('signin');return}
-  await refreshUser();
-  const m=state.currentMember;
-  if(!m){toast('Your profile could not be loaded.');return}
-  const {data:clientCommissions,error}=await supabaseClient.from('commissions').select('id,service_id,artist_id,client_id,status,payment_type,deposit_amount,total_amount,amount,currency,target_deadline,created_at,updated_at,project_title,client_name,company,paypal_order_id,paypal_capture_id,service:service_id(id,title,thumbnail_url),artist:artist_id(id,display_name,username,avatar_url),client_reviews(id,rating,review,published,created_at)').eq('client_id',m.id).order('created_at',{ascending:false});
-  state.myCommissions=clientCommissions||[];
-  state.myCommissionError=error?.message||null;
-  state.route='commissions';
-  const path=pathForRoute('commissions');
-  if(location.pathname!==path) history.pushState({route:'commissions'},'',path);
-  render();
-}
-
 async function openDashboard(initialTab='overview'){
   if(!state.currentUser){openAuth('signin');return}
   await refreshUser();
@@ -2529,13 +2508,10 @@ async function openDashboard(initialTab='overview'){
   const m=state.currentMember;
   if(!m){toast('Your profile could not be loaded.');return}
   
-  const [{data:ps},{data:ss},{data:clientCommissions,error:commissionError}]=await Promise.all([
+  const [{data:ps},{data:ss}]=await Promise.all([
     supabaseClient.from('projects').select('*').eq('owner_id',m.id).order('created_at',{ascending:false}),
-    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,amount,delivery_time,thumbnail_url,status,published,featured,views,add_ons,sort_order,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false}),
-    supabaseClient.from('commissions').select('id,service_id,artist_id,client_id,status,payment_type,deposit_amount,total_amount,amount,currency,target_deadline,created_at,updated_at,project_title,client_name,company,paypal_order_id,paypal_capture_id,service:service_id(id,title,thumbnail_url),artist:artist_id(id,display_name,username,avatar_url),client_reviews(id,rating,review,published,created_at)').eq('client_id',m.id).order('created_at',{ascending:false})
+    supabaseClient.from('services').select('id,owner_id,artist_id,title,description,category,tags,price_from,amount,delivery_time,thumbnail_url,status,published,featured,views,add_ons,sort_order,created_at,updated_at,service_projects(project_id)').or(`owner_id.eq.${m.id},artist_id.eq.${m.id}`).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false})
   ]);
-  state.myCommissions=clientCommissions||[];
-  state.myCommissionError=commissionError?.message||null;
   
   state.myProjects=(ps||[]).sort((a,b)=>(a.position||0)-(b.position||0));
   const userServices = ((ss && ss.length) ? ss : data.services.filter(s => s.member === m.id)).slice().sort((a,b)=>{ const ao=Number(a.sort_order); const bo=Number(b.sort_order); const an=Number.isFinite(ao)?ao:2147483647; const bn=Number.isFinite(bo)?bo:2147483647; return an-bn || String(b.created_at||'').localeCompare(String(a.created_at||'')); });
@@ -2648,72 +2624,6 @@ function setupServiceDragAndDrop(){
     toast('Service order saved');
     await loadData();
   }
-}
-
-function commissionClientStatusLabel(status){
-  return commissionStatusLabel(status);
-}
-
-async function renderPublicClientDashboard(clientId){
-  const container=document.getElementById('publicClientCommissions');
-  if(!container)return;
-  const {data:rows,error}=await supabaseClient.from('commissions').select('id,status,total_amount,amount,currency,target_deadline,created_at,updated_at,project_title,service:service_id(id,title,thumbnail_url),artist:artist_id(id,display_name,username,avatar_url),client_reviews(id,rating,review,published,created_at)').eq('client_id',clientId).order('created_at',{ascending:false});
-  if(error){container.innerHTML=`<div class="meta">Unable to load commissions: ${esc(error.message)}</div>`;return;}
-  if(!rows?.length){container.innerHTML=`<div class="empty">No commissions yet. Your artist commissions will appear here.</div>`;return;}
-  container.innerHTML=rows.map(c=>{
-    const a=c.artist||{},sv=c.service||{},rv=Array.isArray(c.client_reviews)?c.client_reviews[0]:null;
-    return `<article class="panel" style="padding:16px;margin-top:10px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><div class="eyebrow">${esc(sv.title||c.project_title||'Commission')}</div><div class="meta">Artist: ${esc(a.display_name||a.username||'Artist')}</div></div><span class="pill">${esc(commissionClientStatusLabel(c.status))}</span></div><div class="stats" style="margin-top:10px"><span class="stat">${esc(c.currency||'USD')} ${Number(c.total_amount||c.amount||0).toFixed(2)}</span>${c.target_deadline?`<span class="stat">Due ${esc(c.target_deadline)}</span>`:''}<span class="stat">${new Date(c.created_at).toLocaleDateString()}</span></div>${rv?`<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px"><div class="eyebrow">Your review</div><div style="color:var(--gold)">${'★'.repeat(Number(rv.rating||0))}${'☆'.repeat(5-Number(rv.rating||0))}</div><div class="meta">${esc(rv.review)}</div></div>`:''}</article>`;
-  }).join('');
-}
-
-function renderClientCommissionsTab(){
-  const container=document.getElementById('dash-commissions');
-  if(!container) return;
-  const rows=Array.isArray(state.myCommissions)?state.myCommissions:[];
-  if(state.myCommissionError){
-    container.innerHTML=`<div class="panel"><div class="eyebrow">My Commissions</div><h3 style="margin:5px 0">Unable to load commissions</h3><p class="meta">${esc(state.myCommissionError)}</p></div>`;
-    return;
-  }
-  if(!rows.length){
-    container.innerHTML=`<div class="panel">${emptyState('No commissions yet.','When you commission a Lunarist artist, your orders and completed work will appear here.')}</div>`;
-    return;
-  }
-  container.innerHTML=`<div class="panel"><div class="eyebrow">Client Dashboard</div><h3 style="margin:4px 0">My Commissions</h3><p class="meta">Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.</p><div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">${rows.map(c=>{
-    const artist=c.artist||{}; const service=c.service||{}; const review=Array.isArray(c.client_reviews)?c.client_reviews[0]:null;
-    const idx=commissionStatusIndex(c.status||'waitlist');
-    const canApprove=c.status==='delivered'; const canReview=c.status==='completed'&&!review;
-    return `<article class="panel" style="padding:16px;background:rgba(255,255,255,.02)">
-      <div class="row" style="align-items:flex-start;justify-content:space-between;gap:12px">
-        <div class="grow"><div class="eyebrow">Commission</div><h3 style="margin:3px 0 6px">${esc(service.title||c.project_title||'Commission')}</h3><div class="meta artist"><img class="avatar" style="width:26px;height:26px" src="${esc(artist.avatar_url||'https://i.pravatar.cc/160?u='+artist.id)}" onerror="handleImageError(this)"><span>${esc(artist.display_name||artist.username||'Lunarist Artist')}</span></div></div>
-        <span class="pill">${esc(commissionClientStatusLabel(c.status))}</span>
-      </div>
-      <div class="stats" style="margin:12px 0"><span class="stat">${esc(c.currency||'USD')} ${Number(c.total_amount||c.amount||0).toFixed(2)}</span>${c.target_deadline?`<span class="stat">Due ${esc(c.target_deadline)}</span>`:''}<span class="stat">${new Date(c.created_at).toLocaleDateString()}</span></div>
-      <div style="display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;margin:10px 0 16px">${PUBLIC_COMMISSION_STATUSES.map((st,i)=>`<div title="${esc(st.label)}"><div style="height:5px;border-radius:99px;background:${i<=idx?'var(--moon)':'rgba(255,255,255,.1)'}"></div><div class="meta" style="font-size:9px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(st.label)}</div></div>`).join('')}</div>
-      ${canApprove?`<button class="btn primary" data-approve-commission="${c.id}">✓ Approve delivery & complete</button>`:''}
-      ${review?`<div style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)"><div class="eyebrow">Your review</div><div style="color:var(--gold);font-size:18px;margin:3px 0">${'★'.repeat(Number(review.rating||0))}${'☆'.repeat(5-Number(review.rating||0))}</div><div style="font-size:13px;color:var(--muted)">${esc(review.review)}</div></div>`:''}
-      ${canReview?`<div class="client-review-form" data-review-form="${c.id}" style="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:14px"><div class="eyebrow">Review your completed commission</div><div class="field" style="margin-top:8px"><label>Rating</label><select data-review-rating="${c.id}"><option value="5">★★★★★ — Excellent</option><option value="4">★★★★☆ — Great</option><option value="3">★★★☆☆ — Good</option><option value="2">★★☆☆☆ — Needs work</option><option value="1">★☆☆☆☆ — Poor</option></select></div><div class="field" style="margin-top:8px"><label>Your review</label><textarea data-review-text="${c.id}" placeholder="Tell future clients about your experience…"></textarea></div><button class="btn pink" style="margin-top:8px" data-submit-review="${c.id}">Publish review</button></div>`:''}
-    </article>`;
-  }).join('')}</div></div>`;
-
-  document.querySelectorAll('[data-approve-commission]').forEach(btn=>btn.onclick=async()=>{
-    btn.disabled=true;
-    const {error}=await supabaseClient.from('commissions').update({status:'completed',updated_at:new Date().toISOString()}).eq('id',btn.dataset.approveCommission).eq('client_id',state.currentUser.id).eq('status','delivered');
-    if(error){toast(error.message);btn.disabled=false;return;}
-    toast('Commission completed.');
-    await openDashboard();
-    });
-  document.querySelectorAll('[data-submit-review]').forEach(btn=>btn.onclick=async()=>{
-    const id=btn.dataset.submitReview; const rating=Number(document.querySelector(`[data-review-rating="${id}"]`)?.value||5); const text=document.querySelector(`[data-review-text="${id}"]`)?.value.trim()||'';
-    if(text.length<10){toast('Please write at least 10 characters.');return;}
-    btn.disabled=true;
-    const commission=rows.find(x=>x.id===id);
-    const {error}=await supabaseClient.from('client_reviews').insert({commission_id:id,client_id:state.currentUser.id,artist_id:commission.artist_id,rating,review:text});
-    if(error){toast(error.message);btn.disabled=false;return;}
-    toast('Thank you — your review is published.');
-    await openDashboard();
-    });
-  switchDashTab(initialTab);
-  applyLanguage(state.language || 'en');
 }
 
 function updateMessagesUnreadBadge() {
@@ -4009,7 +3919,6 @@ async function loadData(){
 function updatePrimaryNavVisibility(){
   const navAdmin=document.getElementById('navAdminBtn');
   const navArtistCommission=document.getElementById('navArtistCommissionBtn');
-  const navCommission=document.getElementById('navCommissionsBtn');
   const isSignedIn=!!state.currentUser;
   const isAdmin=!!state.currentMember?.is_admin;
   const isMember=state.currentMember?.account_type==='member';
@@ -4022,12 +3931,6 @@ function updatePrimaryNavVisibility(){
     navArtistCommission.style.display=canSeeArtistCommission?'inline-flex':'none';
     navArtistCommission.hidden=!canSeeArtistCommission;
     navArtistCommission.setAttribute('aria-hidden',canSeeArtistCommission?'false':'true');
-  }
-  if(navCommission){
-    const canSeeCommissions=isSignedIn && !isMember && !isAdmin;
-    navCommission.style.display=canSeeCommissions?'inline-flex':'none';
-    navCommission.hidden=!canSeeCommissions;
-    navCommission.setAttribute('aria-hidden',canSeeCommissions?'false':'true');
   }
   if(navAdmin){
     const canSeeAdmin=isSignedIn && isAdmin;
@@ -4056,11 +3959,10 @@ function updateAccountButton(){
 /* Navigation + language */
 const I18N={
   en:{
-    home:'Home',discover:'Discover',services:'Services',artists:'Artists',artistCommissionCenter:'Artist Commission Center',myCommissions:'My Commissions',adminStudio:'Admin Studio',
+    home:'Home',discover:'Discover',services:'Services',artists:'Artists',artistCommissionCenter:'Artist Commission Center',adminStudio:'Admin Studio',
     overview:'Overview',messages:'Messages 💬',projects:'My Projects',profile:'Profile',servicesTab:'Services',savedTab:'Saved 🔖',
     memberSpace:'Member space',yourLunarist:'Your Lunarist',directMessaging:'Direct Messaging',activeCollaborations:'Active Collaborations',
     myServices:'My services',myProjects:'My projects',editProfile:'Edit profile',clientDashboard:'Client Dashboard',
-    myCommissionsAndReviews:'My commissions & reviews',trackCommissions:'Track every commission you have commissioned, approve delivery, and leave a review when the work is complete.',
     welcomeBack:'Welcome back',overviewDescription:'Your profile and projects are stored in Supabase. Published work appears in Discover.',
     hireCollective:'Hire the collective',servicesTitle:'Services.',servicesDescription:'Book Lunarist members directly for commissions and packages.',
     discoverWork:'Discover work.',discoverDescription:'Lunarist mixes relevance with exploration, so your feed can introduce you to artists and disciplines you would not normally click.',
@@ -4082,11 +3984,10 @@ const I18N={
     activeSession:'Active Session',startedConversation:'Started conversation',loading:'Loading…',loadingReviews:'Loading reviews…',loadingCommissions:'Loading your commissions…'
   },
   ja:{
-    home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',artistCommissionCenter:'アーティスト・コミッションセンター',myCommissions:'マイ・コミッション',adminStudio:'管理スタジオ',
+    home:'ホーム',discover:'発見',services:'サービス',artists:'アーティスト',artistCommissionCenter:'アーティスト・コミッションセンター',adminStudio:'管理スタジオ',
     overview:'概要',messages:'メッセージ 💬',projects:'マイ・プロジェクト',profile:'プロフィール',servicesTab:'サービス',savedTab:'保存済み 🔖',
     memberSpace:'メンバースペース',yourLunarist:'あなたのLunarist',directMessaging:'ダイレクトメッセージ',activeCollaborations:'進行中のコラボレーション',
     myServices:'マイサービス',myProjects:'マイプロジェクト',editProfile:'プロフィールを編集',clientDashboard:'クライアントダッシュボード',
-    myCommissionsAndReviews:'マイ・コミッションとレビュー',trackCommissions:'すべてのコミッションを確認し、納品を承認して、完了後にレビューを投稿できます。',
     welcomeBack:'おかえりなさい',overviewDescription:'プロフィールとプロジェクトはSupabaseに保存されています。公開作品は「発見」に表示されます。',
     hireCollective:'クリエイティブチームに依頼',servicesTitle:'サービス。',servicesDescription:'Lunaristメンバーへ直接コミッションやパッケージを依頼できます。',
     discoverWork:'作品を発見。',discoverDescription:'Lunaristは関連性と探索を組み合わせ、普段ならクリックしないアーティストや分野との出会いを届けます。',
@@ -4196,7 +4097,7 @@ function applyLanguage(lang){
 function initLanguage(){const saved=localStorage.getItem('lunarist_lang')||'en';applyLanguage(saved);document.querySelectorAll('.lang-switch [data-lang]').forEach(el=>el.onclick=()=>{applyLanguage(el.dataset.lang);render();});}
 function initReveal(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in-view'));return}const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -30px'});els.forEach(e=>io.observe(e));}
 
-document.getElementById('accountBtn').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(state.currentUser){openDashboard();}else{openAuth('signin');document.getElementById('authModal')?.classList.add('open');}});document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>{updatePrimaryNavVisibility();document.getElementById('navlinks').classList.toggle('open')};document.getElementById('navArtistCommissionBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');updatePrimaryNavVisibility();if(!state.currentUser||state.currentMember?.account_type!=='member'||state.currentMember?.is_admin)return;await openArtistCommissionCenter()};document.getElementById('navCommissionsBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');updatePrimaryNavVisibility();if(!state.currentUser||state.currentMember?.account_type==='member'||state.currentMember?.is_admin)return;await openCommissionsPage()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
+document.getElementById('accountBtn').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(state.currentUser){openDashboard();}else{openAuth('signin');document.getElementById('authModal')?.classList.add('open');}});document.getElementById('modalClose').onclick=closeModal;document.getElementById('projectModal').onclick=e=>{if(e.target.id==='projectModal')closeModal()};document.getElementById('drawerClose').onclick=closeDash;document.getElementById('drawer').onclick=e=>{if(e.target.id==='drawer')closeDash()};document.getElementById('menuBtn').onclick=()=>{updatePrimaryNavVisibility();document.getElementById('navlinks').classList.toggle('open')};document.getElementById('navArtistCommissionBtn').onclick=async()=>{document.getElementById('navlinks').classList.remove('open');updatePrimaryNavVisibility();if(!state.currentUser||state.currentMember?.account_type!=='member'||state.currentMember?.is_admin)return;await openArtistCommissionCenter()};initLanguage();initReveal();document.getElementById('authClose').onclick=closeAuth;document.getElementById('authModal').onclick=e=>{if(e.target.id==='authModal')closeAuth()};document.getElementById('authToggle').onclick=()=>openAuth(state.authMode==='signin'?'signup':'signin');document.getElementById('googleAuth').onclick=signInWithGoogle;
 async function capturePaypalReturnIfPresent(){
   const params=new URLSearchParams(location.search);
   const paypalStatus=params.get('paypal');
@@ -4245,18 +4146,11 @@ async function capturePaypalReturnIfPresent(){
 </script>
 <script src="/profile-sync.js"></script>
 <script src="/lunarist-enhancements.js?v=2"></script>
-<script src="/client-space.js?v=2"></script>
-<script src="/client-space-ui.js?v=2"></script>
+<script src="/client-hub.js?v=20261017-1"></script>
 <script src="/client-chat-and-artist-join.js?v=5"></script>
 <script src="/commission-command-center.js?v=1"></script>
-<script src="/commission-filters.js?v=1"></script>
-<script src="/client-next-action.js?v=1"></script>
-<script src="/client-commission-detail.js?v=1"></script>
-<script src="/client-commission-timeline.js?v=1"></script>
 <script src="/commission-payment-state.js?v=1"></script>
-<script src="/client-space-mobile-polish.js?v=1"></script>
 <script src="/public-member-profile.js?v=1"></script>
-<script src="/client-space-nav-fix.js?v=1"></script>
 <script src="/eugene-lunarist-integration.js?v=1"></script>
 <script src="/client-messaging.js?v=20261007-contrast3"></script>
 <script src="/x-project-player.js"></script>
@@ -4274,7 +4168,7 @@ async function capturePaypalReturnIfPresent(){
 <script src="/oauth-admin-ui.js?v=3"></script>
 <script src="/oauth-browser-bridge.js"></script>
 <script src="/eugene-card-api-application-ui.js"></script>
-<script src="/client-space-eugene-card-tab.js"></script>
+<script src="/client-hub-eugene-card-tab.js"></script>
 <script src="/social-links.js?v=1"></script>
 <script src="/oauth-browser-bridge.js?v=2"></script>
 <script src="/visitor-analytics.js?v=1"></script>
