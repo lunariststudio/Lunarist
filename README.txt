@@ -1,14 +1,7 @@
-Lunarist YouTube Live Fix
+LUNARIST STUDIO — FULL-PAGE REDESIGN
 
-Replace these files in your Lunarist project:
-  index.html
-  api/youtube.js
+See FULL_PAGE_REDESIGN.md for a summary of the UI/UX changes and validation performed.
 
-Fixes:
-- Accepts youtube.com/live/VIDEO_ID URLs including ?si= parameters.
-- Fetches YouTube statistics for live videos.
-- Returns normalized likeCount/likes values.
-- Syncs YouTube viewCount and likeCount into the Lunarist project's views/likes fields.
-- Keeps normal watch/embed/shorts/youtu.be URLs working.
+Build: npm ci, then npm run build.
 
-After replacing the files, commit and push to main. Vercel should deploy automatically.
+This source ZIP excludes node_modules and production secrets. Use your existing Vercel and Supabase environment settings. No production deploy or database migration is included in this change.
